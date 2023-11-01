@@ -31,7 +31,7 @@ class _ProductsPageState extends State<ProductsPage> {
       final List<Map<String, dynamic>> productsData = (data['data'] as List)
           .where((productsData) =>
               productsData is Map<String, dynamic> &&
-              productsData['type'] == 'Products') // Filter for 'Products'
+              productsData['type'] == '{Products}') // Filter for 'Products'
           .map((productsData) => productsData as Map<String, dynamic>)
           .toList();
 
@@ -212,7 +212,7 @@ class _ProductsPageState extends State<ProductsPage> {
           .where((productsData) =>
               productsData is Map<String, dynamic> &&
               productsData.containsKey('type') &&
-              productsData['type'] == 'Products')
+              productsData['type'] == '{Products}')
           .map((productsData) => productsData as Map<String, dynamic>)
           .toList();
 
