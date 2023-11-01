@@ -19,7 +19,7 @@ class _CustomerPageState extends State<CustomerPage> {
   }
 
   int currentPage = 1;
-  int limit = 2;
+  int limit = 10;
 
   Future<void> fetchData({int page = 1}) async {
     final response = await http.get(Uri.parse(
