@@ -1,5 +1,6 @@
 import 'package:admin_app/views/chat.page.dart';
 import 'package:admin_app/views/home.page.dart';
+import 'package:admin_app/views/recentOrders.page.dart';
 import 'package:admin_app/widgets/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 
@@ -22,10 +23,12 @@ class _DashboardPageState extends State<DashboardPage> {
               child: _currentIndex == 3
                   ? ChatPage()
                   : _currentIndex == 2
-                      ? HomePage() // Display HomePage when index is 2
-                      : Center(
-                          child: Text('Welcome to Page $_currentIndex'),
-                        ),
+                      ? HomePage()
+                      : _currentIndex == 1
+                          ? RecentOrders() // Display HomePage when index is 2
+                          : Center(
+                              child: Text('Welcome to Page $_currentIndex'),
+                            ),
             ),
             BottomNavBar(
               currentIndex: _currentIndex,
