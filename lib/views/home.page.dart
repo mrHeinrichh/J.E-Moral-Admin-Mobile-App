@@ -122,7 +122,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       AppointmentIcon(
                         onTap: () {
-                          // Action to perform when the card is clicked
+                          Navigator.pushNamed(context, appointmentRoute);
                         },
                       ),
                       FeedbackIcon(
