@@ -1,5 +1,6 @@
 import 'package:admin_app/routes/app_routes.dart';
 import 'package:admin_app/views/accessory.page.dart';
+import 'package:admin_app/views/appointment.page.dart';
 import 'package:admin_app/views/customer.page.dart';
 import 'package:admin_app/views/dashboard.page.dart';
 import 'package:admin_app/views/drivers.page.dart';
@@ -30,6 +31,7 @@ class MyApp extends StatelessWidget {
         accessoriesRoute: (context) => AccessoryPage(),
         walkinRoute: (context) => walkinPage(),
         transactionRoute: (context) => transactionPage(),
+        appointmentRoute: (context) => AppointmentPage(),
       },
     );
   }
