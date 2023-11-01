@@ -1,9 +1,43 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:admin_app/routes/app_routes.dart';
 import 'package:admin_app/widgets/custom_button.dart';
-import 'package:admin_app/widgets/text_field.dart';
-import 'package:flutter/material.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
+  @override
+  _LoginPageState createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  String email = "";
+  String password = "";
+
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    final response = await http.post(
+      Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/auth/login'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+
+      if (data['status'] == 'success') {
+        return data;
+      } else {
+        return {'error': 'Login failed'};
+      }
+    } else {
+      return {'error': 'Login failed'};
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,27 +55,59 @@ class LoginPage extends StatelessWidget {
                   height: null,
                 ),
                 const SizedBox(height: 50.0),
-                const CustomTextField(
-                  labelText: "Email Address",
-                  hintText: "Enter your Email Address",
+                TextField(
+                  onChanged: (value) {
+                    email = value;
+                  },
+                  decoration: InputDecoration(
+                    labelText: "Email Address",
+                    hintText: "Enter your Email Address",
+                  ),
                 ),
-                const CustomTextField(
-                  labelText: "Password",
-                  hintText: "Enter your Password",
+                TextField(
+                  onChanged: (value) {
+                    password = value;
+                  },
+                  decoration: InputDecoration(
+                    labelText: "Password",
+                    hintText: "Enter your Password",
+                  ),
                 ),
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [Text("Forgot your password?")],
                 ),
-                const SizedBox(height: 30.0),
+                SizedBox(height: 30.0),
                 Column(
                   children: [
                     LoginButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, dashboardRoute);
+                      onPressed: () async {
+                        final loginResult = await login(email, password);
+
+                        if (loginResult.containsKey('error')) {
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text('Login Failed'),
+                                content: Text(loginResult['error']),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text('OK'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        } else {
+                          Navigator.pushNamed(context, dashboardRoute);
+                        }
                       },
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                   ],
                 )
               ],
