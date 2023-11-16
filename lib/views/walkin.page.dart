@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
+import 'package:http_parser/http_parser.dart';
 
 class walkinPage extends StatefulWidget {
   @override
@@ -8,8 +12,19 @@ class walkinPage extends StatefulWidget {
 }
 
 class _walkinPageState extends State<walkinPage> {
+  File? _image;
+  final _imageStreamController = StreamController<File?>.broadcast();
+  bool _sortAscending = true;
+  String _sortColumn = 'createdAt'; // Default sorting column
+
   List<Map<String, dynamic>> walkinDataList = [];
   TextEditingController searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _imageStreamController.close();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -19,6 +34,94 @@ class _walkinPageState extends State<walkinPage> {
 
   int currentPage = 1;
   int limit = 2;
+
+  Future<void> _pickImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      final imageFile = File(pickedFile.path);
+      _imageStreamController.sink.add(imageFile);
+      setState(() {
+        _image = imageFile;
+      });
+    }
+  }
+
+  Future<Map<String, dynamic>?> uploadImageToServer(File imageFile) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/upload/image'),
+      );
+
+      var fileStream = http.ByteStream(Stream.castFrom(imageFile.openRead()));
+      var length = await imageFile.length();
+
+      String fileExtension = imageFile.path.split('.').last.toLowerCase();
+      var contentType = MediaType('image', 'png');
+
+      Map<String, String> imageExtensions = {
+        'png': 'png',
+        'jpg': 'jpeg',
+        'jpeg': 'jpeg',
+        'gif': 'gif',
+      };
+
+      if (imageExtensions.containsKey(fileExtension)) {
+        contentType = MediaType('image', imageExtensions[fileExtension]!);
+      }
+
+      var multipartFile = http.MultipartFile(
+        'image',
+        fileStream,
+        length,
+        filename: 'image.$fileExtension',
+        contentType: contentType,
+      );
+
+      request.files.add(multipartFile);
+
+      var response = await request.send();
+
+      // ...
+
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        print("Image uploaded successfully: $responseBody");
+
+        // Parse the response JSON
+        final parsedResponse = json.decode(responseBody);
+
+        // Check if 'data' is present in the response
+        if (parsedResponse.containsKey('data')) {
+          final List<dynamic> data = parsedResponse['data'];
+
+          // Check if 'path' is present in the first item of the 'data' array
+          if (data.isNotEmpty && data[0].containsKey('path')) {
+            final imageUrl = data[0]['path'];
+            print("Image URL: $imageUrl");
+
+            return {'url': imageUrl};
+          } else {
+            print("Invalid response format: $parsedResponse");
+            return null;
+          }
+        } else {
+          print("Invalid response format: $parsedResponse");
+          return null;
+        }
+      } else {
+        print("Image upload failed with status code: ${response.statusCode}");
+        final responseBody = await response.stream.bytesToString();
+        print("Response body: $responseBody");
+        return null;
+      }
+    } catch (e) {
+      print("Image upload failed with error: $e");
+      return null;
+    }
+  }
 
   Future<void> fetchData({int page = 1}) async {
     final response = await http.get(
@@ -49,6 +152,18 @@ class _walkinPageState extends State<walkinPage> {
     final url =
         Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions');
     final headers = {'Content-Type': 'application/json'};
+
+    var uploadResponse = await uploadImageToServer(_image!);
+    print("Upload Response: $uploadResponse");
+
+    if (uploadResponse != null) {
+      print("Image URL: ${uploadResponse["url"]}");
+      newWalkin["pickupImages"] = uploadResponse["url"];
+    } else {
+      // Handle the case where image upload fails
+      print("Image upload failed");
+      return;
+    }
 
     final response = await http.post(
       url,
@@ -135,6 +250,7 @@ class _walkinPageState extends State<walkinPage> {
                   decoration: InputDecoration(labelText: 'completed'),
                 ),
                 TextFormField(
+                  initialValue: 'Walkin',
                   controller: typeController,
                   decoration: InputDecoration(labelText: 'type'),
                 ),
@@ -150,19 +266,14 @@ class _walkinPageState extends State<walkinPage> {
             ),
             TextButton(
               onPressed: () async {
-                walkinToEdit['deliveryLocation'] =
-                    walkinToEdit['name'] = nameController.text;
+                walkinToEdit['deliveryLocation'] = " ";
+                walkinToEdit['name'] = nameController.text;
                 walkinToEdit['contactNumber'] = contactNumberController.text;
-
                 walkinToEdit['paymentMethod'] = paymentMethodController.text;
-
                 walkinToEdit['total'] = totalController.text;
                 walkinToEdit['items'] = itemsController.text;
-
                 walkinToEdit['rider'] = riderController.text;
-
                 walkinToEdit['pickupImages'] = pickupImagesController.text;
-
                 walkinToEdit['completed'] = completedController.text;
                 walkinToEdit['type'] = typeController.text;
 
@@ -216,19 +327,12 @@ class _walkinPageState extends State<walkinPage> {
 
   void openAddWalkinDialog() {
     TextEditingController nameController = TextEditingController();
-
     TextEditingController contactNumberController = TextEditingController();
-
     TextEditingController paymentMethodController = TextEditingController();
-
     TextEditingController totalController = TextEditingController();
     TextEditingController itemsController = TextEditingController();
-
     TextEditingController pickupImagesController = TextEditingController();
-
-    TextEditingController completedController = TextEditingController();
-
-    TextEditingController typeController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
@@ -256,23 +360,58 @@ class _walkinPageState extends State<walkinPage> {
                 ),
                 TextFormField(
                   controller: itemsController,
-                  decoration: InputDecoration(labelText: 'Contact Number'),
+                  decoration: InputDecoration(labelText: 'Items'),
                 ),
-                TextFormField(
-                  controller: pickupImagesController,
-                  decoration: InputDecoration(labelText: 'pickupImages'),
+                Text(
+                  "\npickupImage",
+                  style: TextStyle(
+                    fontSize: 15.0,
+                    color: Colors.grey[700],
+                  ),
                 ),
-                TextFormField(
-                  controller: completedController,
-                  decoration: InputDecoration(labelText: 'completed'),
-                ),
-                TextFormField(
-                  controller: typeController,
-                  decoration: InputDecoration(labelText: 'type'),
+                //BREAKKKKKKKKKK
+                StreamBuilder<File?>(
+                  stream: _imageStreamController.stream,
+                  builder: (context, snapshot) {
+                    return Column(
+                      children: [
+                        const SizedBox(height: 10.0),
+                        const Divider(),
+                        const SizedBox(height: 10.0),
+                        snapshot.data == null
+                            ? const CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Colors.grey,
+                                child: Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 50,
+                                ),
+                              )
+                            : CircleAvatar(
+                                radius: 50,
+                                backgroundImage: FileImage(snapshot.data!),
+                              ),
+                        TextButton(
+                          onPressed: () async {
+                            await _pickImage();
+                          },
+                          child: const Text(
+                            "Upload Image",
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontSize: 15.0,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
           ),
+          //BREAKKKKKKKKKK
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -288,9 +427,9 @@ class _walkinPageState extends State<walkinPage> {
                   "paymentMethod": paymentMethodController.text,
                   "total": totalController.text,
                   "items": itemsController.text,
-                  "pickupImages": pickupImagesController.text,
-                  "completed": completedController.text,
-                  "type": typeController.text,
+                  "pickupImages": "",
+                  "completed": "true",
+                  "type": "Walkin",
                 };
                 addWalkinToAPI(newWalkin);
               },
@@ -405,62 +544,24 @@ class _walkinPageState extends State<walkinPage> {
                   borderRadius: BorderRadius.circular(12.0),
                 ),
                 child: DataTable(
-                  columns: <DataColumn>[
-                    DataColumn(label: Text('name')),
-                    DataColumn(label: Text('contactNumber')),
-                    DataColumn(label: Text('paymentMethod')),
-                    DataColumn(label: Text('Total')),
-                    DataColumn(label: Text('items')),
-                    DataColumn(label: Text('pickupImages')),
-                    DataColumn(label: Text('completed')),
-                    DataColumn(label: Text('type')),
-                    DataColumn(
-                      label: Text('Actions'),
-                      tooltip: 'Update and Delete',
-                    ),
-                  ],
-                  rows: walkinDataList.map((userData) {
-                    final id = userData['_id'];
+                  sortAscending: _sortAscending,
+                  sortColumnIndex:
+                      0, // Set to the index of the column you want to initially sort by
 
-                    return DataRow(
-                      cells: <DataCell>[
-                        DataCell(Text(userData['name'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(
-                            Text(userData['contactNumber'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(
-                            Text(userData['paymentMethod'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(Text(userData['total'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(Text(userData['items'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(
-                            Text(userData['pickupImages'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(Text(userData['completed'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(Text(userData['type'] ?? ''),
-                            placeholder: false),
-                        DataCell(
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.edit),
-                                onPressed: () => updateData(id),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () => deleteData(id),
-                              ),
-                            ],
-                          ),
-                          placeholder: false,
-                        ),
-                      ],
-                    );
-                  }).toList(),
+                  columns: <DataColumn>[
+                    // _buildDataColumnWithSort(
+                    //     'createdAt', 'Created At', 'Sort by Created At'),
+                    _buildDataColumnWithSort('createdAt', 'Name', 'Name'),
+                    _buildDataColumn('contactNumber', 'Contact Number'),
+                    _buildDataColumn('paymentMethod', 'Payment Method'),
+                    _buildDataColumn('Total', 'Total'),
+                    _buildDataColumn('items', 'Items'),
+                    _buildDataColumn('pickupImages', 'Pickup Images'),
+                    _buildDataColumn('completed', 'Completed'),
+                    _buildDataColumn('type', 'Type'),
+                    _buildDataColumn('Actions', 'Update and Delete'),
+                  ],
+                  rows: _buildDataRows(),
                 ),
               ),
             ),
@@ -493,5 +594,85 @@ class _walkinPageState extends State<walkinPage> {
         ),
       ),
     );
+  }
+
+  DataColumn _buildDataColumnWithSort(
+      String columnName, String label, String tooltip) {
+    return DataColumn(
+      label: Text(label),
+      tooltip: tooltip,
+      onSort: (columnIndex, ascending) {
+        setState(() {
+          _sortColumn = columnName;
+          _sortAscending = ascending;
+        });
+      },
+    );
+  }
+
+  DataColumn _buildDataColumn(String columnName, String label) {
+    return DataColumn(label: Text(label));
+  }
+
+  int _getColumnIndex(String columnName) {
+    for (int i = 0; i < walkinDataList.length; i++) {
+      if (walkinDataList[i].containsKey(columnName)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  List<DataRow> _buildDataRows() {
+    List<Map<String, dynamic>> sortedList = List.from(walkinDataList);
+
+    sortedList.sort((a, b) {
+      DateTime aDate = DateTime.parse(a['createdAt']);
+      DateTime bDate = DateTime.parse(b['createdAt']);
+
+      if (_sortAscending) {
+        return aDate.compareTo(bDate);
+      } else {
+        return bDate.compareTo(aDate);
+      }
+    });
+
+    return sortedList.map((userData) {
+      final id = userData['_id'];
+
+      return DataRow(
+        cells: <DataCell>[
+          DataCell(Text(userData['name'].toString() ?? ''), placeholder: false),
+          DataCell(Text(userData['contactNumber'].toString() ?? ''),
+              placeholder: false),
+          DataCell(Text(userData['paymentMethod'].toString() ?? ''),
+              placeholder: false),
+          DataCell(Text(userData['total'].toString() ?? ''),
+              placeholder: false),
+          DataCell(Text(userData['items'].toString() ?? ''),
+              placeholder: false),
+          DataCell(Text(userData['pickupImages'].toString() ?? ''),
+              placeholder: false),
+          DataCell(Text(userData['completed'].toString() ?? ''),
+              placeholder: false),
+          DataCell(Text(userData['type'] ?? ''), placeholder: false),
+          DataCell(
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.edit),
+                  onPressed: () => updateData(id),
+                ),
+                IconButton(
+                  icon: Icon(Icons.delete),
+                  onPressed: () => deleteData(id),
+                ),
+              ],
+            ),
+            placeholder: false,
+          ),
+        ],
+      );
+    }).toList();
   }
 }
