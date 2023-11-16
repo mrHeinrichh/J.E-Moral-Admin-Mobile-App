@@ -14,6 +14,7 @@ class walkinPage extends StatefulWidget {
 class _walkinPageState extends State<walkinPage> {
   File? _image;
   final _imageStreamController = StreamController<File?>.broadcast();
+
   bool _sortAscending = true;
   String _sortColumn = 'createdAt'; // Default sorting column
 
@@ -189,21 +190,14 @@ class _walkinPageState extends State<walkinPage> {
         TextEditingController(text: walkinToEdit['name'].toString());
     TextEditingController contactNumberController =
         TextEditingController(text: walkinToEdit['contactNumber'].toString());
-
     TextEditingController paymentMethodController =
         TextEditingController(text: walkinToEdit['paymentMethod'].toString());
-
     TextEditingController totalController =
         TextEditingController(text: walkinToEdit['total'].toString());
     TextEditingController itemsController =
         TextEditingController(text: walkinToEdit['items'].toString());
-
-    TextEditingController riderController =
-        TextEditingController(text: walkinToEdit['rider'].toString());
-
     TextEditingController pickupImagesController =
         TextEditingController(text: walkinToEdit['pickupImages'].toString());
-
     TextEditingController completedController =
         TextEditingController(text: walkinToEdit['completed'].toString());
     TextEditingController typeController =
@@ -237,22 +231,50 @@ class _walkinPageState extends State<walkinPage> {
                   controller: itemsController,
                   decoration: InputDecoration(labelText: 'Items'),
                 ),
-                TextFormField(
-                  controller: riderController,
-                  decoration: InputDecoration(labelText: 'Rider'),
+                Text(
+                  "\npickupImage",
+                  style: TextStyle(
+                    fontSize: 15.0,
+                    color: Colors.grey[700],
+                  ),
                 ),
-                TextFormField(
-                  controller: pickupImagesController,
-                  decoration: InputDecoration(labelText: 'pickupImages'),
-                ),
-                TextFormField(
-                  controller: completedController,
-                  decoration: InputDecoration(labelText: 'completed'),
-                ),
-                TextFormField(
-                  initialValue: 'Walkin',
-                  controller: typeController,
-                  decoration: InputDecoration(labelText: 'type'),
+                StreamBuilder<File?>(
+                  stream: _imageStreamController.stream,
+                  builder: (context, snapshot) {
+                    return Column(
+                      children: [
+                        const SizedBox(height: 10.0),
+                        const Divider(),
+                        const SizedBox(height: 10.0),
+                        snapshot.data == null
+                            ? const CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Colors.grey,
+                                child: Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 50,
+                                ),
+                              )
+                            : CircleAvatar(
+                                radius: 50,
+                                backgroundImage: FileImage(snapshot.data!),
+                              ),
+                        TextButton(
+                          onPressed: () async {
+                            await _pickImage();
+                          },
+                          child: const Text(
+                            "Upload Image",
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontSize: 15.0,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
@@ -272,10 +294,24 @@ class _walkinPageState extends State<walkinPage> {
                 walkinToEdit['paymentMethod'] = paymentMethodController.text;
                 walkinToEdit['total'] = totalController.text;
                 walkinToEdit['items'] = itemsController.text;
-                walkinToEdit['rider'] = riderController.text;
-                walkinToEdit['pickupImages'] = pickupImagesController.text;
+                walkinToEdit['pickupImages'] = ""; // Clear previous value
                 walkinToEdit['completed'] = completedController.text;
                 walkinToEdit['type'] = typeController.text;
+
+                // Upload new image if available
+                if (_image != null) {
+                  var uploadResponse = await uploadImageToServer(_image!);
+                  print("Upload Response: $uploadResponse");
+
+                  if (uploadResponse != null) {
+                    print("Image URL: ${uploadResponse["url"]}");
+                    walkinToEdit["pickupImages"] = uploadResponse["url"];
+                  } else {
+                    // Handle the case where image upload fails
+                    print("Image upload failed");
+                    return;
+                  }
+                }
 
                 final url = Uri.parse(
                     'https://lpg-api-06n8.onrender.com/api/v1/transactions/$id');
@@ -547,7 +583,6 @@ class _walkinPageState extends State<walkinPage> {
                   sortAscending: _sortAscending,
                   sortColumnIndex:
                       0, // Set to the index of the column you want to initially sort by
-
                   columns: <DataColumn>[
                     // _buildDataColumnWithSort(
                     //     'createdAt', 'Created At', 'Sort by Created At'),
