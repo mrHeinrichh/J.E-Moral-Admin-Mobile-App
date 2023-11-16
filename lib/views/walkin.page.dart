@@ -14,6 +14,8 @@ class walkinPage extends StatefulWidget {
 class _walkinPageState extends State<walkinPage> {
   File? _image;
   final _imageStreamController = StreamController<File?>.broadcast();
+  bool _sortAscending = true;
+  String _sortColumn = 'createdAt'; // Default sorting column
 
   List<Map<String, dynamic>> walkinDataList = [];
   TextEditingController searchController = TextEditingController();
@@ -499,7 +501,6 @@ class _walkinPageState extends State<walkinPage> {
           ),
         ],
       ),
-      //SEARCH BUTTON
       body: Padding(
         padding: const EdgeInsets.all(15.0),
         child: Column(
@@ -532,8 +533,6 @@ class _walkinPageState extends State<walkinPage> {
                 ],
               ),
             ),
-
-            //DATATABLE
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Container(
@@ -545,62 +544,24 @@ class _walkinPageState extends State<walkinPage> {
                   borderRadius: BorderRadius.circular(12.0),
                 ),
                 child: DataTable(
-                  columns: <DataColumn>[
-                    DataColumn(label: Text('name')),
-                    DataColumn(label: Text('contactNumber')),
-                    DataColumn(label: Text('paymentMethod')),
-                    DataColumn(label: Text('Total')),
-                    DataColumn(label: Text('items')),
-                    DataColumn(label: Text('pickupImages')),
-                    DataColumn(label: Text('completed')),
-                    DataColumn(label: Text('type')),
-                    DataColumn(
-                      label: Text('Actions'),
-                      tooltip: 'Update and Delete',
-                    ),
-                  ],
-                  rows: walkinDataList.map((userData) {
-                    final id = userData['_id'];
+                  sortAscending: _sortAscending,
+                  sortColumnIndex:
+                      0, // Set to the index of the column you want to initially sort by
 
-                    return DataRow(
-                      cells: <DataCell>[
-                        DataCell(Text(userData['name'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(
-                            Text(userData['contactNumber'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(
-                            Text(userData['paymentMethod'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(Text(userData['total'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(Text(userData['items'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(
-                            Text(userData['pickupImages'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(Text(userData['completed'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(Text(userData['type'] ?? ''),
-                            placeholder: false),
-                        DataCell(
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.edit),
-                                onPressed: () => updateData(id),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () => deleteData(id),
-                              ),
-                            ],
-                          ),
-                          placeholder: false,
-                        ),
-                      ],
-                    );
-                  }).toList(),
+                  columns: <DataColumn>[
+                    // _buildDataColumnWithSort(
+                    //     'createdAt', 'Created At', 'Sort by Created At'),
+                    _buildDataColumnWithSort('createdAt', 'Name', 'Name'),
+                    _buildDataColumn('contactNumber', 'Contact Number'),
+                    _buildDataColumn('paymentMethod', 'Payment Method'),
+                    _buildDataColumn('Total', 'Total'),
+                    _buildDataColumn('items', 'Items'),
+                    _buildDataColumn('pickupImages', 'Pickup Images'),
+                    _buildDataColumn('completed', 'Completed'),
+                    _buildDataColumn('type', 'Type'),
+                    _buildDataColumn('Actions', 'Update and Delete'),
+                  ],
+                  rows: _buildDataRows(),
                 ),
               ),
             ),
@@ -633,5 +594,85 @@ class _walkinPageState extends State<walkinPage> {
         ),
       ),
     );
+  }
+
+  DataColumn _buildDataColumnWithSort(
+      String columnName, String label, String tooltip) {
+    return DataColumn(
+      label: Text(label),
+      tooltip: tooltip,
+      onSort: (columnIndex, ascending) {
+        setState(() {
+          _sortColumn = columnName;
+          _sortAscending = ascending;
+        });
+      },
+    );
+  }
+
+  DataColumn _buildDataColumn(String columnName, String label) {
+    return DataColumn(label: Text(label));
+  }
+
+  int _getColumnIndex(String columnName) {
+    for (int i = 0; i < walkinDataList.length; i++) {
+      if (walkinDataList[i].containsKey(columnName)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  List<DataRow> _buildDataRows() {
+    List<Map<String, dynamic>> sortedList = List.from(walkinDataList);
+
+    sortedList.sort((a, b) {
+      DateTime aDate = DateTime.parse(a['createdAt']);
+      DateTime bDate = DateTime.parse(b['createdAt']);
+
+      if (_sortAscending) {
+        return aDate.compareTo(bDate);
+      } else {
+        return bDate.compareTo(aDate);
+      }
+    });
+
+    return sortedList.map((userData) {
+      final id = userData['_id'];
+
+      return DataRow(
+        cells: <DataCell>[
+          DataCell(Text(userData['name'].toString() ?? ''), placeholder: false),
+          DataCell(Text(userData['contactNumber'].toString() ?? ''),
+              placeholder: false),
+          DataCell(Text(userData['paymentMethod'].toString() ?? ''),
+              placeholder: false),
+          DataCell(Text(userData['total'].toString() ?? ''),
+              placeholder: false),
+          DataCell(Text(userData['items'].toString() ?? ''),
+              placeholder: false),
+          DataCell(Text(userData['pickupImages'].toString() ?? ''),
+              placeholder: false),
+          DataCell(Text(userData['completed'].toString() ?? ''),
+              placeholder: false),
+          DataCell(Text(userData['type'] ?? ''), placeholder: false),
+          DataCell(
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.edit),
+                  onPressed: () => updateData(id),
+                ),
+                IconButton(
+                  icon: Icon(Icons.delete),
+                  onPressed: () => deleteData(id),
+                ),
+              ],
+            ),
+            placeholder: false,
+          ),
+        ],
+      );
+    }).toList();
   }
 }
