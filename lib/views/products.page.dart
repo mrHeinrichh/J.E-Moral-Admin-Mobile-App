@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:http_parser/http_parser.dart';
 
 class ProductsPage extends StatefulWidget {
   @override
@@ -8,11 +12,19 @@ class ProductsPage extends StatefulWidget {
 }
 
 class _ProductsPageState extends State<ProductsPage> {
-  List<Map<String, dynamic>> productsDataList = [];
+  File? _image;
+  final _imageStreamController = StreamController<File?>.broadcast();
+
+  List<Map<String, dynamic>> productDataList = [];
   TextEditingController searchController =
       TextEditingController(); // Controller for the search field
 
   @override
+  void dispose() {
+    _imageStreamController.close();
+    super.dispose();
+  }
+
   void initState() {
     super.initState();
     fetchData();
@@ -21,24 +33,110 @@ class _ProductsPageState extends State<ProductsPage> {
   int currentPage = 1;
   int limit = 21;
 
+  Future<void> _pickImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      final imageFile = File(pickedFile.path);
+      _imageStreamController.sink.add(imageFile);
+      setState(() {
+        _image = imageFile;
+      });
+    }
+  }
+
+  Future<Map<String, dynamic>?> uploadImageToServer(File imageFile) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/upload/image'),
+      );
+
+      var fileStream = http.ByteStream(Stream.castFrom(imageFile.openRead()));
+      var length = await imageFile.length();
+
+      String fileExtension = imageFile.path.split('.').last.toLowerCase();
+      var contentType = MediaType('image', 'png');
+
+      Map<String, String> imageExtensions = {
+        'png': 'png',
+        'jpg': 'jpeg',
+        'jpeg': 'jpeg',
+        'gif': 'gif',
+      };
+
+      if (imageExtensions.containsKey(fileExtension)) {
+        contentType = MediaType('image', imageExtensions[fileExtension]!);
+      }
+
+      var multipartFile = http.MultipartFile(
+        'image',
+        fileStream,
+        length,
+        filename: 'image.$fileExtension',
+        contentType: contentType,
+      );
+
+      request.files.add(multipartFile);
+
+      var response = await request.send();
+
+      // ...
+
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        print("Image uploaded successfully: $responseBody");
+
+        // Parse the response JSON
+        final parsedResponse = json.decode(responseBody);
+
+        // Check if 'data' is present in the response
+        if (parsedResponse.containsKey('data')) {
+          final List<dynamic> data = parsedResponse['data'];
+
+          // Check if 'path' is present in the first item of the 'data' array
+          if (data.isNotEmpty && data[0].containsKey('path')) {
+            final imageUrl = data[0]['path'];
+            print("Image URL: $imageUrl");
+
+            return {'url': imageUrl};
+          } else {
+            print("Invalid response format: $parsedResponse");
+            return null;
+          }
+        } else {
+          print("Invalid response format: $parsedResponse");
+          return null;
+        }
+      } else {
+        print("Image upload failed with status code: ${response.statusCode}");
+        final responseBody = await response.stream.bytesToString();
+        print("Response body: $responseBody");
+        return null;
+      }
+    } catch (e) {
+      print("Image upload failed with error: $e");
+      return null;
+    }
+  }
+
   Future<void> fetchData({int page = 1}) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/items/?page=$page&limit=$limit'));
+    final response = await http
+        .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items'));
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
 
-      final List<Map<String, dynamic>> productsData = (data['data'] as List)
-          .where((productsData) =>
-              productsData is Map<String, dynamic> &&
-              productsData['type'] == '{Products}') // Filter for 'Products'
-          .map((productsData) => productsData as Map<String, dynamic>)
+      final List<Map<String, dynamic>> productData = (data['data'] as List)
+          .where((productData) => productData is Map<String, dynamic>)
+          .map((productData) => productData as Map<String, dynamic>)
           .toList();
 
       setState(() {
         // Clear the existing data before adding new data
-        productsDataList.clear();
-        productsDataList.addAll(productsData);
+        productDataList.clear();
+        productDataList.addAll(productData);
         currentPage = page; // Update the current page number
       });
     } else {
@@ -46,58 +144,67 @@ class _ProductsPageState extends State<ProductsPage> {
     }
   }
 
-  Future<void> addProductsToAPI(Map<String, dynamic> newProducts) async {
+  Future<void> addProductToAPI(Map<String, dynamic> newProduct) async {
     final url = Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items');
     final headers = {'Content-Type': 'application/json'};
 
-    final response = await http.post(
-      url,
-      headers: headers,
-      body: jsonEncode(newProducts),
-    );
+    try {
+      var uploadResponse = await uploadImageToServer(_image!);
+      print("Upload Response: $uploadResponse");
 
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      // The new products has been successfully added or updated
-      // You can also handle the response data if needed
+      if (uploadResponse != null) {
+        print("Image URL: ${uploadResponse["url"]}");
+        newProduct["image"] = uploadResponse["url"];
 
-      // Update the UI to display the newly added or updated products (if required)
-      fetchData(); // Refresh the data list
+        final response = await http.post(
+          url,
+          headers: headers,
+          body: jsonEncode(newProduct),
+        );
 
-      Navigator.pop(context); // Close the add products dialog
-    } else {
-      // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
-      print(
-          'Failed to add or update the products. Status code: ${response.statusCode}');
-      // You can also display an error message to the products
+        print("API Response: ${response.statusCode} - ${response.body}");
+
+        if (response.statusCode == 201 || response.statusCode == 200) {
+          fetchData();
+          Navigator.pop(context);
+        } else {
+          print(
+              'Failed to add or update the product. Status code: ${response.statusCode}');
+        }
+      } else {
+        print("Image upload failed");
+      }
+    } catch (e) {
+      print("Exception during API request: $e");
     }
   }
 
   void updateData(String id) {
-    // Find the products data to edit
-    Map<String, dynamic> productsToEdit =
-        productsDataList.firstWhere((data) => data['_id'] == id);
+    // Find the product data to edit
+    Map<String, dynamic> productToEdit =
+        productDataList.firstWhere((data) => data['_id'] == id);
 
     // Create controllers for each field
     TextEditingController nameController =
-        TextEditingController(text: productsToEdit['name']);
+        TextEditingController(text: productToEdit['name']);
     TextEditingController categoryController =
-        TextEditingController(text: productsToEdit['category']);
+        TextEditingController(text: productToEdit['category']);
     TextEditingController descriptionController =
-        TextEditingController(text: productsToEdit['description']);
+        TextEditingController(text: productToEdit['description']);
     TextEditingController weightController =
-        TextEditingController(text: productsToEdit['weight'].toString());
+        TextEditingController(text: productToEdit['weight'].toString());
     TextEditingController quantityController =
-        TextEditingController(text: productsToEdit['quantity'].toString());
+        TextEditingController(text: productToEdit['quantity'].toString());
     TextEditingController typeController =
-        TextEditingController(text: productsToEdit['type']);
+        TextEditingController(text: productToEdit['type']);
     TextEditingController customerPriceController =
-        TextEditingController(text: productsToEdit['customerPrice'].toString());
+        TextEditingController(text: productToEdit['customerPrice'].toString());
 
     TextEditingController retailerPriceController =
-        TextEditingController(text: productsToEdit['retailerPrice'].toString());
+        TextEditingController(text: productToEdit['retailerPrice'].toString());
 
     TextEditingController imageController =
-        TextEditingController(text: productsToEdit['image']);
+        TextEditingController(text: productToEdit['image']);
 
     showDialog(
       context: context,
@@ -116,6 +223,10 @@ class _ProductsPageState extends State<ProductsPage> {
                   decoration: InputDecoration(labelText: 'Category'),
                 ),
                 TextFormField(
+                  controller: typeController,
+                  decoration: InputDecoration(labelText: 'Type'),
+                ),
+                TextFormField(
                   controller: descriptionController,
                   decoration: InputDecoration(labelText: 'Description'),
                 ),
@@ -128,20 +239,16 @@ class _ProductsPageState extends State<ProductsPage> {
                   decoration: InputDecoration(labelText: 'Quantity'),
                 ),
                 TextFormField(
-                  controller: typeController,
-                  decoration: InputDecoration(labelText: 'type'),
-                ),
-                TextFormField(
                   controller: customerPriceController,
-                  decoration: InputDecoration(labelText: 'customerPrice'),
+                  decoration: InputDecoration(labelText: 'Customer Price'),
                 ),
                 TextFormField(
                   controller: retailerPriceController,
-                  decoration: InputDecoration(labelText: 'retailerPrice'),
+                  decoration: InputDecoration(labelText: 'Retailer Price'),
                 ),
                 TextFormField(
                   controller: imageController,
-                  decoration: InputDecoration(labelText: 'image'),
+                  decoration: InputDecoration(labelText: 'Image'),
                 ),
               ],
             ),
@@ -155,17 +262,16 @@ class _ProductsPageState extends State<ProductsPage> {
             ),
             TextButton(
               onPressed: () async {
-                // Update the products data based on the controllers
-                productsToEdit['name'] = nameController.text;
-                productsToEdit['category'] = categoryController.text;
-                productsToEdit['description'] = descriptionController.text;
-                productsToEdit['weight'] = weightController.text;
-                productsToEdit['quantity'] = quantityController.text;
-                productsToEdit['type'] = typeController.text;
-                productsToEdit['customerPrice'] = customerPriceController.text;
-                productsToEdit['retailerPrice'] = retailerPriceController.text;
-
-                productsToEdit['image'] = imageController.text;
+                // Update the product data based on the controllers
+                productToEdit['name'] = nameController.text;
+                productToEdit['category'] = categoryController.text;
+                productToEdit['description'] = descriptionController.text;
+                productToEdit['weight'] = weightController.text;
+                productToEdit['quantity'] = quantityController.text;
+                productToEdit['type'] = typeController.text;
+                productToEdit['customerPrice'] = customerPriceController.text;
+                productToEdit['retailerPrice'] = retailerPriceController.text;
+                productToEdit['image'] = imageController.text;
 
                 // Send a request to your API to update the data with the new values
                 final url = Uri.parse(
@@ -175,22 +281,22 @@ class _ProductsPageState extends State<ProductsPage> {
                 final response = await http.patch(
                   url,
                   headers: headers,
-                  body: jsonEncode(productsToEdit),
+                  body: jsonEncode(productToEdit),
                 );
 
                 if (response.statusCode == 200) {
                   // The data has been successfully updated
                   // You can also handle the response data if needed
 
-                  // Update the UI to display the newly updated products (if required)
+                  // Update the UI to display the newly updated product (if required)
                   fetchData(); // Refresh the data list
 
-                  Navigator.pop(context); // Close the edit products dialog
+                  Navigator.pop(context); // Close the edit product dialog
                 } else {
                   // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
                   print(
-                      'Failed to update the products. Status code: ${response.statusCode}');
-                  // You can also display an error message to the products
+                      'Failed to update the product. Status code: ${response.statusCode}');
+                  // You can also display an error message to the user
                 }
               },
               child: Text('Save'),
@@ -208,21 +314,24 @@ class _ProductsPageState extends State<ProductsPage> {
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
 
-      final List<Map<String, dynamic>> productsData = (data['data'] as List)
-          .where((productsData) =>
-              productsData is Map<String, dynamic> &&
-              productsData.containsKey('type') &&
-              productsData['type'] == '{Products}')
-          .map((productsData) => productsData as Map<String, dynamic>)
+      final List<Map<String, dynamic>> productData = (data['data'] as List)
+          .where((productData) =>
+              productData is Map<String, dynamic> &&
+              productData.containsKey('type') &&
+              productData['type'] ==
+                  'Products') // Only include products with type 'Products'
+          .map((productData) => productData as Map<String, dynamic>)
           .toList();
 
       setState(() {
-        productsDataList = productsData;
+        productDataList = productData;
       });
-    } else {}
+    } else {
+      // Handle the error case
+    }
   }
 
-  void openAddProductsDialog() {
+  void openAddProductDialog() {
     // Create controllers for each field
     TextEditingController nameController = TextEditingController();
     TextEditingController categoryController = TextEditingController();
@@ -233,24 +342,29 @@ class _ProductsPageState extends State<ProductsPage> {
     TextEditingController customerPriceController = TextEditingController();
     TextEditingController retailerPriceController = TextEditingController();
     TextEditingController imageController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Add New Products'),
+          title: Text('Add New Product'),
           content: SingleChildScrollView(
             child: Column(
               children: [
-                // Add text form fields for products data input
+                // Add text form fields for product data input
                 TextFormField(
                   controller: nameController,
                   decoration: InputDecoration(labelText: 'Name'),
                 ),
                 TextFormField(
                   controller: categoryController,
-                  decoration: InputDecoration(labelText: 'category'),
+                  decoration: InputDecoration(labelText: 'Category'),
                 ),
+                // TextFormField(
+                //   controller: typeController,
+                //   decoration: InputDecoration(labelText: 'Type'),
+                // ),
                 TextFormField(
                   controller: descriptionController,
                   decoration: InputDecoration(labelText: 'Description'),
@@ -264,25 +378,62 @@ class _ProductsPageState extends State<ProductsPage> {
                   decoration: InputDecoration(labelText: 'Quantity'),
                 ),
                 TextFormField(
-                  controller: typeController,
-                  decoration: InputDecoration(labelText: 'type'),
-                ),
-                TextFormField(
                   controller: customerPriceController,
-                  decoration: InputDecoration(labelText: 'customer price'),
+                  decoration: InputDecoration(labelText: 'Customer Price'),
                 ),
                 TextFormField(
                   controller: retailerPriceController,
-                  decoration: InputDecoration(labelText: 'retailerPrice'),
+                  decoration: InputDecoration(labelText: 'Retailer Price'),
                 ),
-
-                TextFormField(
-                  controller: imageController,
-                  decoration: InputDecoration(labelText: 'image'),
+                Text(
+                  "\nProductImage",
+                  style: TextStyle(
+                    fontSize: 15.0,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                StreamBuilder<File?>(
+                  stream: _imageStreamController.stream,
+                  builder: (context, snapshot) {
+                    return Column(
+                      children: [
+                        const SizedBox(height: 10.0),
+                        const Divider(),
+                        const SizedBox(height: 10.0),
+                        snapshot.data == null
+                            ? const CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Colors.grey,
+                                child: Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 50,
+                                ),
+                              )
+                            : CircleAvatar(
+                                radius: 50,
+                                backgroundImage: FileImage(snapshot.data!),
+                              ),
+                        TextButton(
+                          onPressed: () async {
+                            await _pickImage();
+                          },
+                          child: const Text(
+                            "Upload Image",
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontSize: 15.0,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
           ),
+          //BREAKKKKKKKKKK
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -292,21 +443,19 @@ class _ProductsPageState extends State<ProductsPage> {
             ),
             TextButton(
               onPressed: () {
-                // Create a new products object from the input data
-                Map<String, dynamic> newProducts = {
+                Map<String, dynamic> newProduct = {
                   "name": nameController.text,
                   "category": categoryController.text,
                   "description": descriptionController.text,
                   "weight": weightController.text,
                   "quantity": quantityController.text,
-                  "type": typeController.text,
+                  "type": "Products",
                   "customerPrice": customerPriceController.text,
                   "retailerPrice": retailerPriceController.text,
-                  "image": imageController.text,
+                  "image": "",
                 };
-
-                // Call the function to add the new products to the API
-                addProductsToAPI(newProducts);
+                // Call the function to add the new product to the API
+                addProductToAPI(newProduct);
               },
               child: Text('Save'),
             ),
@@ -316,7 +465,7 @@ class _ProductsPageState extends State<ProductsPage> {
     );
   }
 
-// Function to handle data delete
+  // Function to handle data delete
   void deleteData(String id) async {
     // Show a confirmation dialog to confirm the deletion
     showDialog(
@@ -343,7 +492,7 @@ class _ProductsPageState extends State<ProductsPage> {
                   // Data has been successfully deleted
                   // Update the UI to remove the deleted data
                   setState(() {
-                    productsDataList.removeWhere((data) => data['_id'] == id);
+                    productDataList.removeWhere((data) => data['_id'] == id);
                   });
 
                   Navigator.pop(context); // Close the dialog
@@ -351,7 +500,7 @@ class _ProductsPageState extends State<ProductsPage> {
                   // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
                   print(
                       'Failed to delete the data. Status code: ${response.statusCode}');
-                  // You can also display an error message to the products
+                  // You can also display an error message to the user
                 }
               },
               child: Text('Delete'),
@@ -369,7 +518,7 @@ class _ProductsPageState extends State<ProductsPage> {
         elevation: 0,
         backgroundColor: Colors.white,
         title: const Text(
-          'Products CRUD',
+          'Product CRUD',
           style: TextStyle(color: Color(0xFF232937), fontSize: 24),
         ),
         iconTheme: IconThemeData(color: Color(0xFF232937)),
@@ -378,8 +527,8 @@ class _ProductsPageState extends State<ProductsPage> {
             icon: Icon(Icons.add),
             color: Color(0xFF232937),
             onPressed: () {
-              // Open the dialog to add a new products
-              openAddProductsDialog();
+              // Open the dialog to add a new product
+              openAddProductDialog();
             },
           ),
         ],
@@ -434,43 +583,42 @@ class _ProductsPageState extends State<ProductsPage> {
                 child: DataTable(
                   columns: <DataColumn>[
                     DataColumn(label: Text('Name')),
-                    DataColumn(label: Text('category')),
+                    DataColumn(label: Text('Category')),
+                    DataColumn(label: Text('Type')),
                     DataColumn(label: Text('Description')),
                     DataColumn(label: Text('Weight')),
                     DataColumn(label: Text('Quantity')),
-                    DataColumn(label: Text('customerPrice')),
-                    DataColumn(label: Text('retailerPrice')),
-                    DataColumn(label: Text('Type')),
+                    DataColumn(label: Text('Customer Price')),
+                    DataColumn(label: Text('Retailer Price')),
                     DataColumn(
                       label: Text('Actions'),
                       tooltip: 'Update and Delete',
                     ),
                   ],
-                  rows: productsDataList.map((productsData) {
-                    final id = productsData['_id'];
+                  rows: productDataList
+                      .where((productData) => productData['type'] == 'Products')
+                      .map((productData) {
+                    final id = productData['_id'];
 
                     return DataRow(
                       cells: <DataCell>[
-                        DataCell(Text(productsData['name'] ?? ''),
+                        DataCell(Text(productData['name'] ?? ''),
                             placeholder: false),
-                        DataCell(Text(productsData['category'] ?? ''),
+                        DataCell(Text(productData['category'] ?? ''),
                             placeholder: false),
-                        DataCell(Text(productsData['description'] ?? ''),
+                        DataCell(Text(productData['type'] ?? ''),
                             placeholder: false),
-                        DataCell(Text(productsData['weight'].toString() ?? ''),
+                        DataCell(Text(productData['description'] ?? ''),
                             placeholder: false),
-                        DataCell(
-                            Text(productsData['quantity'].toString() ?? ''),
+                        DataCell(Text(productData['weight'].toString() ?? ''),
                             placeholder: false),
-                        DataCell(
-                            Text(
-                                productsData['customerPrice'].toString() ?? ''),
+                        DataCell(Text(productData['quantity'].toString() ?? ''),
                             placeholder: false),
                         DataCell(
-                            Text(
-                                productsData['retailerPrice'].toString() ?? ''),
+                            Text(productData['customerPrice'].toString() ?? ''),
                             placeholder: false),
-                        DataCell(Text(productsData['type'] ?? ''),
+                        DataCell(
+                            Text(productData['retailerPrice'].toString() ?? ''),
                             placeholder: false),
                         DataCell(
                           Row(
