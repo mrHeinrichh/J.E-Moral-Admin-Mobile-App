@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:flutter/services.dart';
 
 class walkinPage extends StatefulWidget {
   @override
@@ -124,6 +125,38 @@ class _walkinPageState extends State<walkinPage> {
     }
   }
 
+  void showCustomOverlay(BuildContext context, String message) {
+    final overlay = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).size.height * 0.5,
+        left: 0,
+        right: 0,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            alignment: Alignment.center,
+            child: Card(
+              color: Colors.red,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  message,
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context)!.insert(overlay);
+
+    Future.delayed(Duration(seconds: 2), () {
+      overlay.remove();
+    });
+  }
+
   Future<void> fetchData({int page = 1}) async {
     final response = await http.get(
         Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions'));
@@ -202,81 +235,129 @@ class _walkinPageState extends State<walkinPage> {
         TextEditingController(text: walkinToEdit['completed'].toString());
     TextEditingController typeController =
         TextEditingController(text: walkinToEdit['type']);
+    final _formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Edit Data'),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: nameController,
-                  decoration: InputDecoration(labelText: 'Name'),
-                ),
-                TextFormField(
-                  controller: contactNumberController,
-                  decoration: InputDecoration(labelText: 'ContactNumber'),
-                ),
-                TextFormField(
-                  controller: paymentMethodController,
-                  decoration: InputDecoration(labelText: 'PaymentMethod'),
-                ),
-                TextFormField(
-                  controller: totalController,
-                  decoration: InputDecoration(labelText: 'Total'),
-                ),
-                TextFormField(
-                  controller: itemsController,
-                  decoration: InputDecoration(labelText: 'Items'),
-                ),
-                Text(
-                  "\npickupImage",
-                  style: TextStyle(
-                    fontSize: 15.0,
-                    color: Colors.grey[700],
+          content: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: InputDecoration(labelText: 'Name'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter a name';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-                StreamBuilder<File?>(
-                  stream: _imageStreamController.stream,
-                  builder: (context, snapshot) {
-                    return Column(
-                      children: [
-                        const SizedBox(height: 10.0),
-                        const Divider(),
-                        const SizedBox(height: 10.0),
-                        snapshot.data == null
-                            ? const CircleAvatar(
-                                radius: 50,
-                                backgroundColor: Colors.grey,
-                                child: Icon(
-                                  Icons.person,
-                                  color: Colors.white,
-                                  size: 50,
+                  TextFormField(
+                    controller: contactNumberController,
+                    decoration: InputDecoration(labelText: 'Contact Number'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter a contact number';
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: paymentMethodController.text,
+                    onChanged: (newValue) {
+                      setState(() {
+                        paymentMethodController.text = newValue!;
+                      });
+                    },
+                    items: ['Cash', 'Gcash']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: InputDecoration(
+                      labelText: 'Payment Method',
+                    ),
+                  ),
+                  TextFormField(
+                    controller: itemsController,
+                    decoration: InputDecoration(labelText: 'Items'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter items';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: totalController,
+                    decoration: InputDecoration(labelText: 'Total'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter a total amount';
+                      }
+                      return null;
+                    },
+                    keyboardType:
+                        TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  Text(
+                    "\npickupImage",
+                    style: TextStyle(
+                      fontSize: 15.0,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  StreamBuilder<File?>(
+                    stream: _imageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          const SizedBox(height: 10.0),
+                          const Divider(),
+                          const SizedBox(height: 10.0),
+                          snapshot.data == null
+                              ? const CircleAvatar(
+                                  radius: 50,
+                                  backgroundColor: Colors.grey,
+                                  child: Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                    size: 50,
+                                  ),
+                                )
+                              : CircleAvatar(
+                                  radius: 50,
+                                  backgroundImage: FileImage(snapshot.data!),
                                 ),
-                              )
-                            : CircleAvatar(
-                                radius: 50,
-                                backgroundImage: FileImage(snapshot.data!),
+                          TextButton(
+                            onPressed: () async {
+                              await _pickImage();
+                            },
+                            child: const Text(
+                              "Upload Image",
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontSize: 15.0,
                               ),
-                        TextButton(
-                          onPressed: () async {
-                            await _pickImage();
-                          },
-                          child: const Text(
-                            "Upload Image",
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontSize: 15.0,
                             ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ],
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           actions: <Widget>[
@@ -288,48 +369,52 @@ class _walkinPageState extends State<walkinPage> {
             ),
             TextButton(
               onPressed: () async {
-                walkinToEdit['deliveryLocation'] = " ";
-                walkinToEdit['name'] = nameController.text;
-                walkinToEdit['contactNumber'] = contactNumberController.text;
-                walkinToEdit['paymentMethod'] = paymentMethodController.text;
-                walkinToEdit['total'] = totalController.text;
-                walkinToEdit['items'] = itemsController.text;
-                walkinToEdit['pickupImages'] = ""; // Clear previous value
-                walkinToEdit['completed'] = completedController.text;
-                walkinToEdit['type'] = typeController.text;
+                if (_formKey.currentState!.validate()) {
+                  // Form is valid, proceed with data update
 
-                // Upload new image if available
-                if (_image != null) {
-                  var uploadResponse = await uploadImageToServer(_image!);
-                  print("Upload Response: $uploadResponse");
+                  walkinToEdit['deliveryLocation'] = " ";
+                  walkinToEdit['name'] = nameController.text;
+                  walkinToEdit['contactNumber'] = contactNumberController.text;
+                  walkinToEdit['paymentMethod'] = paymentMethodController.text;
+                  walkinToEdit['total'] = totalController.text;
+                  walkinToEdit['items'] = itemsController.text;
 
-                  if (uploadResponse != null) {
-                    print("Image URL: ${uploadResponse["url"]}");
-                    walkinToEdit["pickupImages"] = uploadResponse["url"];
-                  } else {
-                    // Handle the case where image upload fails
-                    print("Image upload failed");
-                    return;
+                  // Upload new image only if available
+                  if (_image != null) {
+                    var uploadResponse = await uploadImageToServer(_image!);
+                    print("Upload Response: $uploadResponse");
+
+                    if (uploadResponse != null) {
+                      print("Image URL: ${uploadResponse["url"]}");
+                      walkinToEdit["pickupImages"] = uploadResponse["url"];
+                    } else {
+                      // Handle the case where image upload fails
+                      print("Image upload failed");
+                      return;
+                    }
                   }
-                }
 
-                final url = Uri.parse(
-                    'https://lpg-api-06n8.onrender.com/api/v1/transactions/$id');
-                final headers = {'Content-Type': 'application/json'};
+                  walkinToEdit['completed'] = completedController.text;
 
-                final response = await http.patch(
-                  url,
-                  headers: headers,
-                  body: jsonEncode(walkinToEdit),
-                );
+                  final url = Uri.parse(
+                    'https://lpg-api-06n8.onrender.com/api/v1/transactions/$id',
+                  );
+                  final headers = {'Content-Type': 'application/json'};
 
-                if (response.statusCode == 200) {
-                  fetchData();
+                  final response = await http.patch(
+                    url,
+                    headers: headers,
+                    body: jsonEncode(walkinToEdit),
+                  );
 
-                  Navigator.pop(context);
-                } else {
-                  print(
-                      'Failed to update the walkin. Status code: ${response.statusCode}');
+                  if (response.statusCode == 200) {
+                    fetchData();
+                    Navigator.pop(context);
+                  } else {
+                    print(
+                      'Failed to update the walkin. Status code: ${response.statusCode}',
+                    );
+                  }
                 }
               },
               child: Text('Save'),
@@ -376,78 +461,129 @@ class _walkinPageState extends State<walkinPage> {
         return AlertDialog(
           title: Text('Add New Walkin'),
           content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: nameController,
-                  decoration: InputDecoration(labelText: 'Name'),
-                ),
-                TextFormField(
-                  controller: contactNumberController,
-                  decoration: InputDecoration(labelText: 'ContactNumber'),
-                ),
-                TextFormField(
-                  controller: paymentMethodController,
-                  decoration: InputDecoration(labelText: 'PaymentMethod'),
-                ),
-                TextFormField(
-                  controller: totalController,
-                  decoration: InputDecoration(labelText: 'Total'),
-                ),
-                TextFormField(
-                  controller: itemsController,
-                  decoration: InputDecoration(labelText: 'Items'),
-                ),
-                Text(
-                  "\npickupImage",
-                  style: TextStyle(
-                    fontSize: 15.0,
-                    color: Colors.grey[700],
+            child: Form(
+              key: formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: InputDecoration(labelText: 'Name'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter a name';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-                //BREAKKKKKKKKKK
-                StreamBuilder<File?>(
-                  stream: _imageStreamController.stream,
-                  builder: (context, snapshot) {
-                    return Column(
-                      children: [
-                        const SizedBox(height: 10.0),
-                        const Divider(),
-                        const SizedBox(height: 10.0),
-                        snapshot.data == null
-                            ? const CircleAvatar(
-                                radius: 50,
-                                backgroundColor: Colors.grey,
-                                child: Icon(
-                                  Icons.person,
-                                  color: Colors.white,
-                                  size: 50,
+                  TextFormField(
+                    controller: contactNumberController,
+                    decoration: InputDecoration(labelText: 'Contact Number'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter a contact number';
+                      }
+                      return null;
+                    },
+                    keyboardType:
+                        TextInputType.number, // Set the keyboard type to number
+                    inputFormatters: [
+                      FilteringTextInputFormatter
+                          .digitsOnly, // Allow only numeric input
+                    ],
+                  ),
+                  DropdownButtonFormField(
+                    value: paymentMethodController.text.isNotEmpty
+                        ? paymentMethodController.text
+                        : null,
+                    decoration:
+                        const InputDecoration(labelText: 'Payment Method'),
+                    items: const [
+                      DropdownMenuItem(value: 'Cash', child: Text('Cash')),
+                      DropdownMenuItem(value: 'Gcash', child: Text('Gcash')),
+                    ],
+                    onChanged: (newValue) {
+                      paymentMethodController.text = newValue.toString();
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Please Select Payment Method";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                  TextFormField(
+                    controller: itemsController,
+                    decoration: InputDecoration(labelText: 'Items'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter items';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: totalController,
+                    decoration: InputDecoration(labelText: 'Total'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter a total amount';
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.numberWithOptions(
+                        decimal:
+                            true), // Set the keyboard type to allow numbers and decimal point
+                  ),
+                  Text(
+                    "\nPickup Image",
+                    style: TextStyle(
+                      fontSize: 15.0,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  StreamBuilder<File?>(
+                    stream: _imageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          const SizedBox(height: 10.0),
+                          const Divider(),
+                          const SizedBox(height: 10.0),
+                          snapshot.data == null
+                              ? const CircleAvatar(
+                                  radius: 50,
+                                  backgroundColor: Colors.grey,
+                                  child: Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                    size: 50,
+                                  ),
+                                )
+                              : CircleAvatar(
+                                  radius: 50,
+                                  backgroundImage: FileImage(snapshot.data!),
                                 ),
-                              )
-                            : CircleAvatar(
-                                radius: 50,
-                                backgroundImage: FileImage(snapshot.data!),
+                          TextButton(
+                            onPressed: () async {
+                              await _pickImage();
+                            },
+                            child: const Text(
+                              "Upload Image",
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontSize: 15.0,
                               ),
-                        TextButton(
-                          onPressed: () async {
-                            await _pickImage();
-                          },
-                          child: const Text(
-                            "Upload Image",
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontSize: 15.0,
                             ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ],
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
-          //BREAKKKKKKKKKK
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -457,17 +593,24 @@ class _walkinPageState extends State<walkinPage> {
             ),
             TextButton(
               onPressed: () {
-                Map<String, dynamic> newWalkin = {
-                  "name": nameController.text,
-                  "contactNumber": contactNumberController.text,
-                  "paymentMethod": paymentMethodController.text,
-                  "total": totalController.text,
-                  "items": itemsController.text,
-                  "pickupImages": "",
-                  "completed": "true",
-                  "type": "Walkin",
-                };
-                addWalkinToAPI(newWalkin);
+                if (formKey.currentState!.validate()) {
+                  // Additional conditions for image validation
+                  if (_image == null) {
+                    showCustomOverlay(context, 'Please Upload an Image');
+                  } else {
+                    Map<String, dynamic> newWalkin = {
+                      "name": nameController.text,
+                      "contactNumber": contactNumberController.text,
+                      "paymentMethod": paymentMethodController.text,
+                      "total": totalController.text,
+                      "items": itemsController.text,
+                      "pickupImages": "",
+                      "completed": "true",
+                      "type": "Walkin",
+                    };
+                    addWalkinToAPI(newWalkin);
+                  }
+                }
               },
               child: Text('Save'),
             ),
@@ -584,8 +727,6 @@ class _walkinPageState extends State<walkinPage> {
                   sortColumnIndex:
                       0, // Set to the index of the column you want to initially sort by
                   columns: <DataColumn>[
-                    // _buildDataColumnWithSort(
-                    //     'createdAt', 'Created At', 'Sort by Created At'),
                     _buildDataColumnWithSort('createdAt', 'Name', 'Name'),
                     _buildDataColumn('contactNumber', 'Contact Number'),
                     _buildDataColumn('paymentMethod', 'Payment Method'),
