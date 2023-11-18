@@ -179,6 +179,19 @@ class _ProductsPageState extends State<ProductsPage> {
     }
   }
 
+  Future<void> _pickImageForEdit() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      final imageFile = File(pickedFile.path);
+      _imageStreamController.sink.add(imageFile);
+      setState(() {
+        _image = imageFile;
+      });
+    }
+  }
+
   void updateData(String id) {
     // Find the product data to edit
     Map<String, dynamic> productToEdit =
@@ -195,14 +208,10 @@ class _ProductsPageState extends State<ProductsPage> {
         TextEditingController(text: productToEdit['weight'].toString());
     TextEditingController quantityController =
         TextEditingController(text: productToEdit['quantity'].toString());
-    TextEditingController typeController =
-        TextEditingController(text: productToEdit['type']);
     TextEditingController customerPriceController =
         TextEditingController(text: productToEdit['customerPrice'].toString());
-
     TextEditingController retailerPriceController =
         TextEditingController(text: productToEdit['retailerPrice'].toString());
-
     TextEditingController imageController =
         TextEditingController(text: productToEdit['image']);
 
@@ -218,13 +227,23 @@ class _ProductsPageState extends State<ProductsPage> {
                   controller: nameController,
                   decoration: InputDecoration(labelText: 'Name'),
                 ),
-                TextFormField(
-                  controller: categoryController,
-                  decoration: InputDecoration(labelText: 'Category'),
-                ),
-                TextFormField(
-                  controller: typeController,
-                  decoration: InputDecoration(labelText: 'Type'),
+                DropdownButtonFormField<String>(
+                  value: categoryController.text,
+                  onChanged: (newValue) {
+                    setState(() {
+                      categoryController.text = newValue!;
+                    });
+                  },
+                  items: ['Brandnew Tanks', 'Refill Tanks']
+                      .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  decoration: InputDecoration(
+                    labelText: 'Category',
+                  ),
                 ),
                 TextFormField(
                   controller: descriptionController,
@@ -246,9 +265,50 @@ class _ProductsPageState extends State<ProductsPage> {
                   controller: retailerPriceController,
                   decoration: InputDecoration(labelText: 'Retailer Price'),
                 ),
-                TextFormField(
-                  controller: imageController,
-                  decoration: InputDecoration(labelText: 'Image'),
+                Text(
+                  "\nProduct Image",
+                  style: TextStyle(
+                    fontSize: 15.0,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                StreamBuilder<File?>(
+                  stream: _imageStreamController.stream,
+                  builder: (context, snapshot) {
+                    return Column(
+                      children: [
+                        const SizedBox(height: 10.0),
+                        const Divider(),
+                        const SizedBox(height: 10.0),
+                        snapshot.data == null
+                            ? const CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Colors.grey,
+                                child: Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 50,
+                                ),
+                              )
+                            : CircleAvatar(
+                                radius: 50,
+                                backgroundImage: FileImage(snapshot.data!),
+                              ),
+                        TextButton(
+                          onPressed: () async {
+                            await _pickImageForEdit();
+                          },
+                          child: const Text(
+                            "Upload Image",
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontSize: 15.0,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
@@ -268,10 +328,17 @@ class _ProductsPageState extends State<ProductsPage> {
                 productToEdit['description'] = descriptionController.text;
                 productToEdit['weight'] = weightController.text;
                 productToEdit['quantity'] = quantityController.text;
-                productToEdit['type'] = typeController.text;
                 productToEdit['customerPrice'] = customerPriceController.text;
                 productToEdit['retailerPrice'] = retailerPriceController.text;
-                productToEdit['image'] = imageController.text;
+                if (_image != null) {
+                  var uploadResponse = await uploadImageToServer(_image!);
+                  if (uploadResponse != null) {
+                    print("Image URL: ${uploadResponse["url"]}");
+                    productToEdit["image"] = uploadResponse["url"];
+                  } else {
+                    print("Image upload failed");
+                  }
+                }
 
                 // Send a request to your API to update the data with the new values
                 final url = Uri.parse(
@@ -338,10 +405,8 @@ class _ProductsPageState extends State<ProductsPage> {
     TextEditingController descriptionController = TextEditingController();
     TextEditingController weightController = TextEditingController();
     TextEditingController quantityController = TextEditingController();
-    TextEditingController typeController = TextEditingController();
     TextEditingController customerPriceController = TextEditingController();
     TextEditingController retailerPriceController = TextEditingController();
-    TextEditingController imageController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
     showDialog(
@@ -361,10 +426,6 @@ class _ProductsPageState extends State<ProductsPage> {
                   controller: categoryController,
                   decoration: InputDecoration(labelText: 'Category'),
                 ),
-                // TextFormField(
-                //   controller: typeController,
-                //   decoration: InputDecoration(labelText: 'Type'),
-                // ),
                 TextFormField(
                   controller: descriptionController,
                   decoration: InputDecoration(labelText: 'Description'),
@@ -386,7 +447,7 @@ class _ProductsPageState extends State<ProductsPage> {
                   decoration: InputDecoration(labelText: 'Retailer Price'),
                 ),
                 Text(
-                  "\nProductImage",
+                  "\nProduct Image",
                   style: TextStyle(
                     fontSize: 15.0,
                     color: Colors.grey[700],
