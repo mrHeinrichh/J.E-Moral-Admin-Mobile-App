@@ -103,6 +103,19 @@ class _AccessoryPageState extends State<AccessoryPage> {
     }
   }
 
+  Future<void> _pickImageForEdit() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      final imageFile = File(pickedFile.path);
+      _imageStreamController.sink.add(imageFile);
+      setState(() {
+        _image = imageFile;
+      });
+    }
+  }
+
   Future<Map<String, dynamic>?> uploadImageToServer(File imageFile) async {
     try {
       var request = http.MultipartRequest(
@@ -176,78 +189,190 @@ class _AccessoryPageState extends State<AccessoryPage> {
     }
   }
 
+  void showCustomOverlay(BuildContext context, String message) {
+    final overlay = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).size.height * 0.5,
+        left: 0,
+        right: 0,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            alignment: Alignment.center,
+            child: Card(
+              color: Colors.red,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  message,
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context)!.insert(overlay);
+
+    Future.delayed(Duration(seconds: 2), () {
+      overlay.remove();
+    });
+  }
+
   void updateData(String id) {
-    // Find the accessory data to edit
     Map<String, dynamic> accessoryToEdit =
         accessoryDataList.firstWhere((data) => data['_id'] == id);
 
-    // Create controllers for each field
     TextEditingController nameController =
         TextEditingController(text: accessoryToEdit['name']);
-    TextEditingController categoryController =
-        TextEditingController(text: accessoryToEdit['category']);
+    // TextEditingController categoryController =
+    //     TextEditingController(text: accessoryToEdit['category']);
     TextEditingController descriptionController =
         TextEditingController(text: accessoryToEdit['description']);
-    TextEditingController weightController =
-        TextEditingController(text: accessoryToEdit['weight'].toString());
+    // TextEditingController weightController =
+    //     TextEditingController(text: accessoryToEdit['weight'].toString());
     TextEditingController quantityController =
         TextEditingController(text: accessoryToEdit['quantity'].toString());
-    TextEditingController typeController =
-        TextEditingController(text: accessoryToEdit['type']);
+    // TextEditingController typeController =
+    //     TextEditingController(text: accessoryToEdit['type']);
     TextEditingController customerPriceController = TextEditingController(
         text: accessoryToEdit['customerPrice'].toString());
-
     TextEditingController retailerPriceController = TextEditingController(
         text: accessoryToEdit['retailerPrice'].toString());
-
     TextEditingController imageController =
         TextEditingController(text: accessoryToEdit['image']);
+    final _formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Edit Data'),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: nameController,
-                  decoration: InputDecoration(labelText: 'Name'),
-                ),
-                TextFormField(
-                  controller: categoryController,
-                  decoration: InputDecoration(labelText: 'Category'),
-                ),
-                TextFormField(
-                  controller: descriptionController,
-                  decoration: InputDecoration(labelText: 'Description'),
-                ),
-                TextFormField(
-                  controller: weightController,
-                  decoration: InputDecoration(labelText: 'Weight'),
-                ),
-                TextFormField(
-                  controller: quantityController,
-                  decoration: InputDecoration(labelText: 'Quantity'),
-                ),
-                TextFormField(
-                  controller: typeController,
-                  decoration: InputDecoration(labelText: 'type'),
-                ),
-                TextFormField(
-                  controller: customerPriceController,
-                  decoration: InputDecoration(labelText: 'customerPrice'),
-                ),
-                TextFormField(
-                  controller: retailerPriceController,
-                  decoration: InputDecoration(labelText: 'retailerPrice'),
-                ),
-                TextFormField(
-                  controller: imageController,
-                  decoration: InputDecoration(labelText: 'image'),
-                ),
-              ],
+          content: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: InputDecoration(labelText: 'Name'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the accesory name';
+                      }
+                      return null;
+                    },
+                  ),
+                  // TextFormField(
+                  //   controller: categoryController,
+                  //   decoration: InputDecoration(labelText: 'Category'),
+                  // ),
+                  TextFormField(
+                    controller: descriptionController,
+                    decoration: InputDecoration(labelText: 'Description'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the accessory decription';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: quantityController,
+                    decoration: InputDecoration(labelText: 'Quantity'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the accessory quantity';
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  // TextFormField(
+                  //   controller: typeController,
+                  //   decoration: InputDecoration(labelText: 'type'),
+                  // ),
+                  TextFormField(
+                    controller: customerPriceController,
+                    decoration: InputDecoration(labelText: 'customerPrice'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the accessory customer price';
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  TextFormField(
+                    controller: retailerPriceController,
+                    decoration: InputDecoration(labelText: 'retailerPrice'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the accessory retailer price';
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+
+                  Text(
+                    "\nProduct Image",
+                    style: TextStyle(
+                      fontSize: 15.0,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  StreamBuilder<File?>(
+                    stream: _imageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          const SizedBox(height: 10.0),
+                          const Divider(),
+                          const SizedBox(height: 10.0),
+                          snapshot.data == null
+                              ? const CircleAvatar(
+                                  radius: 50,
+                                  backgroundColor: Colors.grey,
+                                  child: Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                    size: 50,
+                                  ),
+                                )
+                              : CircleAvatar(
+                                  radius: 50,
+                                  backgroundImage: FileImage(snapshot.data!),
+                                ),
+                          TextButton(
+                            onPressed: () async {
+                              await _pickImageForEdit();
+                            },
+                            child: const Text(
+                              "Upload Image",
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontSize: 15.0,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           actions: <Widget>[
@@ -259,42 +384,42 @@ class _AccessoryPageState extends State<AccessoryPage> {
             ),
             TextButton(
               onPressed: () async {
-                // Update the accessory data based on the controllers
-                accessoryToEdit['name'] = nameController.text;
-                accessoryToEdit['category'] = categoryController.text;
-                accessoryToEdit['description'] = descriptionController.text;
-                accessoryToEdit['weight'] = weightController.text;
-                accessoryToEdit['quantity'] = quantityController.text;
-                accessoryToEdit['type'] = typeController.text;
-                accessoryToEdit['customerPrice'] = customerPriceController.text;
-                accessoryToEdit['retailerPrice'] = retailerPriceController.text;
+                if (_formKey.currentState!.validate()) {
+                  accessoryToEdit['name'] = nameController.text;
+                  accessoryToEdit['description'] = descriptionController.text;
+                  accessoryToEdit['quantity'] = quantityController.text;
+                  accessoryToEdit['customerPrice'] =
+                      customerPriceController.text;
+                  accessoryToEdit['retailerPrice'] =
+                      retailerPriceController.text;
 
-                accessoryToEdit['image'] = imageController.text;
+                  // Upload new image only if available
+                  if (_image != null) {
+                    var uploadResponse = await uploadImageToServer(_image!);
+                    if (uploadResponse != null) {
+                      print("Image URL: ${uploadResponse["url"]}");
+                      accessoryToEdit["image"] = uploadResponse["url"];
+                    } else {
+                      print("Image upload failed");
+                    }
+                  }
+                  final url = Uri.parse(
+                      'https://lpg-api-06n8.onrender.com/api/v1/items/$id');
+                  final headers = {'Content-Type': 'application/json'};
 
-                // Send a request to your API to update the data with the new values
-                final url = Uri.parse(
-                    'https://lpg-api-06n8.onrender.com/api/v1/items/$id');
-                final headers = {'Content-Type': 'application/json'};
+                  final response = await http.patch(
+                    url,
+                    headers: headers,
+                    body: jsonEncode(accessoryToEdit),
+                  );
 
-                final response = await http.patch(
-                  url,
-                  headers: headers,
-                  body: jsonEncode(accessoryToEdit),
-                );
-
-                if (response.statusCode == 200) {
-                  // The data has been successfully updated
-                  // You can also handle the response data if needed
-
-                  // Update the UI to display the newly updated accessory (if required)
-                  fetchData(); // Refresh the data list
-
-                  Navigator.pop(context); // Close the edit accessory dialog
-                } else {
-                  // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
-                  print(
-                      'Failed to update the accessory. Status code: ${response.statusCode}');
-                  // You can also display an error message to the accessory
+                  if (response.statusCode == 200) {
+                    fetchData();
+                    Navigator.pop(context);
+                  } else {
+                    print(
+                        'Failed to update the accessory. Status code: ${response.statusCode}');
+                  }
                 }
               },
               child: Text('Save'),
@@ -351,7 +476,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                     decoration: InputDecoration(labelText: 'Name'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the product name';
+                        return 'Please enter the accessory name';
                       }
                       return null;
                     },
@@ -361,7 +486,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                     decoration: InputDecoration(labelText: 'Description'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the product description';
+                        return 'Please enter the accessory description';
                       }
                       return null;
                     },
@@ -371,7 +496,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                     decoration: InputDecoration(labelText: 'Quantity'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the product quantity';
+                        return 'Please enter the accessory quantity';
                       }
                       return null;
                     },
@@ -387,7 +512,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                     decoration: InputDecoration(labelText: 'Customer Price'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the product customer price';
+                        return 'Please enter the accessory customer price';
                       }
                       return null;
                     },
@@ -399,7 +524,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                     decoration: InputDecoration(labelText: 'Retailer Price'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the product retailer price';
+                        return 'Please enter the accessory retailer price';
                       }
                       return null;
                     },
@@ -458,27 +583,34 @@ class _AccessoryPageState extends State<AccessoryPage> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
               child: Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
-                // Create a new accessory object from the input data
-                Map<String, dynamic> newAccessory = {
-                  "name": nameController.text,
-                  "category": "Accessories",
-                  "description": descriptionController.text,
-                  "weight": 0,
-                  "quantity": quantityController.text,
-                  "type": "Accessory",
-                  "customerPrice": customerPriceController.text,
-                  "retailerPrice": retailerPriceController.text,
-                  "image": imageController.text,
-                };
+                if (formKey.currentState!.validate()) {
+                  // Additional conditions for image validation
+                  if (_image == null) {
+                    showCustomOverlay(context, 'Please Upload an Image');
+                  } else {
+                    // Create a new accessory object from the input data
+                    Map<String, dynamic> newAccessory = {
+                      "name": nameController.text,
+                      "category": "Accessories",
+                      "description": descriptionController.text,
+                      "weight": 0,
+                      "quantity": quantityController.text,
+                      "type": "Accessory",
+                      "customerPrice": customerPriceController.text,
+                      "retailerPrice": retailerPriceController.text,
+                      "image": imageController.text,
+                    };
 
-                // Call the function to add the new accessory to the API
-                addAccessoryToAPI(newAccessory);
+                    // Call the function to add the new accessory to the API
+                    addAccessoryToAPI(newAccessory);
+                  }
+                }
               },
               child: Text('Save'),
             ),
@@ -606,14 +738,11 @@ class _AccessoryPageState extends State<AccessoryPage> {
                 child: DataTable(
                   columns: <DataColumn>[
                     DataColumn(label: Text('Name')),
-                    DataColumn(label: Text('category')),
-                    DataColumn(label: Text('type')),
-                    DataColumn(label: Text('Description')),
-                    DataColumn(label: Text('Weight')),
-                    DataColumn(label: Text('Quantity')),
-                    DataColumn(label: Text('customerPrice')),
-                    DataColumn(label: Text('retailerPrice')),
                     DataColumn(label: Text('Type')),
+                    DataColumn(label: Text('Description')),
+                    DataColumn(label: Text('Quantity')),
+                    DataColumn(label: Text('Customer Price')),
+                    DataColumn(label: Text('Retailer Price')),
                     DataColumn(
                       label: Text('Actions'),
                       tooltip: 'Update and Delete',
@@ -629,13 +758,9 @@ class _AccessoryPageState extends State<AccessoryPage> {
                       cells: <DataCell>[
                         DataCell(Text(accessoryData['name'] ?? ''),
                             placeholder: false),
-                        DataCell(Text(accessoryData['category'] ?? ''),
-                            placeholder: false),
                         DataCell(Text(accessoryData['type'] ?? ''),
                             placeholder: false),
                         DataCell(Text(accessoryData['description'] ?? ''),
-                            placeholder: false),
-                        DataCell(Text(accessoryData['weight'].toString() ?? ''),
                             placeholder: false),
                         DataCell(
                             Text(accessoryData['quantity'].toString() ?? ''),
@@ -647,8 +772,6 @@ class _AccessoryPageState extends State<AccessoryPage> {
                         DataCell(
                             Text(accessoryData['retailerPrice'].toString() ??
                                 ''),
-                            placeholder: false),
-                        DataCell(Text(accessoryData['type'] ?? ''),
                             placeholder: false),
                         DataCell(
                           Row(
