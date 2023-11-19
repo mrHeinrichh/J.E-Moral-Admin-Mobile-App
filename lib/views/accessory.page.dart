@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:flutter/services.dart';
 
 class AccessoryPage extends StatefulWidget {
   @override
@@ -8,11 +13,18 @@ class AccessoryPage extends StatefulWidget {
 }
 
 class _AccessoryPageState extends State<AccessoryPage> {
+  File? _image;
+  final _imageStreamController = StreamController<File?>.broadcast();
+
   List<Map<String, dynamic>> accessoryDataList = [];
-  TextEditingController searchController =
-      TextEditingController(); // Controller for the search field
+  TextEditingController searchController = TextEditingController();
 
   @override
+  void dispose() {
+    _imageStreamController.close();
+    super.dispose();
+  }
+
   void initState() {
     super.initState();
     fetchData();
@@ -20,6 +32,19 @@ class _AccessoryPageState extends State<AccessoryPage> {
 
   int currentPage = 1;
   int limit = 21;
+
+  Future<void> _pickImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      final imageFile = File(pickedFile.path);
+      _imageStreamController.sink.add(imageFile);
+      setState(() {
+        _image = imageFile;
+      });
+    }
+  }
 
   Future<void> fetchData({int page = 1}) async {
     final response = await http.get(Uri.parse(
@@ -29,17 +54,14 @@ class _AccessoryPageState extends State<AccessoryPage> {
       final Map<String, dynamic> data = json.decode(response.body);
 
       final List<Map<String, dynamic>> accessoryData = (data['data'] as List)
-          .where((accessoryData) =>
-              accessoryData is Map<String, dynamic> &&
-              accessoryData['type'] == 'Accessory') // Filter for 'Accessory'
+          .where((accessoryData) => accessoryData is Map<String, dynamic>)
           .map((accessoryData) => accessoryData as Map<String, dynamic>)
           .toList();
 
       setState(() {
-        // Clear the existing data before adding new data
         accessoryDataList.clear();
         accessoryDataList.addAll(accessoryData);
-        currentPage = page; // Update the current page number
+        currentPage = page;
       });
     } else {
       throw Exception('Failed to load data from the API');
@@ -50,25 +72,107 @@ class _AccessoryPageState extends State<AccessoryPage> {
     final url = Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items');
     final headers = {'Content-Type': 'application/json'};
 
-    final response = await http.post(
-      url,
-      headers: headers,
-      body: jsonEncode(newAccessory),
-    );
+    try {
+      var uploadResponse = await uploadImageToServer(_image!);
+      print("Upload Response: $uploadResponse");
 
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      // The new accessory has been successfully added or updated
-      // You can also handle the response data if needed
+      if (uploadResponse != null) {
+        print("Image URL: ${uploadResponse["url"]}");
+        newAccessory["image"] = uploadResponse["url"];
 
-      // Update the UI to display the newly added or updated accessory (if required)
-      fetchData(); // Refresh the data list
+        final response = await http.post(
+          url,
+          headers: headers,
+          body: jsonEncode(newAccessory),
+        );
 
-      Navigator.pop(context); // Close the add accessory dialog
-    } else {
-      // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
-      print(
-          'Failed to add or update the accessory. Status code: ${response.statusCode}');
-      // You can also display an error message to the accessory
+        print("API Response: ${response.statusCode} - ${response.body}");
+
+        if (response.statusCode == 201 || response.statusCode == 200) {
+          fetchData();
+          Navigator.pop(context);
+        } else {
+          print(
+              'Failed to add or update the product. Status code: ${response.statusCode}');
+        }
+      } else {
+        print("Image upload failed");
+      }
+    } catch (e) {
+      print("Exception during API request: $e");
+    }
+  }
+
+  Future<Map<String, dynamic>?> uploadImageToServer(File imageFile) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/upload/image'),
+      );
+
+      var fileStream = http.ByteStream(Stream.castFrom(imageFile.openRead()));
+      var length = await imageFile.length();
+
+      String fileExtension = imageFile.path.split('.').last.toLowerCase();
+      var contentType = MediaType('image', 'png');
+
+      Map<String, String> imageExtensions = {
+        'png': 'png',
+        'jpg': 'jpeg',
+        'jpeg': 'jpeg',
+        'gif': 'gif',
+      };
+
+      if (imageExtensions.containsKey(fileExtension)) {
+        contentType = MediaType('image', imageExtensions[fileExtension]!);
+      }
+
+      var multipartFile = http.MultipartFile(
+        'image',
+        fileStream,
+        length,
+        filename: 'image.$fileExtension',
+        contentType: contentType,
+      );
+
+      request.files.add(multipartFile);
+
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        print("Image uploaded successfully: $responseBody");
+
+        // Parse the response JSON
+        final parsedResponse = json.decode(responseBody);
+
+        // Check if 'data' is present in the response
+        if (parsedResponse.containsKey('data')) {
+          final List<dynamic> data = parsedResponse['data'];
+
+          // Check if 'path' is present in the first item of the 'data' array
+          if (data.isNotEmpty && data[0].containsKey('path')) {
+            final imageUrl = data[0]['path'];
+            print("Image URL: $imageUrl");
+
+            return {'url': imageUrl};
+          } else {
+            print("Invalid response format: $parsedResponse");
+            return null;
+          }
+        } else {
+          print("Invalid response format: $parsedResponse");
+          return null;
+        }
+      } else {
+        print("Image upload failed with status code: ${response.statusCode}");
+        final responseBody = await response.stream.bytesToString();
+        print("Response body: $responseBody");
+        return null;
+      }
+    } catch (e) {
+      print("Image upload failed with error: $e");
+      return null;
     }
   }
 
@@ -212,7 +316,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
           .where((accessoryData) =>
               accessoryData is Map<String, dynamic> &&
               accessoryData.containsKey('type') &&
-              accessoryData['type'] == 'Accessory')
+              accessoryData['category'] == 'Accessories')
           .map((accessoryData) => accessoryData as Map<String, dynamic>)
           .toList();
 
@@ -225,14 +329,12 @@ class _AccessoryPageState extends State<AccessoryPage> {
   void openAddAccessoryDialog() {
     // Create controllers for each field
     TextEditingController nameController = TextEditingController();
-    TextEditingController categoryController = TextEditingController();
     TextEditingController descriptionController = TextEditingController();
-    TextEditingController weightController = TextEditingController();
     TextEditingController quantityController = TextEditingController();
-    TextEditingController typeController = TextEditingController();
     TextEditingController customerPriceController = TextEditingController();
     TextEditingController retailerPriceController = TextEditingController();
     TextEditingController imageController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
@@ -240,47 +342,117 @@ class _AccessoryPageState extends State<AccessoryPage> {
         return AlertDialog(
           title: Text('Add New Accessory'),
           content: SingleChildScrollView(
-            child: Column(
-              children: [
-                // Add text form fields for accessory data input
-                TextFormField(
-                  controller: nameController,
-                  decoration: InputDecoration(labelText: 'Name'),
-                ),
-                TextFormField(
-                  controller: categoryController,
-                  decoration: InputDecoration(labelText: 'category'),
-                ),
-                TextFormField(
-                  controller: descriptionController,
-                  decoration: InputDecoration(labelText: 'Description'),
-                ),
-                TextFormField(
-                  controller: weightController,
-                  decoration: InputDecoration(labelText: 'Weight'),
-                ),
-                TextFormField(
-                  controller: quantityController,
-                  decoration: InputDecoration(labelText: 'Quantity'),
-                ),
-                TextFormField(
-                  controller: typeController,
-                  decoration: InputDecoration(labelText: 'type'),
-                ),
-                TextFormField(
-                  controller: customerPriceController,
-                  decoration: InputDecoration(labelText: 'customer price'),
-                ),
-                TextFormField(
-                  controller: retailerPriceController,
-                  decoration: InputDecoration(labelText: 'retailerPrice'),
-                ),
-
-                TextFormField(
-                  controller: imageController,
-                  decoration: InputDecoration(labelText: 'image'),
-                ),
-              ],
+            child: Form(
+              key: formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: InputDecoration(labelText: 'Name'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product name';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: descriptionController,
+                    decoration: InputDecoration(labelText: 'Description'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product description';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: quantityController,
+                    decoration: InputDecoration(labelText: 'Quantity'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product quantity';
+                      }
+                      return null;
+                    },
+                    keyboardType:
+                        TextInputType.number, // Set the keyboard type to number
+                    inputFormatters: [
+                      FilteringTextInputFormatter
+                          .digitsOnly, // Allow only numeric input
+                    ],
+                  ),
+                  TextFormField(
+                    controller: customerPriceController,
+                    decoration: InputDecoration(labelText: 'Customer Price'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product customer price';
+                      }
+                      return null;
+                    },
+                    keyboardType:
+                        TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  TextFormField(
+                    controller: retailerPriceController,
+                    decoration: InputDecoration(labelText: 'Retailer Price'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product retailer price';
+                      }
+                      return null;
+                    },
+                    keyboardType:
+                        TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  Text(
+                    "\nProduct Image",
+                    style: TextStyle(
+                      fontSize: 15.0,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  StreamBuilder<File?>(
+                    stream: _imageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          const SizedBox(height: 10.0),
+                          const Divider(),
+                          const SizedBox(height: 10.0),
+                          snapshot.data == null
+                              ? const CircleAvatar(
+                                  radius: 50,
+                                  backgroundColor: Colors.grey,
+                                  child: Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                    size: 50,
+                                  ),
+                                )
+                              : CircleAvatar(
+                                  radius: 50,
+                                  backgroundImage: FileImage(snapshot.data!),
+                                ),
+                          TextButton(
+                            onPressed: () async {
+                              await _pickImage();
+                            },
+                            child: const Text(
+                              "Upload Image",
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontSize: 15.0,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           actions: <Widget>[
@@ -295,11 +467,11 @@ class _AccessoryPageState extends State<AccessoryPage> {
                 // Create a new accessory object from the input data
                 Map<String, dynamic> newAccessory = {
                   "name": nameController.text,
-                  "category": categoryController.text,
+                  "category": "Accessories",
                   "description": descriptionController.text,
-                  "weight": weightController.text,
+                  "weight": 0,
                   "quantity": quantityController.text,
-                  "type": typeController.text,
+                  "type": "Accessory",
                   "customerPrice": customerPriceController.text,
                   "retailerPrice": retailerPriceController.text,
                   "image": imageController.text,
@@ -435,6 +607,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                   columns: <DataColumn>[
                     DataColumn(label: Text('Name')),
                     DataColumn(label: Text('category')),
+                    DataColumn(label: Text('type')),
                     DataColumn(label: Text('Description')),
                     DataColumn(label: Text('Weight')),
                     DataColumn(label: Text('Quantity')),
@@ -446,14 +619,19 @@ class _AccessoryPageState extends State<AccessoryPage> {
                       tooltip: 'Update and Delete',
                     ),
                   ],
-                  rows: accessoryDataList.map((accessoryData) {
+                  rows: accessoryDataList
+                      .where((accessoryData) =>
+                          accessoryData['type'] ==
+                          'Accessory') // Filter data by type
+                      .map((accessoryData) {
                     final id = accessoryData['_id'];
-
                     return DataRow(
                       cells: <DataCell>[
                         DataCell(Text(accessoryData['name'] ?? ''),
                             placeholder: false),
                         DataCell(Text(accessoryData['category'] ?? ''),
+                            placeholder: false),
+                        DataCell(Text(accessoryData['type'] ?? ''),
                             placeholder: false),
                         DataCell(Text(accessoryData['description'] ?? ''),
                             placeholder: false),
