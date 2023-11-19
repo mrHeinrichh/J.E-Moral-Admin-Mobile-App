@@ -227,16 +227,10 @@ class _AccessoryPageState extends State<AccessoryPage> {
 
     TextEditingController nameController =
         TextEditingController(text: accessoryToEdit['name']);
-    // TextEditingController categoryController =
-    //     TextEditingController(text: accessoryToEdit['category']);
     TextEditingController descriptionController =
         TextEditingController(text: accessoryToEdit['description']);
-    // TextEditingController weightController =
-    //     TextEditingController(text: accessoryToEdit['weight'].toString());
     TextEditingController quantityController =
         TextEditingController(text: accessoryToEdit['quantity'].toString());
-    // TextEditingController typeController =
-    //     TextEditingController(text: accessoryToEdit['type']);
     TextEditingController customerPriceController = TextEditingController(
         text: accessoryToEdit['customerPrice'].toString());
     TextEditingController retailerPriceController = TextEditingController(
@@ -293,13 +287,9 @@ class _AccessoryPageState extends State<AccessoryPage> {
                       FilteringTextInputFormatter.digitsOnly,
                     ],
                   ),
-                  // TextFormField(
-                  //   controller: typeController,
-                  //   decoration: InputDecoration(labelText: 'type'),
-                  // ),
                   TextFormField(
                     controller: customerPriceController,
-                    decoration: InputDecoration(labelText: 'customerPrice'),
+                    decoration: InputDecoration(labelText: 'Customer Price'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the accessory customer price';
@@ -313,7 +303,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                   ),
                   TextFormField(
                     controller: retailerPriceController,
-                    decoration: InputDecoration(labelText: 'retailerPrice'),
+                    decoration: InputDecoration(labelText: 'Retailer Price'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the accessory retailer price';
@@ -327,7 +317,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                   ),
 
                   Text(
-                    "\nProduct Image",
+                    "\nAccessory Image",
                     style: TextStyle(
                       fontSize: 15.0,
                       color: Colors.grey[700],
@@ -532,7 +522,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                         TextInputType.numberWithOptions(decimal: true),
                   ),
                   Text(
-                    "\nProduct Image",
+                    "\nAccessory Image",
                     style: TextStyle(
                       fontSize: 15.0,
                       color: Colors.grey[700],
