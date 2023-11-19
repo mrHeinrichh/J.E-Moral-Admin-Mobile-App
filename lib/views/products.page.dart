@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:flutter/services.dart';
 
 class ProductsPage extends StatefulWidget {
   @override
@@ -16,8 +17,7 @@ class _ProductsPageState extends State<ProductsPage> {
   final _imageStreamController = StreamController<File?>.broadcast();
 
   List<Map<String, dynamic>> productDataList = [];
-  TextEditingController searchController =
-      TextEditingController(); // Controller for the search field
+  TextEditingController searchController = TextEditingController();
 
   @override
   void dispose() {
@@ -31,7 +31,6 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   int currentPage = 1;
-  int limit = 21;
 
   Future<void> _pickImage() async {
     final pickedFile =
@@ -82,8 +81,6 @@ class _ProductsPageState extends State<ProductsPage> {
 
       var response = await request.send();
 
-      // ...
-
       if (response.statusCode == 200) {
         final responseBody = await response.stream.bytesToString();
         print("Image uploaded successfully: $responseBody");
@@ -121,9 +118,41 @@ class _ProductsPageState extends State<ProductsPage> {
     }
   }
 
-  Future<void> fetchData({int page = 1}) async {
-    final response = await http
-        .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items'));
+  void showCustomOverlay(BuildContext context, String message) {
+    final overlay = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).size.height * 0.5,
+        left: 0,
+        right: 0,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            alignment: Alignment.center,
+            child: Card(
+              color: Colors.red,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  message,
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context)!.insert(overlay);
+
+    Future.delayed(Duration(seconds: 2), () {
+      overlay.remove();
+    });
+  }
+
+  Future<void> fetchData({int page = 1, int limit = 12}) async {
+    final response = await http.get(Uri.parse(
+        'https://lpg-api-06n8.onrender.com/api/v1/items/?page=$page&limit=$limit'));
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
@@ -193,11 +222,9 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   void updateData(String id) {
-    // Find the product data to edit
     Map<String, dynamic> productToEdit =
         productDataList.firstWhere((data) => data['_id'] == id);
 
-    // Create controllers for each field
     TextEditingController nameController =
         TextEditingController(text: productToEdit['name']);
     TextEditingController categoryController =
@@ -214,156 +241,206 @@ class _ProductsPageState extends State<ProductsPage> {
         TextEditingController(text: productToEdit['retailerPrice'].toString());
     TextEditingController imageController =
         TextEditingController(text: productToEdit['image']);
+    final _formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Edit Data'),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: nameController,
-                  decoration: InputDecoration(labelText: 'Name'),
-                ),
-                DropdownButtonFormField<String>(
-                  value: categoryController.text,
-                  onChanged: (newValue) {
-                    setState(() {
-                      categoryController.text = newValue!;
-                    });
-                  },
-                  items: ['Brandnew Tanks', 'Refill Tanks']
-                      .map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  decoration: InputDecoration(
-                    labelText: 'Category',
+          content: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: InputDecoration(labelText: 'Name'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product name';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-                TextFormField(
-                  controller: descriptionController,
-                  decoration: InputDecoration(labelText: 'Description'),
-                ),
-                TextFormField(
-                  controller: weightController,
-                  decoration: InputDecoration(labelText: 'Weight'),
-                ),
-                TextFormField(
-                  controller: quantityController,
-                  decoration: InputDecoration(labelText: 'Quantity'),
-                ),
-                TextFormField(
-                  controller: customerPriceController,
-                  decoration: InputDecoration(labelText: 'Customer Price'),
-                ),
-                TextFormField(
-                  controller: retailerPriceController,
-                  decoration: InputDecoration(labelText: 'Retailer Price'),
-                ),
-                Text(
-                  "\nProduct Image",
-                  style: TextStyle(
-                    fontSize: 15.0,
-                    color: Colors.grey[700],
+                  DropdownButtonFormField<String>(
+                    value: categoryController.text,
+                    onChanged: (newValue) {
+                      setState(() {
+                        categoryController.text = newValue!;
+                      });
+                    },
+                    items: ['Brandnew Tanks', 'Refill Tanks']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: InputDecoration(
+                      labelText: 'Category',
+                    ),
                   ),
-                ),
-                StreamBuilder<File?>(
-                  stream: _imageStreamController.stream,
-                  builder: (context, snapshot) {
-                    return Column(
-                      children: [
-                        const SizedBox(height: 10.0),
-                        const Divider(),
-                        const SizedBox(height: 10.0),
-                        snapshot.data == null
-                            ? const CircleAvatar(
-                                radius: 50,
-                                backgroundColor: Colors.grey,
-                                child: Icon(
-                                  Icons.person,
-                                  color: Colors.white,
-                                  size: 50,
+                  TextFormField(
+                    controller: descriptionController,
+                    decoration: InputDecoration(labelText: 'Description'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product description';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: weightController,
+                    decoration: InputDecoration(labelText: 'Weight (in kg.)'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product weight (in kg.)';
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  TextFormField(
+                    controller: quantityController,
+                    decoration: InputDecoration(labelText: 'Quantity'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product quantity';
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  TextFormField(
+                    controller: customerPriceController,
+                    decoration: InputDecoration(labelText: 'Customer Price'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product customer price';
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  TextFormField(
+                    controller: retailerPriceController,
+                    decoration: InputDecoration(labelText: 'Retailer Price'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product retailer price';
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  Text(
+                    "\nProduct Image",
+                    style: TextStyle(
+                      fontSize: 15.0,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  StreamBuilder<File?>(
+                    stream: _imageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          const SizedBox(height: 10.0),
+                          const Divider(),
+                          const SizedBox(height: 10.0),
+                          snapshot.data == null
+                              ? const CircleAvatar(
+                                  radius: 50,
+                                  backgroundColor: Colors.grey,
+                                  child: Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                    size: 50,
+                                  ),
+                                )
+                              : CircleAvatar(
+                                  radius: 50,
+                                  backgroundImage: FileImage(snapshot.data!),
                                 ),
-                              )
-                            : CircleAvatar(
-                                radius: 50,
-                                backgroundImage: FileImage(snapshot.data!),
+                          TextButton(
+                            onPressed: () async {
+                              await _pickImageForEdit();
+                            },
+                            child: const Text(
+                              "Upload Image",
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontSize: 15.0,
                               ),
-                        TextButton(
-                          onPressed: () async {
-                            await _pickImageForEdit();
-                          },
-                          child: const Text(
-                            "Upload Image",
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontSize: 15.0,
                             ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ],
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
               child: Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
-                // Update the product data based on the controllers
-                productToEdit['name'] = nameController.text;
-                productToEdit['category'] = categoryController.text;
-                productToEdit['description'] = descriptionController.text;
-                productToEdit['weight'] = weightController.text;
-                productToEdit['quantity'] = quantityController.text;
-                productToEdit['customerPrice'] = customerPriceController.text;
-                productToEdit['retailerPrice'] = retailerPriceController.text;
-                if (_image != null) {
-                  var uploadResponse = await uploadImageToServer(_image!);
-                  if (uploadResponse != null) {
-                    print("Image URL: ${uploadResponse["url"]}");
-                    productToEdit["image"] = uploadResponse["url"];
-                  } else {
-                    print("Image upload failed");
+                if (_formKey.currentState!.validate()) {
+                  productToEdit['name'] = nameController.text;
+                  productToEdit['category'] = categoryController.text;
+                  productToEdit['description'] = descriptionController.text;
+                  productToEdit['weight'] = weightController.text;
+                  productToEdit['quantity'] = quantityController.text;
+                  productToEdit['customerPrice'] = customerPriceController.text;
+                  productToEdit['retailerPrice'] = retailerPriceController.text;
+
+                  // Upload new image only if available
+                  if (_image != null) {
+                    var uploadResponse = await uploadImageToServer(_image!);
+                    if (uploadResponse != null) {
+                      print("Image URL: ${uploadResponse["url"]}");
+                      productToEdit["image"] = uploadResponse["url"];
+                    } else {
+                      print("Image upload failed");
+                    }
                   }
-                }
+                  final url = Uri.parse(
+                      'https://lpg-api-06n8.onrender.com/api/v1/items/$id');
+                  final headers = {'Content-Type': 'application/json'};
 
-                // Send a request to your API to update the data with the new values
-                final url = Uri.parse(
-                    'https://lpg-api-06n8.onrender.com/api/v1/items/$id');
-                final headers = {'Content-Type': 'application/json'};
+                  final response = await http.patch(
+                    url,
+                    headers: headers,
+                    body: jsonEncode(productToEdit),
+                  );
 
-                final response = await http.patch(
-                  url,
-                  headers: headers,
-                  body: jsonEncode(productToEdit),
-                );
-
-                if (response.statusCode == 200) {
-                  // The data has been successfully updated
-                  // You can also handle the response data if needed
-
-                  // Update the UI to display the newly updated product (if required)
-                  fetchData(); // Refresh the data list
-
-                  Navigator.pop(context); // Close the edit product dialog
-                } else {
-                  // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
-                  print(
-                      'Failed to update the product. Status code: ${response.statusCode}');
-                  // You can also display an error message to the user
+                  if (response.statusCode == 200) {
+                    fetchData();
+                    Navigator.pop(context);
+                  } else {
+                    print(
+                        'Failed to update the product. Status code: ${response.statusCode}');
+                  }
                 }
               },
               child: Text('Save'),
@@ -415,108 +492,187 @@ class _ProductsPageState extends State<ProductsPage> {
         return AlertDialog(
           title: Text('Add New Product'),
           content: SingleChildScrollView(
-            child: Column(
-              children: [
-                // Add text form fields for product data input
-                TextFormField(
-                  controller: nameController,
-                  decoration: InputDecoration(labelText: 'Name'),
-                ),
-                TextFormField(
-                  controller: categoryController,
-                  decoration: InputDecoration(labelText: 'Category'),
-                ),
-                TextFormField(
-                  controller: descriptionController,
-                  decoration: InputDecoration(labelText: 'Description'),
-                ),
-                TextFormField(
-                  controller: weightController,
-                  decoration: InputDecoration(labelText: 'Weight'),
-                ),
-                TextFormField(
-                  controller: quantityController,
-                  decoration: InputDecoration(labelText: 'Quantity'),
-                ),
-                TextFormField(
-                  controller: customerPriceController,
-                  decoration: InputDecoration(labelText: 'Customer Price'),
-                ),
-                TextFormField(
-                  controller: retailerPriceController,
-                  decoration: InputDecoration(labelText: 'Retailer Price'),
-                ),
-                Text(
-                  "\nProduct Image",
-                  style: TextStyle(
-                    fontSize: 15.0,
-                    color: Colors.grey[700],
+            child: Form(
+              key: formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: InputDecoration(labelText: 'Name'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product name';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-                StreamBuilder<File?>(
-                  stream: _imageStreamController.stream,
-                  builder: (context, snapshot) {
-                    return Column(
-                      children: [
-                        const SizedBox(height: 10.0),
-                        const Divider(),
-                        const SizedBox(height: 10.0),
-                        snapshot.data == null
-                            ? const CircleAvatar(
-                                radius: 50,
-                                backgroundColor: Colors.grey,
-                                child: Icon(
-                                  Icons.person,
-                                  color: Colors.white,
-                                  size: 50,
+                  DropdownButtonFormField(
+                    value: categoryController.text.isNotEmpty
+                        ? categoryController.text
+                        : null,
+                    decoration: const InputDecoration(labelText: 'Category'),
+                    items: const [
+                      DropdownMenuItem(
+                          value: 'Brandnew Tanks',
+                          child: Text('Brandnew Tanks')),
+                      DropdownMenuItem(
+                          value: 'Refill Tanks', child: Text('Refill Tanks')),
+                    ],
+                    onChanged: (newValue) {
+                      categoryController.text = newValue.toString();
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Please select the product category";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                  TextFormField(
+                    controller: descriptionController,
+                    decoration: InputDecoration(labelText: 'Description'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product description';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: weightController,
+                    decoration: InputDecoration(labelText: 'Weight (in kg.)'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product weight (in kg.)';
+                      }
+                      return null;
+                    },
+                    keyboardType:
+                        TextInputType.number, // Set the keyboard type to number
+                    inputFormatters: [
+                      FilteringTextInputFormatter
+                          .digitsOnly, // Allow only numeric input
+                    ],
+                  ),
+                  TextFormField(
+                    controller: quantityController,
+                    decoration: InputDecoration(labelText: 'Quantity'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product quantity';
+                      }
+                      return null;
+                    },
+                    keyboardType:
+                        TextInputType.number, // Set the keyboard type to number
+                    inputFormatters: [
+                      FilteringTextInputFormatter
+                          .digitsOnly, // Allow only numeric input
+                    ],
+                  ),
+                  TextFormField(
+                    controller: customerPriceController,
+                    decoration: InputDecoration(labelText: 'Customer Price'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product customer price';
+                      }
+                      return null;
+                    },
+                    keyboardType:
+                        TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  TextFormField(
+                    controller: retailerPriceController,
+                    decoration: InputDecoration(labelText: 'Retailer Price'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product retailer price';
+                      }
+                      return null;
+                    },
+                    keyboardType:
+                        TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  Text(
+                    "\nProduct Image",
+                    style: TextStyle(
+                      fontSize: 15.0,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  StreamBuilder<File?>(
+                    stream: _imageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          const SizedBox(height: 10.0),
+                          const Divider(),
+                          const SizedBox(height: 10.0),
+                          snapshot.data == null
+                              ? const CircleAvatar(
+                                  radius: 50,
+                                  backgroundColor: Colors.grey,
+                                  child: Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                    size: 50,
+                                  ),
+                                )
+                              : CircleAvatar(
+                                  radius: 50,
+                                  backgroundImage: FileImage(snapshot.data!),
                                 ),
-                              )
-                            : CircleAvatar(
-                                radius: 50,
-                                backgroundImage: FileImage(snapshot.data!),
+                          TextButton(
+                            onPressed: () async {
+                              await _pickImage();
+                            },
+                            child: const Text(
+                              "Upload Image",
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontSize: 15.0,
                               ),
-                        TextButton(
-                          onPressed: () async {
-                            await _pickImage();
-                          },
-                          child: const Text(
-                            "Upload Image",
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontSize: 15.0,
                             ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ],
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
-          //BREAKKKKKKKKKK
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
               child: Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
-                Map<String, dynamic> newProduct = {
-                  "name": nameController.text,
-                  "category": categoryController.text,
-                  "description": descriptionController.text,
-                  "weight": weightController.text,
-                  "quantity": quantityController.text,
-                  "type": "Products",
-                  "customerPrice": customerPriceController.text,
-                  "retailerPrice": retailerPriceController.text,
-                  "image": "",
-                };
-                // Call the function to add the new product to the API
-                addProductToAPI(newProduct);
+                if (formKey.currentState!.validate()) {
+                  // Additional conditions for image validation
+                  if (_image == null) {
+                    showCustomOverlay(context, 'Please Upload an Image');
+                  } else {
+                    Map<String, dynamic> newProduct = {
+                      "name": nameController.text,
+                      "category": categoryController.text,
+                      "description": descriptionController.text,
+                      "weight": weightController.text,
+                      "quantity": quantityController.text,
+                      "type": "Products",
+                      "customerPrice": customerPriceController.text,
+                      "retailerPrice": retailerPriceController.text,
+                      "image": "",
+                    };
+                    // Call the function to add the new product to the API
+                    addProductToAPI(newProduct);
+                  }
+                }
               },
               child: Text('Save'),
             ),
@@ -657,30 +813,24 @@ class _ProductsPageState extends State<ProductsPage> {
                     ),
                   ],
                   rows: productDataList
-                      .where((productData) => productData['type'] == 'Products')
+                      .where((productData) =>
+                          productData['type'] ==
+                          'Products') // Filter data by type
                       .map((productData) {
                     final id = productData['_id'];
-
                     return DataRow(
                       cells: <DataCell>[
-                        DataCell(Text(productData['name'] ?? ''),
-                            placeholder: false),
-                        DataCell(Text(productData['category'] ?? ''),
-                            placeholder: false),
-                        DataCell(Text(productData['type'] ?? ''),
-                            placeholder: false),
-                        DataCell(Text(productData['description'] ?? ''),
-                            placeholder: false),
-                        DataCell(Text(productData['weight'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(Text(productData['quantity'].toString() ?? ''),
-                            placeholder: false),
+                        DataCell(Text(productData['name'] ?? '')),
+                        DataCell(Text(productData['category'] ?? '')),
+                        DataCell(Text(productData['type'] ?? '')),
+                        DataCell(Text(productData['description'] ?? '')),
+                        DataCell(Text(productData['weight'].toString() ?? '')),
                         DataCell(
-                            Text(productData['customerPrice'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(
-                            Text(productData['retailerPrice'].toString() ?? ''),
-                            placeholder: false),
+                            Text(productData['quantity'].toString() ?? '')),
+                        DataCell(Text(
+                            productData['customerPrice'].toString() ?? '')),
+                        DataCell(Text(
+                            productData['retailerPrice'].toString() ?? '')),
                         DataCell(
                           Row(
                             children: [
@@ -694,7 +844,6 @@ class _ProductsPageState extends State<ProductsPage> {
                               ),
                             ],
                           ),
-                          placeholder: false,
                         ),
                       ],
                     );
