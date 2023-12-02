@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 
 class RecentOrders extends StatefulWidget {
   @override
@@ -9,11 +10,18 @@ class RecentOrders extends StatefulWidget {
 
 class _RecentOrdersState extends State<RecentOrders> {
   List<Map<String, dynamic>> transactions = [];
+  bool _mounted = true;
 
   @override
   void initState() {
     super.initState();
     fetchData();
+  }
+
+  @override
+  void dispose() {
+    _mounted = false;
+    super.dispose();
   }
 
   Future<void> showConfirmationDialog(
@@ -52,37 +60,56 @@ class _RecentOrdersState extends State<RecentOrders> {
         Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions'),
       );
 
-      if (!mounted) {
-        return;
-      }
+      if (_mounted) {
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = json.decode(response.body);
+          if (data.containsKey("data")) {
+            final List<dynamic> transactionData = data["data"];
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        if (data.containsKey("data")) {
-          final List<dynamic> transactionData = data["data"];
-          setState(() {
-            transactions = List<Map<String, dynamic>>.from(transactionData);
-          });
-        } else {}
-      } else {
-        print("Error: ${response.statusCode}");
+            // Filter out accepted transactions
+            final List<Map<String, dynamic>> filteredTransactions =
+                List<Map<String, dynamic>>.from(transactionData)
+                    .where((transaction) => !transaction["isApproved"])
+                    .toList();
+
+            setState(() {
+              transactions = filteredTransactions;
+            });
+          } else {
+            // Handle data format issues if needed
+          }
+        } else {
+          print("Error: ${response.statusCode}");
+        }
       }
     } catch (e) {
-      print("Error: $e");
+      // Handle network request errors
+      if (_mounted) {
+        print("Error: $e");
+      }
     }
   }
 
   Future<void> updateOrderInDatabase(
-      String id, bool isApproved, bool isDeleted) async {
+    String id,
+    bool isApproved,
+    bool isDeleted,
+    bool isCompleted,
+  ) async {
     // Convert boolean to string
     String isApprovedString = isApproved.toString();
     String isDeletedString = isDeleted.toString();
+    String isCompletedString = isCompleted.toString();
 
     try {
       // Make an HTTP request or database query to update the value in the database
       final response = await http.patch(
         Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions/$id'),
-        body: {'isApproved': isApprovedString, 'deleted': isDeletedString},
+        body: {
+          'isApproved': isApprovedString,
+          'deleted': isDeletedString,
+          'completed': isCompletedString,
+        },
       );
 
       if (response.statusCode == 200) {
@@ -98,16 +125,18 @@ class _RecentOrdersState extends State<RecentOrders> {
     }
   }
 
-  @override
-  void dispose() {
-    super.dispose();
+  Future<void> refreshData() async {
+    await fetchData();
   }
 
   @override
   Widget build(BuildContext context) {
     List<Map<String, dynamic>> filteredTransactions = transactions
         .where((transaction) =>
-            !transaction["isApproved"] && transaction["type"] == "Online")
+            !transaction["isApproved"] &&
+            transaction["type"] == "Online" &&
+            transaction["type"] != "Walkin" &&
+            transaction["type"] != "")
         .toList();
 
     filteredTransactions.sort((b, a) {
@@ -128,252 +157,263 @@ class _RecentOrdersState extends State<RecentOrders> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: ListView.builder(
-          reverse: false, // Display the latest data at the top
+        child: RefreshIndicator(
+          onRefresh: refreshData,
+          child: ListView.builder(
+            reverse: false, // Display the latest data at the top
 
-          itemCount: transactions.length,
-          itemBuilder: (context, index) {
-            final transaction = transactions[index];
-            return Card(
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(25.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Product Name",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          "Quantity: 1",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    Divider(
-                      thickness: 1,
-                      color: Colors.black,
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          "Name: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
+            itemCount: transactions.length,
+            itemBuilder: (context, index) {
+              final transaction = transactions[index];
+              return Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(25.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Product Name",
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
-                        ),
-                        Text(
-                          '${transaction['name']}',
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          "Contact Number: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                          Text(
+                            "Quantity: 1",
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
-                        ),
-                        Text(
-                          '${transaction['contactNumber']}',
-                        ),
-                      ],
-                    ),
-                    Text(
-                      "Delivery Location: ",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
+                        ],
                       ),
-                    ),
-                    Text(
-                      '${transaction['deliveryLocation']}',
-                    ),
-                    Text(
-                      "House#/Lot/Blk:  ",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
+                      Divider(
+                        thickness: 1,
+                        color: Colors.black,
                       ),
-                    ),
-                    Text(
-                      '${transaction['houseLotBlk']}',
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          "Barangay: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                      Row(
+                        children: [
+                          Text(
+                            "Name: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '${transaction['barangay']}',
-                        ),
-                      ],
-                    ),
-
-                    Text(
-                      "Payment Method: ",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
+                          Text(
+                            '${transaction['name']}',
+                          ),
+                        ],
                       ),
-                    ),
-                    Text(
-                      '${transaction['paymentMethod']}',
-                    ),
-
-                    Row(
-                      children: [
-                        Text(
-                          "Needs to be assembled: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                      Row(
+                        children: [
+                          Text(
+                            "Contact Number: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '${transaction['assembly']}',
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          "Delivery Time: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                          Text(
+                            '${transaction['contactNumber']}',
                           ),
+                        ],
+                      ),
+                      Text(
+                        "Delivery Location: ",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
                         ),
-                        Text(
-                          '${transaction['deliveryTime']}',
+                      ),
+                      Text(
+                        '${transaction['deliveryLocation']}',
+                      ),
+                      Text(
+                        "House#/Lot/Blk:  ",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
                         ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          "Date Ordered: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                      ),
+                      Text(
+                        '${transaction['houseLotBlk']}',
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            "Barangay: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '${transaction['updatedAt']}',
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          "Total Price: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                          Text(
+                            '${transaction['barangay']}',
                           ),
+                        ],
+                      ),
+
+                      Text(
+                        "Payment Method: ",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
                         ),
-                        Text(
-                          '${transaction['total']}',
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          "Order Status: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                      ),
+                      Text(
+                        '${transaction['paymentMethod']}',
+                      ),
+
+                      Row(
+                        children: [
+                          Text(
+                            "Needs to be assembled: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        Text(
-                          transaction['isApproved'] ? 'Approved' : 'Pending',
-                          style: TextStyle(
-                            color: transaction['isApproved']
-                                ? Colors.green
-                                : Colors.red,
+                          Text(
+                            '${transaction['assembly']}',
                           ),
-                        ),
-                      ],
-                    ),
-                    // Text("Date: ${transaction['updatedAt']}"),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () async {
-                            // Show accept confirmation dialog
-                            showConfirmationDialog(
-                              context,
-                              "Are you sure you want to accept the order for ${transaction['name']}?",
-                              () async {
-                                // Handle accept logic here
-                                print("Order Accepted: ${transaction['name']}");
-
-                                // Update isApproved to true in the local state
-                                setState(() {
-                                  transaction['isApproved'] = true;
-                                });
-
-                                // Update isApproved to true in the database
-                                await updateOrderInDatabase(
-                                  transaction['_id'].toString(),
-                                  true,
-                                  false,
-                                );
-                                await fetchData();
-
-                                Navigator.pop(context); // Close the dialog
-                              },
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            primary: Colors.black,
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            "Delivery Time: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          child: Text("Accept"),
-                        ),
-                        ElevatedButton(
-                          onPressed: () async {
-                            // Show decline confirmation dialog
-                            showConfirmationDialog(
-                              context,
-                              "Are you sure you want to decline the order for ${transaction['name']}?",
-                              () async {
-                                // Handle decline logic here
-                                print("Order Declined: ${transaction['name']}");
-
-                                // Update isApproved to false in the local state
-                                setState(() {
-                                  transaction['isApproved'] = false;
-                                });
-
-                                // Update isApproved to false in the database
-                                await updateOrderInDatabase(
-                                  transaction['_id'].toString(),
-                                  false,
-                                  true,
-                                );
-
-                                // Fetch data again to refresh the list
-                                await fetchData();
-
-                                Navigator.pop(context); // Close the dialog
-                              },
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            primary: Colors.red,
+                          Text(
+                            '${transaction['deliveryTime']}',
                           ),
-                          child: Text("Decline"),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            "Date Ordered: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '${transaction['updatedAt']}',
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            "Total Price: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '${transaction['total']}',
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            "Order Status: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            transaction['isApproved'] ? 'Approved' : 'Pending',
+                            style: TextStyle(
+                              color: transaction['isApproved']
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Text("Date: ${transaction['updatedAt']}"),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              // Show accept confirmation dialog
+                              showConfirmationDialog(
+                                context,
+                                "Are you sure you want to accept the order for ${transaction['name']}?",
+                                () async {
+                                  // Handle accept logic here
+                                  print(
+                                      "Order Accepted: ${transaction['name']}");
+
+                                  // Update isApproved to true in the local state
+                                  setState(() {
+                                    transaction['isApproved'] = true;
+                                    transaction['completed'] = true;
+                                  });
+
+                                  // Update isApproved to true in the database
+                                  await updateOrderInDatabase(
+                                      transaction['_id'].toString(),
+                                      true,
+                                      false,
+                                      true);
+
+                                  // Remove the accepted transaction from the displayed list
+                                  setState(() {
+                                    transactions.removeWhere((item) =>
+                                        item['_id'] == transaction['_id']);
+                                  });
+
+                                  Navigator.pop(context); // Close the dialog
+                                },
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              primary: Colors.black,
+                            ),
+                            child: Text("Accept"),
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              // Show decline confirmation dialog
+                              showConfirmationDialog(
+                                context,
+                                "Are you sure you want to decline the order for ${transaction['name']}?",
+                                () async {
+                                  // Handle decline logic here
+                                  print(
+                                      "Order Declined: ${transaction['name']}");
+
+                                  // Update isApproved to false in the local state
+                                  setState(() {
+                                    transaction['isApproved'] = false;
+                                  });
+
+                                  // Update isApproved to false in the database
+                                  await updateOrderInDatabase(
+                                      transaction['_id'].toString(),
+                                      false,
+                                      true,
+                                      false);
+
+                                  // Fetch data again to refresh the list
+                                  await fetchData();
+
+                                  Navigator.pop(context); // Close the dialog
+                                },
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              primary: Colors.red,
+                            ),
+                            child: Text("Decline"),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
