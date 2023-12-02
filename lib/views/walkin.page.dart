@@ -86,8 +86,6 @@ class _walkinPageState extends State<walkinPage> {
 
       var response = await request.send();
 
-      // ...
-
       if (response.statusCode == 200) {
         final responseBody = await response.stream.bytesToString();
         print("Image uploaded successfully: $responseBody");
@@ -157,9 +155,9 @@ class _walkinPageState extends State<walkinPage> {
     });
   }
 
-  Future<void> fetchData({int page = 1}) async {
-    final response = await http.get(
-        Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions'));
+  Future<void> fetchData({int page = 1, int limit = 12}) async {
+    final response = await http.get(Uri.parse(
+        'https://lpg-api-06n8.onrender.com/api/v1/transactions/?page=$page&limit=$limit'));
 
     // 'https://lpg-api-06n8.onrender.com/api/v1/transactions/?page=$page&limit=$limit'));
 
@@ -370,8 +368,6 @@ class _walkinPageState extends State<walkinPage> {
             TextButton(
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
-                  // Form is valid, proceed with data update
-
                   walkinToEdit['deliveryLocation'] = " ";
                   walkinToEdit['name'] = nameController.text;
                   walkinToEdit['contactNumber'] = contactNumberController.text;
@@ -433,17 +429,21 @@ class _walkinPageState extends State<walkinPage> {
       final Map<String, dynamic> data = json.decode(response.body);
 
       final List<Map<String, dynamic>> walkinData = (data['data'] as List)
-          .where((userData) =>
-              userData is Map<String, dynamic> &&
-              userData.containsKey('type') &&
-              userData['type'] == 'Walkin')
-          .map((userData) => userData as Map<String, dynamic>)
+          .where((walkinData) =>
+              walkinData is Map<String, dynamic> &&
+              walkinData.containsKey('type') &&
+              walkinData['type'] == 'Walkin' &&
+              walkinData['name'].toLowerCase().contains(
+                  query.toLowerCase())) // Include name-based filtering
+          .map((walkinData) => walkinData as Map<String, dynamic>)
           .toList();
 
       setState(() {
         walkinDataList = walkinData;
       });
-    } else {}
+    } else {
+      // Handle error cases if needed
+    }
   }
 
   void openAddWalkinDialog() {
@@ -606,7 +606,9 @@ class _walkinPageState extends State<walkinPage> {
                       "items": itemsController.text,
                       "pickupImages": "",
                       "completed": "true",
+                      "isApproved": "true",
                       "type": "Walkin",
+                      "pickedUp": "true",
                     };
                     addWalkinToAPI(newWalkin);
                   }
@@ -694,17 +696,21 @@ class _walkinPageState extends State<walkinPage> {
                       decoration: InputDecoration(
                         hintText: 'Search',
                         border: InputBorder.none,
+                        // Remove input field border
                       ),
                     ),
                   ),
                   ElevatedButton(
                     onPressed: () {
+                      // Handle the search button click
                       search(searchController.text);
                     },
                     style: ElevatedButton.styleFrom(
-                      primary: Colors.black,
+                      primary: Colors
+                          .black, // Change the button background color to black
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius:
+                            BorderRadius.circular(20), // Apply border radius
                       ),
                     ),
                     child: Icon(Icons.search),
@@ -723,21 +729,54 @@ class _walkinPageState extends State<walkinPage> {
                   borderRadius: BorderRadius.circular(12.0),
                 ),
                 child: DataTable(
-                  sortAscending: _sortAscending,
-                  sortColumnIndex:
-                      0, // Set to the index of the column you want to initially sort by
                   columns: <DataColumn>[
-                    _buildDataColumnWithSort('createdAt', 'Name', 'Name'),
-                    _buildDataColumn('contactNumber', 'Contact Number'),
-                    _buildDataColumn('paymentMethod', 'Payment Method'),
-                    _buildDataColumn('Total', 'Total'),
-                    _buildDataColumn('items', 'Items'),
-                    _buildDataColumn('pickupImages', 'Pickup Images'),
-                    _buildDataColumn('completed', 'Completed'),
-                    _buildDataColumn('type', 'Type'),
-                    _buildDataColumn('Actions', 'Update and Delete'),
+                    DataColumn(label: Text('Name')),
+                    DataColumn(label: Text('Contact Number')),
+                    DataColumn(label: Text('Payment Method')),
+                    DataColumn(label: Text('Total')),
+                    DataColumn(label: Text('Items')),
+                    DataColumn(label: Text('Pickup Image')),
+                    DataColumn(label: Text('Completed')),
+                    DataColumn(label: Text('Type')),
+                    DataColumn(
+                      label: Text('Actions'),
+                      tooltip: 'Update and Delete',
+                    ),
                   ],
-                  rows: _buildDataRows(),
+                  rows: walkinDataList
+                      .where((walkinData) =>
+                          walkinData['type'] == 'Walkin') // Filter data by type
+                      .map((walkinData) {
+                    final id = walkinData['_id'];
+
+                    return DataRow(
+                      cells: <DataCell>[
+                        DataCell(Text(walkinData['name'] ?? '')),
+                        DataCell(Text(walkinData['contactNumber'] ?? '')),
+                        DataCell(Text(walkinData['type'] ?? '')),
+                        DataCell(Text(walkinData['total'].toString() ?? '')),
+                        DataCell(Text(walkinData['items'].toString() ?? '')),
+                        DataCell(Text(walkinData['pickupImages'] ?? '')),
+                        DataCell(
+                            Text(walkinData['completed'].toString() ?? '')),
+                        DataCell(Text(walkinData['type'] ?? '')),
+                        DataCell(
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.edit),
+                                onPressed: () => updateData(id),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete),
+                                onPressed: () => deleteData(id),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
                 ),
               ),
             ),
@@ -747,20 +786,24 @@ class _walkinPageState extends State<walkinPage> {
                 if (currentPage > 1)
                   ElevatedButton(
                     onPressed: () {
+                      // Load the previous page of data
                       fetchData(page: currentPage - 1);
                     },
                     style: ElevatedButton.styleFrom(
-                      primary: Colors.black,
+                      primary: Colors
+                          .black, // Change the button background color to black
                     ),
                     child: Text('Previous'),
                   ),
                 SizedBox(width: 20),
                 ElevatedButton(
                   onPressed: () {
+                    // Load the next page of data
                     fetchData(page: currentPage + 1);
                   },
                   style: ElevatedButton.styleFrom(
-                    primary: Colors.black,
+                    primary: Colors
+                        .black, // Change the button background color to black
                   ),
                   child: Text('Next'),
                 ),
@@ -770,85 +813,5 @@ class _walkinPageState extends State<walkinPage> {
         ),
       ),
     );
-  }
-
-  DataColumn _buildDataColumnWithSort(
-      String columnName, String label, String tooltip) {
-    return DataColumn(
-      label: Text(label),
-      tooltip: tooltip,
-      onSort: (columnIndex, ascending) {
-        setState(() {
-          _sortColumn = columnName;
-          _sortAscending = ascending;
-        });
-      },
-    );
-  }
-
-  DataColumn _buildDataColumn(String columnName, String label) {
-    return DataColumn(label: Text(label));
-  }
-
-  int _getColumnIndex(String columnName) {
-    for (int i = 0; i < walkinDataList.length; i++) {
-      if (walkinDataList[i].containsKey(columnName)) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  List<DataRow> _buildDataRows() {
-    List<Map<String, dynamic>> sortedList = List.from(walkinDataList);
-
-    sortedList.sort((a, b) {
-      DateTime aDate = DateTime.parse(a['createdAt']);
-      DateTime bDate = DateTime.parse(b['createdAt']);
-
-      if (_sortAscending) {
-        return aDate.compareTo(bDate);
-      } else {
-        return bDate.compareTo(aDate);
-      }
-    });
-
-    return sortedList.map((userData) {
-      final id = userData['_id'];
-
-      return DataRow(
-        cells: <DataCell>[
-          DataCell(Text(userData['name'].toString() ?? ''), placeholder: false),
-          DataCell(Text(userData['contactNumber'].toString() ?? ''),
-              placeholder: false),
-          DataCell(Text(userData['paymentMethod'].toString() ?? ''),
-              placeholder: false),
-          DataCell(Text(userData['total'].toString() ?? ''),
-              placeholder: false),
-          DataCell(Text(userData['items'].toString() ?? ''),
-              placeholder: false),
-          DataCell(Text(userData['pickupImages'].toString() ?? ''),
-              placeholder: false),
-          DataCell(Text(userData['completed'].toString() ?? ''),
-              placeholder: false),
-          DataCell(Text(userData['type'] ?? ''), placeholder: false),
-          DataCell(
-            Row(
-              children: [
-                IconButton(
-                  icon: Icon(Icons.edit),
-                  onPressed: () => updateData(id),
-                ),
-                IconButton(
-                  icon: Icon(Icons.delete),
-                  onPressed: () => deleteData(id),
-                ),
-              ],
-            ),
-            placeholder: false,
-          ),
-        ],
-      );
-    }).toList();
   }
 }
