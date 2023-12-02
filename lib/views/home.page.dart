@@ -115,16 +115,15 @@ class _HomePageState extends State<HomePage> {
     return filteredTransactions;
   }
 
-  List<Map<String, dynamic>> filterTransactionsForTodayAndMonth(
+//DATATABLE MONTH
+  List<Map<String, dynamic>> filterTransactionsForCurrentMonth(
       List<Map<String, dynamic>> transactions) {
     DateTime now = DateTime.now();
-    int currentDay = now.day;
 
     List<Map<String, dynamic>> filteredTransactions =
         transactions.where((transaction) {
       DateTime transactionDate = DateTime.parse(transaction['createdAt']);
-      return transactionDate.month == now.month &&
-          transactionDate.day == currentDay;
+      return transactionDate.month == now.month;
     }).toList();
 
     // Sort the filtered transactions in descending order based on createdAt
@@ -165,7 +164,7 @@ class _HomePageState extends State<HomePage> {
     if (selectedRange == 'Today') {
       selectedTransactions = filterTransactionsForPeriod(transactions, 1);
     } else if (selectedRange == 'This Month') {
-      selectedTransactions = filterTransactionsForTodayAndMonth(transactions);
+      selectedTransactions = filterTransactionsForCurrentMonth(transactions);
     } else if (selectedRange == 'This Year') {
       selectedTransactions = filterTransactionsForThisYear(transactions);
     }
