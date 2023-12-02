@@ -30,28 +30,132 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         transactions = List<Map<String, dynamic>>.from(
           data.where(
-              (item) => item['type'] == 'Walkin' || item['type'] == '{Online}'),
+              (item) => item['type'] == 'Walkin' || item['type'] == 'Online'),
         );
       });
     }
   }
 
-  double calculateTotalSum() {
+//TODAY
+  double calculateTotalSumToday() {
+    DateTime now = DateTime.now();
+    DateTime today = DateTime(now.year, now.month, now.day);
+
     double sum = 0.0;
     for (var transaction in transactions) {
-      sum += (transaction['total'] ?? 0.0);
+      DateTime transactionDate = DateTime.parse(transaction['createdAt']);
+
+      // Check if the transaction is on the current day and is approved
+      if (transactionDate.year == today.year &&
+          transactionDate.month == today.month &&
+          transactionDate.day == today.day &&
+          transaction['isApproved'] == true &&
+          transaction['completed'] == true) {
+        sum += (transaction['total'] ?? 0.0);
+      }
     }
     return sum;
   }
 
+//THIS MONTH
+  double calculateTotalSumThisMonth() {
+    DateTime now = DateTime.now();
+    DateTime startOfMonth = DateTime(now.year, now.month, 1);
+
+    double sum = 0.0;
+    for (var transaction in transactions) {
+      DateTime transactionDate = DateTime.parse(transaction['createdAt']);
+
+      // Check if the transaction is within the current month
+      if (transactionDate.isAfter(startOfMonth.subtract(Duration(days: 1)))) {
+        sum += (transaction['total'] ?? 0.0);
+      }
+    }
+    return sum;
+  }
+
+//NUMBER OF TRANSACTION TODAY
+  int calculateNumberOfTransactionsToday() {
+    DateTime now = DateTime.now();
+    DateTime today = DateTime(now.year, now.month, now.day);
+
+    int transactionCount = 0;
+    for (var transaction in transactions) {
+      DateTime transactionDate = DateTime.parse(transaction['createdAt']);
+
+      // Check if the transaction is on the current day
+      if (transactionDate.year == today.year &&
+          transactionDate.month == today.month &&
+          transactionDate.day == today.day) {
+        transactionCount++;
+      }
+    }
+    return transactionCount;
+  }
+
+//DATATABLE TODAY
   List<Map<String, dynamic>> filterTransactionsForPeriod(
       List<Map<String, dynamic>> transactions, int periodInDays) {
     DateTime now = DateTime.now();
     DateTime cutoffDate = now.subtract(Duration(days: periodInDays));
-    return transactions.where((transaction) {
+
+    List<Map<String, dynamic>> filteredTransactions =
+        transactions.where((transaction) {
       DateTime transactionDate = DateTime.parse(transaction['createdAt']);
       return transactionDate.isAfter(cutoffDate);
     }).toList();
+
+    // Sort the filtered transactions in descending order based on createdAt
+    filteredTransactions.sort((a, b) {
+      DateTime dateA = DateTime.parse(a['createdAt']);
+      DateTime dateB = DateTime.parse(b['createdAt']);
+      return dateB.compareTo(dateA);
+    });
+
+    return filteredTransactions;
+  }
+
+  List<Map<String, dynamic>> filterTransactionsForTodayAndMonth(
+      List<Map<String, dynamic>> transactions) {
+    DateTime now = DateTime.now();
+    int currentDay = now.day;
+
+    List<Map<String, dynamic>> filteredTransactions =
+        transactions.where((transaction) {
+      DateTime transactionDate = DateTime.parse(transaction['createdAt']);
+      return transactionDate.month == now.month &&
+          transactionDate.day == currentDay;
+    }).toList();
+
+    // Sort the filtered transactions in descending order based on createdAt
+    filteredTransactions.sort((a, b) {
+      DateTime dateA = DateTime.parse(a['createdAt']);
+      DateTime dateB = DateTime.parse(b['createdAt']);
+      return dateB.compareTo(dateA);
+    });
+
+    return filteredTransactions;
+  }
+
+  List<Map<String, dynamic>> filterTransactionsForThisYear(
+      List<Map<String, dynamic>> transactions) {
+    DateTime now = DateTime.now();
+    int currentYear = now.year;
+
+    List<Map<String, dynamic>> filteredTransactions =
+        transactions.where((transaction) {
+      DateTime transactionDate = DateTime.parse(transaction['createdAt']);
+      return transactionDate.year == currentYear;
+    }).toList();
+
+    // Sort the filtered transactions in descending order based on createdAt
+    filteredTransactions.sort((a, b) {
+      DateTime dateA = DateTime.parse(a['createdAt']);
+      DateTime dateB = DateTime.parse(b['createdAt']);
+      return dateB.compareTo(dateA);
+    });
+
+    return filteredTransactions;
   }
 
   @override
@@ -60,10 +164,10 @@ class _HomePageState extends State<HomePage> {
 
     if (selectedRange == 'Today') {
       selectedTransactions = filterTransactionsForPeriod(transactions, 1);
-    } else if (selectedRange == 'Monthly') {
-      selectedTransactions = filterTransactionsForPeriod(transactions, 30);
-    } else if (selectedRange == 'Yearly') {
-      selectedTransactions = filterTransactionsForPeriod(transactions, 365);
+    } else if (selectedRange == 'This Month') {
+      selectedTransactions = filterTransactionsForTodayAndMonth(transactions);
+    } else if (selectedRange == 'This Year') {
+      selectedTransactions = filterTransactionsForThisYear(transactions);
     }
 
     List<PieChartSectionData> selectedSections =
@@ -145,7 +249,7 @@ class _HomePageState extends State<HomePage> {
                       selectedRange = newValue!;
                     });
                   },
-                  items: ['Today', 'Monthly', 'Yearly']
+                  items: ['Today', 'This Month', 'This Year']
                       .map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
@@ -169,16 +273,17 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     RectangleCard(
-                      title: 'Total',
-                      value: '\₱${calculateTotalSum().toStringAsFixed(2)}',
+                      title: 'Total Revenue',
+                      value: '\₱${calculateTotalSumToday().toStringAsFixed(2)}',
                     ),
                     RectangleCard(
-                      title: 'Total',
-                      value: '\₱${calculateTotalSum().toStringAsFixed(2)}',
+                      title: 'Total Profit',
+                      value:
+                          '\₱${calculateTotalSumThisMonth().toStringAsFixed(2)}',
                     ),
                     RectangleCard(
-                      title: 'Total',
-                      value: '\₱${calculateTotalSum().toStringAsFixed(2)}',
+                      title: 'Transaction',
+                      value: '\₱${calculateNumberOfTransactionsToday()}',
                     ),
                   ],
                 ),
@@ -195,7 +300,11 @@ class _HomePageState extends State<HomePage> {
                     DataColumn(label: Text('Type')),
                     DataColumn(label: Text('Date')),
                   ],
-                  rows: selectedTransactions.map((transaction) {
+                  rows: selectedTransactions
+                      .where((transaction) =>
+                          transaction['isApproved'] == true &&
+                          transaction['completed'] == true)
+                      .map((transaction) {
                     return DataRow(
                       cells: [
                         DataCell(Text(transaction['name'])),
@@ -241,25 +350,23 @@ class _HomePageState extends State<HomePage> {
       double percentage = (transaction['count'] ?? 0) / totalTransactionCount;
 
       String sectionTitle = '';
-      Color textColor = Colors.black; // Default text color
+      Color sectionColor = Colors.black; // Default color
 
       if (transaction['type'] == 'Walkin') {
         sectionTitle = 'Walkin ${percentage.toStringAsFixed(2)}%';
-        textColor = Colors.black;
-      } else if (transaction['type'] == '{Online}') {
+        sectionColor = Colors.grey; // Black color for Walkin
+      } else if (transaction['type'] == 'Online') {
         sectionTitle = 'Online ${percentage.toStringAsFixed(2)}%';
-        textColor = Colors.black; // Customize text color for Online
+        sectionColor = Colors.lime;
       }
 
       return PieChartSectionData(
-        color: Color(int.parse(
-          '0xFF${(transaction['count'] * 25).toRadixString(16).padLeft(2, '0')}434931',
-        )),
-        value: percentage * 100, // Percentage value
+        color: sectionColor,
+        value: percentage * 100,
         title: sectionTitle,
         radius: 75,
         titleStyle: TextStyle(
-          color: textColor, // Apply the customized text color
+          color: Colors.black, // Text color
         ),
       );
     }).toList();
@@ -283,7 +390,7 @@ class RectangleCard extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.rectangle,
         color: Colors.white,
-        borderRadius: BorderRadius.circular(25.0), // Make the card circular
+        borderRadius: BorderRadius.circular(10.0), // Make the card circular
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.5),
