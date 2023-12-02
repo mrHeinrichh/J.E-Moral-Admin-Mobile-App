@@ -657,7 +657,7 @@ class _transactionPageState extends State<transactionPage> {
                             placeholder: false),
                         DataCell(Text(userData['hasFeedback'].toString() ?? ''),
                             placeholder: false),
-                        DataCell(Text(userData['feedback'] ?? ''),
+                        DataCell(Text(userData['feedback'].toString() ?? ''),
                             placeholder: false),
                         DataCell(Text(userData['rating'].toString() ?? ''),
                             placeholder: false),
