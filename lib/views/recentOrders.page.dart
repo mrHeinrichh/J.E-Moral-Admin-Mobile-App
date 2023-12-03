@@ -94,13 +94,10 @@ class _RecentOrdersState extends State<RecentOrders> {
     String id,
     bool isApproved,
     bool isDeleted,
-    bool isCompleted,
   ) async {
     // Convert boolean to string
     String isApprovedString = isApproved.toString();
     String isDeletedString = isDeleted.toString();
-    String isCompletedString = isCompleted.toString();
-
     try {
       // Make an HTTP request or database query to update the value in the database
       final response = await http.patch(
@@ -108,13 +105,14 @@ class _RecentOrdersState extends State<RecentOrders> {
         body: {
           'isApproved': isApprovedString,
           'deleted': isDeletedString,
-          'completed': isCompletedString,
         },
       );
 
       if (response.statusCode == 200) {
         print('Order updated successfully');
-        print('Response body: ${response.body}');
+        // print('Response body: ${response.body}');
+        print(response.statusCode);
+        print(response.body);
       } else {
         print('Failed to update order. Status code: ${response.statusCode}');
         print('Response body: ${response.body}');
@@ -346,15 +344,14 @@ class _RecentOrdersState extends State<RecentOrders> {
                                   // Update isApproved to true in the local state
                                   setState(() {
                                     transaction['isApproved'] = true;
-                                    transaction['completed'] = true;
                                   });
 
                                   // Update isApproved to true in the database
                                   await updateOrderInDatabase(
-                                      transaction['_id'].toString(),
-                                      true,
-                                      false,
-                                      true);
+                                    transaction['_id'].toString(),
+                                    true,
+                                    false,
+                                  );
 
                                   // Remove the accepted transaction from the displayed list
                                   setState(() {
@@ -389,10 +386,10 @@ class _RecentOrdersState extends State<RecentOrders> {
 
                                   // Update isApproved to false in the database
                                   await updateOrderInDatabase(
-                                      transaction['_id'].toString(),
-                                      false,
-                                      true,
-                                      false);
+                                    transaction['_id'].toString(),
+                                    false,
+                                    true,
+                                  );
 
                                   // Fetch data again to refresh the list
                                   await fetchData();
