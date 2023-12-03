@@ -296,10 +296,8 @@ class _AccessoryPageState extends State<AccessoryPage> {
                       }
                       return null;
                     },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                   ),
                   TextFormField(
                     controller: retailerPriceController,
@@ -310,10 +308,8 @@ class _AccessoryPageState extends State<AccessoryPage> {
                       }
                       return null;
                     },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                   ),
 
                   Text(
@@ -332,15 +328,23 @@ class _AccessoryPageState extends State<AccessoryPage> {
                           const Divider(),
                           const SizedBox(height: 10.0),
                           snapshot.data == null
-                              ? const CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 50,
-                                  ),
-                                )
+                              ? (accessoryToEdit['image']?.toString() ?? '')
+                                      .isNotEmpty
+                                  ? CircleAvatar(
+                                      radius: 50,
+                                      backgroundImage: NetworkImage(
+                                          accessoryToEdit['image']
+                                                  ?.toString() ??
+                                              ''),
+                                    )
+                                  : const CircleAvatar(
+                                      radius: 50,
+                                      child: Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 50,
+                                      ),
+                                    )
                               : CircleAvatar(
                                   radius: 50,
                                   backgroundImage: FileImage(snapshot.data!),
