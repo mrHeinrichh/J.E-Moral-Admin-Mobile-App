@@ -328,10 +328,8 @@ class _ProductsPageState extends State<ProductsPage> {
                       }
                       return null;
                     },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                   ),
                   TextFormField(
                     controller: retailerPriceController,
@@ -342,10 +340,8 @@ class _ProductsPageState extends State<ProductsPage> {
                       }
                       return null;
                     },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                   ),
                   Text(
                     "\nProduct Image",
@@ -363,15 +359,22 @@ class _ProductsPageState extends State<ProductsPage> {
                           const Divider(),
                           const SizedBox(height: 10.0),
                           snapshot.data == null
-                              ? const CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 50,
-                                  ),
-                                )
+                              ? (productToEdit['image']?.toString() ?? '')
+                                      .isNotEmpty
+                                  ? CircleAvatar(
+                                      radius: 50,
+                                      backgroundImage: NetworkImage(
+                                          productToEdit['image']?.toString() ??
+                                              ''),
+                                    )
+                                  : const CircleAvatar(
+                                      radius: 50,
+                                      child: Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 50,
+                                      ),
+                                    )
                               : CircleAvatar(
                                   radius: 50,
                                   backgroundImage: FileImage(snapshot.data!),
