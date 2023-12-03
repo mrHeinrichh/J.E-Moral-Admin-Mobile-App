@@ -33,7 +33,7 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         transactions = List<Map<String, dynamic>>.from(
           data.where(
-              (item) => item['type'] == 'Walkin' || item['type'] == 'Online'),
+              (item) => item['type'] == 'Walkin' || item['type'] == '{Online}'),
         );
       });
     }
@@ -65,7 +65,7 @@ class _HomePageState extends State<HomePage> {
     int count = 0;
     for (var transaction in transactions) {
       // Check if the transaction is of type "Online" and is not approved
-      if (transaction['type'] == 'Online' &&
+      if (transaction['type'] == '{Online}' &&
           transaction['isApproved'] == false) {
         count++;
       }
@@ -81,7 +81,7 @@ class _HomePageState extends State<HomePage> {
     int onlineTransactionCount = 0;
     for (var transaction in transactions) {
       // Check if the transaction has type "Online"
-      if (transaction['type'] == 'Online') {
+      if (transaction['type'] == '{Online}') {
         onlineTransactionCount++;
       }
     }
@@ -97,7 +97,7 @@ class _HomePageState extends State<HomePage> {
       DateTime transactionDate = DateTime.parse(transaction['createdAt']);
 
       // Check if the transaction has type "Online"
-      if (transaction['type'] == 'Online' &&
+      if (transaction['type'] == '{Online}' &&
           transaction['isApproved'] == true &&
           transaction['completed'] == true &&
           transactionDate.year == today.year &&
@@ -290,7 +290,7 @@ class _HomePageState extends State<HomePage> {
                   value: '${calculateTotalOnlineTransactionsNotApproved()}',
                 ),
                 RectangleCard(
-                  title: 'Transacted Online Today',
+                  title: 'Completed Online Today',
                   value: '${calculateNumberOfOnlineTransactionsToday()}',
                 ),
               ],
@@ -411,7 +411,7 @@ class _HomePageState extends State<HomePage> {
         sectionTitle =
             'Walkin: ${transaction['count']} \n ${percentage.toStringAsFixed(2)}%';
         sectionColor = Colors.grey; // Grey color for Walkin
-      } else if (transaction['type'] == 'Online') {
+      } else if (transaction['type'] == '{Online}') {
         sectionTitle =
             'Online: ${transaction['count']} \n${percentage.toStringAsFixed(2)}%';
         sectionColor = Colors.lime;
