@@ -325,15 +325,23 @@ class _walkinPageState extends State<walkinPage> {
                           const Divider(),
                           const SizedBox(height: 10.0),
                           snapshot.data == null
-                              ? const CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 50,
-                                  ),
-                                )
+                              ? (walkinToEdit['pickupImages']?.toString() ?? '')
+                                      .isNotEmpty
+                                  ? CircleAvatar(
+                                      radius: 50,
+                                      backgroundImage: NetworkImage(
+                                          walkinToEdit['pickupImages']
+                                                  ?.toString() ??
+                                              ''),
+                                    )
+                                  : const CircleAvatar(
+                                      radius: 50,
+                                      child: Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 50,
+                                      ),
+                                    )
                               : CircleAvatar(
                                   radius: 50,
                                   backgroundImage: FileImage(snapshot.data!),
@@ -712,21 +720,72 @@ class _walkinPageState extends State<walkinPage> {
                         borderRadius:
                             BorderRadius.circular(20), // Apply border radius
                       ),
+                      child: Icon(Icons.search),
                     ),
-                    child: Icon(Icons.search),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Color(0xFF232937),
-                    width: 1.0,
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Color(0xFF232937),
+                      width: 1.0,
+                    ),
+                    borderRadius: BorderRadius.circular(12.0),
                   ),
-                  borderRadius: BorderRadius.circular(12.0),
+                  child: DataTable(
+                    columns: <DataColumn>[
+                      DataColumn(label: Text('Name')),
+                      DataColumn(label: Text('Contact Number')),
+                      DataColumn(label: Text('Payment Method')),
+                      DataColumn(label: Text('Total')),
+                      DataColumn(label: Text('Items')),
+                      DataColumn(label: Text('Pickup Image')),
+                      DataColumn(label: Text('Completed')),
+                      DataColumn(label: Text('Type')),
+                      DataColumn(
+                        label: Text('Actions'),
+                        tooltip: 'Update and Delete',
+                      ),
+                    ],
+                    rows: walkinDataList
+                        .where((walkinData) =>
+                            walkinData['type'] ==
+                            'Walkin') // Filter data by type
+                        .map((walkinData) {
+                      final id = walkinData['_id'];
+
+                      return DataRow(
+                        cells: <DataCell>[
+                          DataCell(Text(walkinData['name'] ?? '')),
+                          DataCell(Text(walkinData['contactNumber'] ?? '')),
+                          DataCell(Text(walkinData['type'] ?? '')),
+                          DataCell(Text(walkinData['total'].toString() ?? '')),
+                          DataCell(Text(walkinData['items'].toString() ?? '')),
+                          DataCell(Text(walkinData['pickupImages'] ?? '')),
+                          DataCell(
+                              Text(walkinData['completed'].toString() ?? '')),
+                          DataCell(Text(walkinData['type'] ?? '')),
+                          DataCell(
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.edit),
+                                  onPressed: () => updateData(id),
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.delete),
+                                  onPressed: () => deleteData(id),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
                 ),
                 child: DataTable(
                   columns: <DataColumn>[
@@ -779,11 +838,22 @@ class _walkinPageState extends State<walkinPage> {
                   }).toList(),
                 ),
               ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (currentPage > 1)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (currentPage > 1)
+                    ElevatedButton(
+                      onPressed: () {
+                        // Load the previous page of data
+                        fetchData(page: currentPage - 1);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: Colors
+                            .black, // Change the button background color to black
+                      ),
+                      child: Text('Previous'),
+                    ),
+                  SizedBox(width: 20),
                   ElevatedButton(
                     onPressed: () {
                       // Load the previous page of data
@@ -793,7 +863,7 @@ class _walkinPageState extends State<walkinPage> {
                       primary: Colors
                           .black, // Change the button background color to black
                     ),
-                    child: Text('Previous'),
+                    child: Text('Next'),
                   ),
                 SizedBox(width: 20),
                 ElevatedButton(
