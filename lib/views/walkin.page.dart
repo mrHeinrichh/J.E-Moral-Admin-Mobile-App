@@ -219,6 +219,8 @@ class _walkinPageState extends State<walkinPage> {
 
     TextEditingController nameController =
         TextEditingController(text: walkinToEdit['name'].toString());
+    TextEditingController barangayController =
+        TextEditingController(text: walkinToEdit['barangay'].toString());
     TextEditingController contactNumberController =
         TextEditingController(text: walkinToEdit['contactNumber'].toString());
     TextEditingController paymentMethodController =
@@ -285,6 +287,62 @@ class _walkinPageState extends State<walkinPage> {
                     }).toList(),
                     decoration: InputDecoration(
                       labelText: 'Payment Method',
+                    ),
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: barangayController.text,
+                    onChanged: (newValue) {
+                      setState(() {
+                        barangayController.text = newValue!;
+                      });
+                    },
+                    items: [
+                      'Bagumbayan',
+                      'Bambang',
+                      'Calzada Tipas',
+                      'Cembo',
+                      'Central Bicutan',
+                      'Central Signal Village',
+                      'Comembo',
+                      'East Rembo',
+                      'Fort Bonifacio',
+                      'Hagonoy',
+                      'Ibayo Tipas',
+                      'Katuparan',
+                      'Ligid Tipas',
+                      'Lower Bicutan',
+                      'Maharlika Village',
+                      'Napindan',
+                      'New Lower Bicutan',
+                      'North Daang Hari',
+                      'North Signal Village',
+                      'Palingon Tipas',
+                      'Pembo',
+                      'Pinagsama',
+                      'Pitogo',
+                      'Post Proper Northside',
+                      'Post Proper Southside',
+                      'Rizal',
+                      'San Miguel',
+                      'Santa Ana',
+                      'South Cembo',
+                      'South Daang Hari',
+                      'South Signal Village',
+                      'Tanyag',
+                      'Tuktukan',
+                      'Ususan',
+                      'Upper Bicutan',
+                      'Wawa',
+                      'West Rembo',
+                      'Western Bicutan',
+                    ].map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: InputDecoration(
+                      labelText: 'Barangay',
                     ),
                   ),
                   TextFormField(
@@ -378,6 +436,7 @@ class _walkinPageState extends State<walkinPage> {
                 if (_formKey.currentState!.validate()) {
                   walkinToEdit['deliveryLocation'] = " ";
                   walkinToEdit['name'] = nameController.text;
+                  walkinToEdit['barangay'] = barangayController.text;
                   walkinToEdit['contactNumber'] = contactNumberController.text;
                   walkinToEdit['paymentMethod'] = paymentMethodController.text;
                   walkinToEdit['total'] = totalController.text;
@@ -458,6 +517,8 @@ class _walkinPageState extends State<walkinPage> {
     TextEditingController nameController = TextEditingController();
     TextEditingController contactNumberController = TextEditingController();
     TextEditingController paymentMethodController = TextEditingController();
+    TextEditingController barangayController = TextEditingController();
+
     TextEditingController totalController = TextEditingController();
     TextEditingController itemsController = TextEditingController();
     TextEditingController pickupImagesController = TextEditingController();
@@ -515,6 +576,106 @@ class _walkinPageState extends State<walkinPage> {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return "Please Select Payment Method";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                  DropdownButtonFormField(
+                    value: barangayController.text.isNotEmpty
+                        ? barangayController.text
+                        : null,
+                    decoration: const InputDecoration(labelText: 'Barangay'),
+                    items: const [
+                      DropdownMenuItem(
+                          value: 'Bagumbayan', child: Text('Bagumbayan')),
+                      DropdownMenuItem(
+                          value: 'Bambang', child: Text('Bambang')),
+                      DropdownMenuItem(
+                          value: 'Calzada Tipas', child: Text('Calzada Tipas')),
+                      DropdownMenuItem(value: 'Cembo', child: Text('Cembo')),
+                      DropdownMenuItem(
+                          value: 'Central Bicutan',
+                          child: Text('Central Bicutan')),
+                      DropdownMenuItem(
+                          value: 'Central Signal Village',
+                          child: Text('Central Signal Village')),
+                      DropdownMenuItem(
+                          value: 'Comembo', child: Text('Comembo')),
+                      DropdownMenuItem(
+                          value: 'East Rembo', child: Text('East Rembo')),
+                      DropdownMenuItem(
+                          value: 'Fort Bonifacio',
+                          child: Text('Fort Bonifacio')),
+                      DropdownMenuItem(
+                          value: 'Hagonoy', child: Text('Hagonoy')),
+                      DropdownMenuItem(
+                          value: 'Ibayo Tipas', child: Text('Ibayo Tipas')),
+                      DropdownMenuItem(
+                          value: 'Katuparan', child: Text('Katuparan')),
+                      DropdownMenuItem(
+                          value: 'Ligid Tipas', child: Text('Ligid Tipas')),
+                      DropdownMenuItem(
+                          value: 'Lower Bicutan', child: Text('Lower Bicutan')),
+                      DropdownMenuItem(
+                          value: 'Maharlika Village',
+                          child: Text('Maharlika Village')),
+                      DropdownMenuItem(
+                          value: 'Napindan', child: Text('Napindan')),
+                      DropdownMenuItem(
+                          value: 'New Lower Bicutan',
+                          child: Text('New Lower Bicutan')),
+                      DropdownMenuItem(
+                          value: 'North Daang Hari',
+                          child: Text('North Daang Hari')),
+                      DropdownMenuItem(
+                          value: 'North Signal Village',
+                          child: Text('North Signal Village')),
+                      DropdownMenuItem(
+                          value: 'Palingon Tipas',
+                          child: Text('Palingon Tipas')),
+                      DropdownMenuItem(value: 'Pembo', child: Text('Pembo')),
+                      DropdownMenuItem(
+                          value: 'Pinagsama', child: Text('Pinagsama')),
+                      DropdownMenuItem(value: 'Pitogo', child: Text('Pitogo')),
+                      DropdownMenuItem(
+                          value: 'Post Proper Northside',
+                          child: Text('Post Proper Northside')),
+                      DropdownMenuItem(
+                          value: 'Post Proper Southside',
+                          child: Text('Post Proper Southside')),
+                      DropdownMenuItem(value: 'Rizal', child: Text('Rizal')),
+                      DropdownMenuItem(
+                          value: 'San Miguel', child: Text('San Miguel')),
+                      DropdownMenuItem(
+                          value: 'Santa Ana', child: Text('Santa Ana')),
+                      DropdownMenuItem(
+                          value: 'South Cembo', child: Text('South Cembo')),
+                      DropdownMenuItem(
+                          value: 'South Daang Hari',
+                          child: Text('South Daang Hari')),
+                      DropdownMenuItem(
+                          value: 'South Signal Village',
+                          child: Text('South Signal Village')),
+                      DropdownMenuItem(value: 'Tanyag', child: Text('Tanyag')),
+                      DropdownMenuItem(
+                          value: 'Tuktukan', child: Text('Tuktukan')),
+                      DropdownMenuItem(value: 'Ususan', child: Text('Ususan')),
+                      DropdownMenuItem(
+                          value: 'Upper Bicutan', child: Text('Upper Bicutan')),
+                      DropdownMenuItem(value: 'Wawa', child: Text('Wawa')),
+                      DropdownMenuItem(
+                          value: 'West Rembo', child: Text('West Rembo')),
+                      DropdownMenuItem(
+                          value: 'Western Bicutan',
+                          child: Text('Western Bicutan')),
+                    ],
+                    onChanged: (newValue) {
+                      barangayController.text = newValue.toString();
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Please Select Barangay";
                       } else {
                         return null;
                       }
@@ -610,6 +771,7 @@ class _walkinPageState extends State<walkinPage> {
                       "name": nameController.text,
                       "contactNumber": contactNumberController.text,
                       "paymentMethod": paymentMethodController.text,
+                      "barangay": barangayController.text,
                       "total": totalController.text,
                       "items": itemsController.text,
                       "pickupImages": "",
@@ -741,11 +903,12 @@ class _walkinPageState extends State<walkinPage> {
                     DataColumn(label: Text('Name')),
                     DataColumn(label: Text('Contact Number')),
                     DataColumn(label: Text('Payment Method')),
+                    DataColumn(label: Text('Barangay')),
                     DataColumn(label: Text('Total')),
                     DataColumn(label: Text('Items')),
                     DataColumn(label: Text('Pickup Image')),
-                    DataColumn(label: Text('Completed')),
-                    DataColumn(label: Text('Type')),
+                    DataColumn(label: Text('Date and Time')),
+                    // DataColumn(label: Text('Type')),
                     DataColumn(
                       label: Text('Actions'),
                       tooltip: 'Update and Delete',
@@ -761,13 +924,14 @@ class _walkinPageState extends State<walkinPage> {
                       cells: <DataCell>[
                         DataCell(Text(walkinData['name'] ?? '')),
                         DataCell(Text(walkinData['contactNumber'] ?? '')),
-                        DataCell(Text(walkinData['type'] ?? '')),
+                        DataCell(Text(walkinData['paymentMethod'] ?? '')),
+                        DataCell(Text(walkinData['barangay'] ?? '')),
                         DataCell(Text(walkinData['total'].toString() ?? '')),
                         DataCell(Text(walkinData['items'].toString() ?? '')),
                         DataCell(Text(walkinData['pickupImages'] ?? '')),
                         DataCell(
-                            Text(walkinData['completed'].toString() ?? '')),
-                        DataCell(Text(walkinData['type'] ?? '')),
+                            Text(walkinData['createdAt'].toString() ?? '')),
+                        // DataCell(Text(walkinData['type'] ?? '')),
                         DataCell(
                           Row(
                             children: [
