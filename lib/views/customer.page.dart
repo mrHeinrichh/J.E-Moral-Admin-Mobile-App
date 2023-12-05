@@ -39,7 +39,7 @@ class _CustomerPageState extends State<CustomerPage> {
   }
 
   int currentPage = 1;
-  int limit = 10;
+  int limit = 5;
 
   Future<void> _profilePickImage() async {
     final profilepickedFile =
@@ -1045,7 +1045,6 @@ class _CustomerPageState extends State<CustomerPage> {
             icon: Icon(Icons.add),
             color: Color(0xFF232937),
             onPressed: () {
-              // Open the dialog to add a new customer
               openAddCustomerDialog();
             },
           ),
@@ -1054,7 +1053,6 @@ class _CustomerPageState extends State<CustomerPage> {
       body: Padding(
         padding: const EdgeInsets.all(15.0),
         child: Form(
-          // key: formKey,
           child: Column(
             children: [
               Padding(
