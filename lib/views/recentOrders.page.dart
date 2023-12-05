@@ -363,9 +363,14 @@ class _RecentOrdersState extends State<RecentOrders> {
                                 );
                               },
                               style: ElevatedButton.styleFrom(
-                                primary: Colors.black,
+                                primary: Color(0xFF232937),
                               ),
-                              child: Text("Accept"),
+                              child: Text(
+                                "Accept",
+                                style: TextStyle(
+                                  color: Color.fromARGB(255, 255, 255, 255),
+                                ),
+                              ),
                             ),
                           ),
                           Spacer(),
@@ -405,7 +410,12 @@ class _RecentOrdersState extends State<RecentOrders> {
                               style: ElevatedButton.styleFrom(
                                 primary: Colors.red,
                               ),
-                              child: Text("Decline"),
+                              child: Text(
+                                "Decline",
+                                style: TextStyle(
+                                  color: Color.fromARGB(255, 255, 255, 255),
+                                ),
+                              ),
                             ),
                           ),
                         ],
