@@ -25,12 +25,6 @@ class BottomNavBar extends StatelessWidget {
         items: [
           const BottomNavigationBarItem(
             icon: Icon(
-              Icons.quiz_outlined,
-            ),
-            label: '',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(
               Icons.history,
             ),
             label: '',

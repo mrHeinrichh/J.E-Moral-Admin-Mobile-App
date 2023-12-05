@@ -175,13 +175,13 @@ class _RecentOrdersState extends State<RecentOrders> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            "Product Name",
+                            "Transaction ID: ${transaction['_id']}",
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          Text(
-                            "Quantity: 1",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
+                          // Text(
+                          //   "Quantity: 1",
+                          //   style: TextStyle(fontWeight: FontWeight.bold),
+                          // ),
                         ],
                       ),
                       Divider(
@@ -215,23 +215,19 @@ class _RecentOrdersState extends State<RecentOrders> {
                         ],
                       ),
                       Text(
-                        "Delivery Location: ",
+                        "Delivery Location: ${transaction['deliveryLocation']}' ",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+
                       Text(
-                        '${transaction['deliveryLocation']}',
-                      ),
-                      Text(
-                        "House#/Lot/Blk:  ",
+                        "House#/Lot/Blk: ${transaction['houseLotBlk']}",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
-                        '${transaction['houseLotBlk']}',
-                      ),
+
                       Row(
                         children: [
                           Text(
@@ -247,13 +243,10 @@ class _RecentOrdersState extends State<RecentOrders> {
                       ),
 
                       Text(
-                        "Payment Method: ",
+                        "Payment Method: ${transaction['paymentMethod']}",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                         ),
-                      ),
-                      Text(
-                        '${transaction['paymentMethod']}',
                       ),
 
                       Row(
@@ -327,82 +320,93 @@ class _RecentOrdersState extends State<RecentOrders> {
                         ],
                       ),
                       // Text("Date: ${transaction['updatedAt']}"),
-
+                      SizedBox(
+                        height: 10,
+                      ),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          ElevatedButton(
-                            onPressed: () async {
-                              // Show accept confirmation dialog
-                              showConfirmationDialog(
-                                context,
-                                "Are you sure you want to accept the order for ${transaction['name']}?",
-                                () async {
-                                  // Handle accept logic here
-                                  print(
-                                      "Order Accepted: ${transaction['name']}");
+                          Container(
+                            height: 45,
+                            width: 150,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                // Show accept confirmation dialog
+                                showConfirmationDialog(
+                                  context,
+                                  "Are you sure you want to accept the order for ${transaction['name']}?",
+                                  () async {
+                                    // Handle accept logic here
+                                    print(
+                                        "Order Accepted: ${transaction['name']}");
 
-                                  // Update isApproved to true in the local state
-                                  setState(() {
-                                    transaction['isApproved'] = true;
-                                  });
+                                    // Update isApproved to true in the local state
+                                    setState(() {
+                                      transaction['isApproved'] = true;
+                                    });
 
-                                  // Update isApproved to true in the database
-                                  await updateOrderInDatabase(
-                                    transaction['_id'].toString(),
-                                    true,
-                                    false,
-                                  );
+                                    // Update isApproved to true in the database
+                                    await updateOrderInDatabase(
+                                      transaction['_id'].toString(),
+                                      true,
+                                      false,
+                                    );
 
-                                  // Remove the accepted transaction from the displayed list
-                                  setState(() {
-                                    transactions.removeWhere((item) =>
-                                        item['_id'] == transaction['_id']);
-                                  });
+                                    // Remove the accepted transaction from the displayed list
+                                    setState(() {
+                                      transactions.removeWhere((item) =>
+                                          item['_id'] == transaction['_id']);
+                                    });
 
-                                  Navigator.pop(context); // Close the dialog
-                                },
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              primary: Colors.black,
+                                    Navigator.pop(context); // Close the dialog
+                                  },
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                primary: Colors.black,
+                              ),
+                              child: Text("Accept"),
                             ),
-                            child: Text("Accept"),
                           ),
-                          ElevatedButton(
-                            onPressed: () async {
-                              // Show decline confirmation dialog
-                              showConfirmationDialog(
-                                context,
-                                "Are you sure you want to decline the order for ${transaction['name']}?",
-                                () async {
-                                  // Handle decline logic here
-                                  print(
-                                      "Order Declined: ${transaction['name']}");
+                          Spacer(),
+                          Container(
+                            height: 45,
+                            width: 150,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                // Show decline confirmation dialog
+                                showConfirmationDialog(
+                                  context,
+                                  "Are you sure you want to decline the order for ${transaction['name']}?",
+                                  () async {
+                                    // Handle decline logic here
+                                    print(
+                                        "Order Declined: ${transaction['name']}");
 
-                                  // Update isApproved to false in the local state
-                                  setState(() {
-                                    transaction['isApproved'] = false;
-                                  });
+                                    // Update isApproved to false in the local state
+                                    setState(() {
+                                      transaction['isApproved'] = false;
+                                    });
 
-                                  // Update isApproved to false in the database
-                                  await updateOrderInDatabase(
-                                    transaction['_id'].toString(),
-                                    false,
-                                    true,
-                                  );
+                                    // Update isApproved to false in the database
+                                    await updateOrderInDatabase(
+                                      transaction['_id'].toString(),
+                                      false,
+                                      true,
+                                    );
 
-                                  // Fetch data again to refresh the list
-                                  await fetchData();
+                                    // Fetch data again to refresh the list
+                                    await fetchData();
 
-                                  Navigator.pop(context); // Close the dialog
-                                },
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              primary: Colors.red,
+                                    Navigator.pop(context); // Close the dialog
+                                  },
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                primary: Colors.red,
+                              ),
+                              child: Text("Decline"),
                             ),
-                            child: Text("Decline"),
                           ),
                         ],
                       ),
