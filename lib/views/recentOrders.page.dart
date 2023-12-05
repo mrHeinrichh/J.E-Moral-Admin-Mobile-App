@@ -152,6 +152,7 @@ class _RecentOrdersState extends State<RecentOrders> {
           'Recent Orders',
           style: TextStyle(color: Color(0xFF232937), fontSize: 24),
         ),
+        automaticallyImplyLeading: false,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
