@@ -377,7 +377,7 @@ class _walkinPageState extends State<walkinPage> {
                   StreamBuilder<File?>(
                     stream: _imageStreamController.stream,
                     builder: (context, snapshot) {
-                      return Column(
+                      return ListView(
                         children: [
                           const SizedBox(height: 10.0),
                           const Divider(),
@@ -532,7 +532,7 @@ class _walkinPageState extends State<walkinPage> {
           content: SingleChildScrollView(
             child: Form(
               key: formKey,
-              child: Column(
+              child: ListView(
                 children: [
                   TextFormField(
                     controller: nameController,
@@ -714,7 +714,7 @@ class _walkinPageState extends State<walkinPage> {
                   StreamBuilder<File?>(
                     stream: _imageStreamController.stream,
                     builder: (context, snapshot) {
-                      return Column(
+                      return ListView(
                         children: [
                           const SizedBox(height: 10.0),
                           const Divider(),
@@ -854,7 +854,7 @@ class _walkinPageState extends State<walkinPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(15.0),
-        child: Column(
+        child: ListView(
           children: [
             Padding(
               padding: const EdgeInsets.all(20.0),

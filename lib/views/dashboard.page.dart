@@ -20,11 +20,11 @@ class _DashboardPageState extends State<DashboardPage> {
           children: [
             buildTopBar(),
             Expanded(
-              child: _currentIndex == 3
+              child: _currentIndex == 2
                   ? ChatPage()
-                  : _currentIndex == 2
+                  : _currentIndex == 1
                       ? HomePage()
-                      : _currentIndex == 1
+                      : _currentIndex == 0
                           ? RecentOrders() // Display HomePage when index is 2
                           : Center(
                               child: Text('Welcome to Page $_currentIndex'),

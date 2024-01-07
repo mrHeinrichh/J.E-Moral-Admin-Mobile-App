@@ -46,7 +46,7 @@ class _DriversPageState extends State<DriversPage> {
   }
 
   int currentPage = 1;
-  int limit = 30;
+  int limit = 15;
 
   Future<void> _profilePickImage() async {
     final profilePickedFile =
@@ -452,14 +452,9 @@ class _DriversPageState extends State<DriversPage> {
   }
 
   Future<void> fetchData({int page = 1}) async {
-    // final response = await http.get(Uri.parse(
-    //     'https://lpg-api-06n8.onrender.com/api/v1/users/?page=$page&limit=$limit'));
-
-    final response = await http.get(
-      Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/users/?page=$page&limit=$limit&sort=-createdAt',
-      ),
-    );
+    final filter = Uri.encodeComponent('{"__t": "Rider"}');
+    final response = await http.get(Uri.parse(
+        'https://lpg-api-06n8.onrender.com/api/v1/users/?filter=$filter&page=$page&limit=$limit'));
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
@@ -1413,91 +1408,90 @@ class _DriversPageState extends State<DriversPage> {
             ),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: const Color(0xFF232937),
-                    width: 1.0,
-                  ),
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                child: DataTable(
-                  columns: const <DataColumn>[
-                    DataColumn(label: Text('Name')),
-                    DataColumn(label: Text('Contact Number')),
-                    DataColumn(label: Text('Address')),
-                    DataColumn(label: Text('Gcash')),
-                    // DataColumn(label: Text('GcashQr')),
-                    DataColumn(label: Text('Type')),
-                    DataColumn(
-                      label: Text('Actions'),
-                      tooltip: 'Update and Delete',
+              child: SingleChildScrollView(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: const Color(0xFF232937),
+                      width: 1.0,
                     ),
-                  ],
-                  rows: riderDataList.map((userData) {
-                    final id = userData['_id'];
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  child: DataTable(
+                    columns: const <DataColumn>[
+                      DataColumn(label: Text('Name')),
+                      DataColumn(label: Text('Contact Number')),
+                      DataColumn(label: Text('Address')),
+                      DataColumn(label: Text('Gcash')),
+                      DataColumn(label: Text('Type')),
+                      DataColumn(
+                        label: Text('Actions'),
+                        tooltip: 'Update and Delete',
+                      ),
+                    ],
+                    rows: riderDataList.map((userData) {
+                      final id = userData['_id'];
 
-                    return DataRow(
-                      cells: <DataCell>[
-                        DataCell(Text(userData['name'] ?? ''),
-                            placeholder: false),
-                        DataCell(
-                            Text(userData['contactNumber'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(Text(userData['address'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(Text(userData['gcash'].toString() ?? ''),
-                            placeholder: false),
-                        // DataCell(Text(userData['gcashQr'].toString() ?? ''),
-                        //     placeholder: false),
-                        DataCell(Text(userData['__t'] ?? ''),
-                            placeholder: false),
-                        DataCell(
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit),
-                                onPressed: () => updateData(id),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () => deleteData(id),
-                              ),
-                            ],
+                      return DataRow(
+                        cells: <DataCell>[
+                          DataCell(Text(userData['name'] ?? ''),
+                              placeholder: false),
+                          DataCell(
+                              Text(userData['contactNumber'].toString() ?? ''),
+                              placeholder: false),
+                          DataCell(Text(userData['address'].toString() ?? ''),
+                              placeholder: false),
+                          DataCell(Text(userData['gcash'].toString() ?? ''),
+                              placeholder: false),
+                          DataCell(Text(userData['__t'] ?? ''),
+                              placeholder: false),
+                          DataCell(
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () => updateData(id),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete),
+                                  onPressed: () => deleteData(id),
+                                ),
+                              ],
+                            ),
+                            placeholder: false,
                           ),
-                          placeholder: false,
-                        ),
-                      ],
-                    );
-                  }).toList(),
+                        ],
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (currentPage > 1)
-                  ElevatedButton(
-                    onPressed: () {
-                      fetchData(page: currentPage - 1);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors.black,
-                    ),
-                    child: Text('Previous'),
-                  ),
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    fetchData(page: currentPage + 1);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    primary: Colors.black,
-                  ),
-                  child: const Text('Next'),
-                ),
-              ],
-            ),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.end,
+            //   children: [
+            //     if (currentPage > 1)
+            //       ElevatedButton(
+            //         onPressed: () {
+            //           fetchData(page: currentPage - 1);
+            //         },
+            //         style: ElevatedButton.styleFrom(
+            //           primary: Colors.black,
+            //         ),
+            //         child: Text('Previous'),
+            //       ),
+            //     const SizedBox(width: 20),
+            //     ElevatedButton(
+            //       onPressed: () {
+            //         fetchData(page: currentPage + 1);
+            //       },
+            //       style: ElevatedButton.styleFrom(
+            //         primary: Colors.black,
+            //       ),
+            //       child: const Text('Next'),
+            //     ),
+            //   ],
+            // ),
           ],
         ),
       ),
