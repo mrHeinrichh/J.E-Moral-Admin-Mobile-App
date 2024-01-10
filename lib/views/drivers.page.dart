@@ -46,7 +46,7 @@ class _DriversPageState extends State<DriversPage> {
   }
 
   int currentPage = 1;
-  int limit = 15;
+  int limit = 10;
 
   Future<void> _profilePickImage() async {
     final profilePickedFile =
@@ -1467,31 +1467,31 @@ class _DriversPageState extends State<DriversPage> {
                 ),
               ),
             ),
-            // Row(
-            //   mainAxisAlignment: MainAxisAlignment.end,
-            //   children: [
-            //     if (currentPage > 1)
-            //       ElevatedButton(
-            //         onPressed: () {
-            //           fetchData(page: currentPage - 1);
-            //         },
-            //         style: ElevatedButton.styleFrom(
-            //           primary: Colors.black,
-            //         ),
-            //         child: Text('Previous'),
-            //       ),
-            //     const SizedBox(width: 20),
-            //     ElevatedButton(
-            //       onPressed: () {
-            //         fetchData(page: currentPage + 1);
-            //       },
-            //       style: ElevatedButton.styleFrom(
-            //         primary: Colors.black,
-            //       ),
-            //       child: const Text('Next'),
-            //     ),
-            //   ],
-            // ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (currentPage > 1)
+                  ElevatedButton(
+                    onPressed: () {
+                      fetchData(page: currentPage - 1);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      primary: Colors.black,
+                    ),
+                    child: Text('Previous'),
+                  ),
+                const SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    fetchData(page: currentPage + 1);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    primary: Colors.black,
+                  ),
+                  child: const Text('Next'),
+                ),
+              ],
+            ),
           ],
         ),
       ),
