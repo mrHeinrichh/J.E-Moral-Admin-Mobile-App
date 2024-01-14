@@ -24,9 +24,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> fetchData() async {
+    if (!mounted) {
+      return; // Check if the widget is still mounted
+    }
+
     final response = await http.get(
       Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions'),
     );
+
+    if (!mounted) {
+      return; // Check again after the asynchronous operation
+    }
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body)['data'];
