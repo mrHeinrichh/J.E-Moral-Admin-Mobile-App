@@ -7,12 +7,20 @@ import 'package:admin_app/views/drivers.page.dart';
 import 'package:admin_app/views/products.page.dart';
 import 'package:admin_app/views/login.page.dart';
 import 'package:admin_app/views/transaction.page.dart';
+import 'package:admin_app/views/user_provider.dart';
 import 'package:admin_app/views/walkin.page.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   runApp(
-    MyApp(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+        // Other providers if any
+      ],
+      child: MyApp(),
+    ),
   );
 }
 
