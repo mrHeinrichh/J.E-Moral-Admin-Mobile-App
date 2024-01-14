@@ -31,6 +31,12 @@ class BottomNavBar extends StatelessWidget {
           ),
           const BottomNavigationBarItem(
             icon: Icon(
+              Icons.history,
+            ),
+            label: '',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(
               Icons.home,
             ),
             label: '',

@@ -4,6 +4,7 @@ import 'package:admin_app/views/appointment.page.dart';
 import 'package:admin_app/views/customer.page.dart';
 import 'package:admin_app/views/dashboard.page.dart';
 import 'package:admin_app/views/drivers.page.dart';
+import 'package:admin_app/views/newCustomers.page.dart';
 import 'package:admin_app/views/products.page.dart';
 import 'package:admin_app/views/login.page.dart';
 import 'package:admin_app/views/transaction.page.dart';
@@ -40,6 +41,7 @@ class MyApp extends StatelessWidget {
         walkinRoute: (context) => walkinPage(),
         transactionRoute: (context) => transactionPage(),
         appointmentRoute: (context) => AppointmentPage(),
+        newCustomerRoute: (context) => NewCustomers(),
       },
     );
   }
