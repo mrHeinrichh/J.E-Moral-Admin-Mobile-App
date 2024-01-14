@@ -10,7 +10,7 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  int _currentIndex = 2;
+  int _currentIndex = 1;
 
   @override
   Widget build(BuildContext context) {
