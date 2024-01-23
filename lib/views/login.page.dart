@@ -17,7 +17,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await http.post(
-      Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/auth/login'),
+      Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/authenticate/'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -35,44 +35,14 @@ class _LoginPageState extends State<LoginPage> {
           final List<dynamic>? userData = data['data'];
           if (userData != null && userData.isNotEmpty) {
             // Accessing the correct nested values
-            String userId = userData[0]['_doc']['user'] ?? '';
+            String userId =
+                userData[0]['_doc']['_id'] ?? ''; // Updated to use _id
 
-            print('User ID: $userId');
+            // Set the user ID in the app state
+            Provider.of<UserProvider>(context, listen: false).setUserId(userId);
 
-            // Fetch additional user details using the user ID
-            final userDetailsResponse = await http.get(
-              Uri.parse(
-                  'https://lpg-api-06n8.onrender.com/api/v1/users/$userId'),
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            );
-
-            print('User Details Response: ${userDetailsResponse.statusCode}');
-
-            if (userDetailsResponse.statusCode == 200) {
-              final Map<String, dynamic> userDetailsData =
-                  jsonDecode(userDetailsResponse.body);
-
-              print('User Details: $userDetailsData');
-
-              // Extract "type" field from user details
-              String userType = userDetailsData['data']['user']['__t'] ?? '';
-
-              print('User Type: $userType');
-
-              if (userType == 'Rider' ||
-                  userType == 'Customer' ||
-                  userType == 'Retailer') {
-                return {'error': 'Login not allowed for this user type'};
-              } else {
-                // Set the user ID in the app state
-                Provider.of<UserProvider>(context, listen: false)
-                    .setUserId(userId);
-              }
-            } else {
-              return {'error': 'Failed to fetch user details'};
-            }
+            // Continue with your navigation logic or any other actions
+            Navigator.pushNamed(context, dashboardRoute);
           } else {
             return {'error': 'User data is missing or empty'};
           }
