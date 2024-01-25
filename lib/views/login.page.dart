@@ -31,24 +31,19 @@ class _LoginPageState extends State<LoginPage> {
       final Map<String, dynamic> data = jsonDecode(response.body);
 
       if (data['status'] == 'success') {
-        if (context != null) {
-          final List<dynamic>? userData = data['data'];
-          if (userData != null && userData.isNotEmpty) {
-            // Accessing the correct nested values
-            String userId =
-                userData[0]['_doc']['_id'] ?? ''; // Updated to use _id
+        final List<dynamic>? userData = data['data'];
+        if (userData != null && userData.isNotEmpty) {
+          // Accessing the correct nested values
+          String userId = userData[0]['_id'] ?? '';
+          print('User ID: $userId');
 
-            // Set the user ID in the app state
-            Provider.of<UserProvider>(context, listen: false).setUserId(userId);
+          // Set the user ID in the app state
+          Provider.of<UserProvider>(context, listen: false).setUserId(userId);
 
-            // Continue with your navigation logic or any other actions
-            Navigator.pushNamed(context, dashboardRoute);
-          } else {
-            return {'error': 'User data is missing or empty'};
-          }
+          return data;
+        } else {
+          return {'error': 'User data is missing or empty'};
         }
-
-        return data;
       } else {
         return {'error': 'Login failed'};
       }
