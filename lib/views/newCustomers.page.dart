@@ -97,7 +97,7 @@ class _NewCustomersState extends State<NewCustomers> {
         print('Updated User Data: ${responseData['data']}');
         print(response.body);
         print('Verification status updated successfully');
-        await refreshData();
+        refreshData();
       } else {
         print('Error updating verification status: ${response.statusCode}');
       }
@@ -129,51 +129,57 @@ class _NewCustomersState extends State<NewCustomers> {
             itemCount: unverifiedCustomers.length,
             itemBuilder: (context, index) {
               final customer = unverifiedCustomers[index];
-              return Card(
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(25.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Name: ${customer['name']}"),
-                              Text(
-                                  "Contact Number: ${customer['contactNumber']}"),
-                            ],
-                          ),
-                          Spacer(),
-                          CircleAvatar(
-                            radius: 30,
-                            backgroundImage: NetworkImage(customer['image']),
-                          ),
-                        ],
-                      ),
-                      Divider(),
-                      // Delete button
-                      Row(
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              // Call the deleteCustomer function with the customer ID
-                              deleteCustomer(customer['_id']);
-                            },
-                            child: Text('Delete'),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              // Call the updateVerificationStatus function with the customer ID
-                              updateVerificationStatus(customer['_id']);
-                            },
-                            child: Text('Update Verification Status'),
-                          ),
-                        ],
-                      ),
-                    ],
+              return GestureDetector(
+                onTap: () {
+                  _showCustomerDetailsModal(customer);
+                },
+                child: Card(
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("Name: ${customer['name']}"),
+                                Text(
+                                    "Contact Number: ${customer['contactNumber']}"),
+                              ],
+                            ),
+                            Spacer(),
+                            CircleAvatar(
+                              radius: 30,
+                              backgroundImage: NetworkImage(customer['image']),
+                            ),
+                          ],
+                        ),
+                        Divider(),
+                        // Delete button
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            TextButton(
+                              onPressed: () {
+                                // Call the updateVerificationStatus function with the customer ID
+                                updateVerificationStatus(customer['_id']);
+                              },
+                              child: Text('Approve'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                // Call the deleteCustomer function with the customer ID
+                                deleteCustomer(customer['_id']);
+                              },
+                              child: Text('Delete'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -181,6 +187,58 @@ class _NewCustomersState extends State<NewCustomers> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showCustomerDetailsModal(Map<String, dynamic> customer) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SingleChildScrollView(
+          child: Container(
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Customer Details',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text('Name: ${customer['name']}'),
+                Text('Contact Number: ${customer['contactNumber']}'),
+
+                Text('Address: ${customer['address']}'),
+                Text('Discount ID:'),
+                customer['discountIdImage'] != null
+                    ? Image.network(
+                        customer['discountIdImage'],
+                        width: 300,
+                        height: 300,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(), // You can customize this placeholder
+
+                // Close button
+                SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.center,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close the modal
+                    },
+                    child: Text('Close'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

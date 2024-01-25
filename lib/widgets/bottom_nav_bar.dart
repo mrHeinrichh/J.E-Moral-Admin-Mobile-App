@@ -23,9 +23,11 @@ class BottomNavBar extends StatelessWidget {
           fontSize: 0,
         ),
         items: [
-          const BottomNavigationBarItem(
-            icon: Icon(
-              Icons.history,
+          BottomNavigationBarItem(
+            icon: Image.network(
+              'https://raw.githubusercontent.com/mrHeinrichh/J.E-Moral-cdn/main/assets/png/add_customer.png',
+              width: 24,
+              height: 24,
             ),
             label: '',
           ),
@@ -38,6 +40,12 @@ class BottomNavBar extends StatelessWidget {
           const BottomNavigationBarItem(
             icon: Icon(
               Icons.home,
+            ),
+            label: '',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(
+              Icons.delivery_dining_outlined,
             ),
             label: '',
           ),

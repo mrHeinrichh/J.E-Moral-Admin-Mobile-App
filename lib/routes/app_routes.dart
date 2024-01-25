@@ -8,3 +8,4 @@ const String walkinRoute = '/walkin';
 const String transactionRoute = '/transactions';
 const String appointmentRoute = '/appointments';
 const String newCustomerRoute = '/newcustomer';
+const String activeOrdersRoute = '/activeorders';

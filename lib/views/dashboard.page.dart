@@ -1,3 +1,4 @@
+import 'package:admin_app/views/active_orders.page.dart';
 import 'package:admin_app/views/chat.page.dart';
 import 'package:admin_app/views/home.page.dart';
 import 'package:admin_app/views/newCustomers.page.dart';
@@ -21,17 +22,20 @@ class _DashboardPageState extends State<DashboardPage> {
           children: [
             buildTopBar(),
             Expanded(
-              child: _currentIndex == 3
+              child: _currentIndex == 4
                   ? ChatPage()
-                  : _currentIndex == 2
-                      ? HomePage()
-                      : _currentIndex == 1
-                          ? RecentOrders()
-                          : _currentIndex == 0
-                              ? NewCustomers()
-                              : Center(
-                                  child: Text('Welcome to Page $_currentIndex'),
-                                ),
+                  : _currentIndex == 3
+                      ? ActiveOrders()
+                      : _currentIndex == 2
+                          ? HomePage()
+                          : _currentIndex == 1
+                              ? RecentOrders()
+                              : _currentIndex == 0
+                                  ? NewCustomers()
+                                  : Center(
+                                      child: Text(
+                                          'Welcome to Page $_currentIndex'),
+                                    ),
             ),
             BottomNavBar(
               currentIndex: _currentIndex,
