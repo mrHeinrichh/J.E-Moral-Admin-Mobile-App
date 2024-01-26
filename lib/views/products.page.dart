@@ -153,20 +153,17 @@ class _ProductsPageState extends State<ProductsPage> {
   Future<void> fetchData({int page = 1, int limit = 12}) async {
     final response = await http.get(Uri.parse(
         'https://lpg-api-06n8.onrender.com/api/v1/items/?page=$page&limit=$limit'));
-
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
-
       final List<Map<String, dynamic>> productData = (data['data'] as List)
           .where((productData) => productData is Map<String, dynamic>)
           .map((productData) => productData as Map<String, dynamic>)
           .toList();
 
       setState(() {
-        // Clear the existing data before adding new data
         productDataList.clear();
         productDataList.addAll(productData);
-        currentPage = page; // Update the current page number
+        currentPage = page;
       });
     } else {
       throw Exception('Failed to load data from the API');
@@ -466,16 +463,14 @@ class _ProductsPageState extends State<ProductsPage> {
               productData is Map<String, dynamic> &&
               productData.containsKey('type') &&
               productData['type'] ==
-                  'Products') // Only include products with type 'Products'
+                  'Product') // Only include products with type 'Products'
           .map((productData) => productData as Map<String, dynamic>)
           .toList();
 
       setState(() {
         productDataList = productData;
       });
-    } else {
-      // Handle the error case
-    }
+    } else {}
   }
 
   void openAddProductDialog() {
@@ -487,6 +482,8 @@ class _ProductsPageState extends State<ProductsPage> {
     TextEditingController quantityController = TextEditingController();
     TextEditingController customerPriceController = TextEditingController();
     TextEditingController retailerPriceController = TextEditingController();
+    TextEditingController imageController = TextEditingController();
+
     final formKey = GlobalKey<FormState>();
 
     showDialog(
@@ -667,7 +664,7 @@ class _ProductsPageState extends State<ProductsPage> {
                       "description": descriptionController.text,
                       "weight": weightController.text,
                       "quantity": quantityController.text,
-                      "type": "Products",
+                      "type": "Product",
                       "customerPrice": customerPriceController.text,
                       "retailerPrice": retailerPriceController.text,
                       "image": "",
@@ -685,9 +682,7 @@ class _ProductsPageState extends State<ProductsPage> {
     );
   }
 
-  // Function to handle data delete
   void deleteData(String id) async {
-    // Show a confirmation dialog to confirm the deletion
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -709,8 +704,6 @@ class _ProductsPageState extends State<ProductsPage> {
                 final response = await http.delete(url);
 
                 if (response.statusCode == 200) {
-                  // Data has been successfully deleted
-                  // Update the UI to remove the deleted data
                   setState(() {
                     productDataList.removeWhere((data) => data['_id'] == id);
                   });
@@ -733,159 +726,159 @@ class _ProductsPageState extends State<ProductsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        title: const Text(
-          'Product CRUD',
-          style: TextStyle(color: Color(0xFF232937), fontSize: 24),
-        ),
-        iconTheme: IconThemeData(color: Color(0xFF232937)),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.add),
-            color: Color(0xFF232937),
-            onPressed: () {
-              // Open the dialog to add a new product
-              openAddProductDialog();
-            },
+        key: _scaffoldKey,
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: Colors.white,
+          title: const Text(
+            'Product CRUD',
+            style: TextStyle(color: Color(0xFF232937), fontSize: 24),
           ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search',
-                        border: InputBorder.none,
-                        // Remove input field border
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Handle the search button click
-                      search(searchController.text);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors
-                          .black, // Change the button background color to black
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(20), // Apply border radius
-                      ),
-                    ),
-                    child: Icon(Icons.search),
-                  ),
-                ],
-              ),
-            ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Color(0xFF232937), // You can change the border color
-                    width: 1.0,
-                    // You can change the border width
-                  ),
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                child: DataTable(
-                  columns: <DataColumn>[
-                    DataColumn(label: Text('Name')),
-                    DataColumn(label: Text('Category')),
-                    DataColumn(label: Text('Type')),
-                    DataColumn(label: Text('Description')),
-                    DataColumn(label: Text('Weight')),
-                    DataColumn(label: Text('Quantity')),
-                    DataColumn(label: Text('Customer Price')),
-                    DataColumn(label: Text('Retailer Price')),
-                    DataColumn(
-                      label: Text('Actions'),
-                      tooltip: 'Update and Delete',
-                    ),
-                  ],
-                  rows: productDataList
-                      .where((productData) =>
-                          productData['type'] ==
-                          'Products') // Filter data by type
-                      .map((productData) {
-                    final id = productData['_id'];
-                    return DataRow(
-                      cells: <DataCell>[
-                        DataCell(Text(productData['name'] ?? '')),
-                        DataCell(Text(productData['category'] ?? '')),
-                        DataCell(Text(productData['type'] ?? '')),
-                        DataCell(Text(productData['description'] ?? '')),
-                        DataCell(Text(productData['weight'].toString() ?? '')),
-                        DataCell(
-                            Text(productData['quantity'].toString() ?? '')),
-                        DataCell(Text(
-                            productData['customerPrice'].toString() ?? '')),
-                        DataCell(Text(
-                            productData['retailerPrice'].toString() ?? '')),
-                        DataCell(
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.edit),
-                                onPressed: () => updateData(id),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () => deleteData(id),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (currentPage > 1)
-                  ElevatedButton(
-                    onPressed: () {
-                      // Load the previous page of data
-                      fetchData(page: currentPage - 1);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors
-                          .black, // Change the button background color to black
-                    ),
-                    child: Text('Previous'),
-                  ),
-                SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    // Load the next page of data
-                    fetchData(page: currentPage + 1);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    primary: Colors
-                        .black, // Change the button background color to black
-                  ),
-                  child: Text('Next'),
-                ),
-              ],
+          iconTheme: IconThemeData(color: Color(0xFF232937)),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.add),
+              color: Color(0xFF232937),
+              onPressed: () {
+                openAddProductDialog();
+              },
             ),
           ],
         ),
-      ),
-    );
+        body: Padding(
+          padding: const EdgeInsets.all(15.0),
+          child: Form(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Search',
+                            border: InputBorder.none,
+                            // Remove input field border
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          // Handle the search button click
+                          search(searchController.text);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          primary: Colors
+                              .black, // Change the button background color to black
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                                20), // Apply border radius
+                          ),
+                        ),
+                        child: Icon(Icons.search),
+                      ),
+                    ],
+                  ),
+                ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Color(
+                            0xFF232937), // You can change the border color
+                        width: 1.0,
+                      ),
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    child: DataTable(
+                      columns: <DataColumn>[
+                        DataColumn(label: Text('Name')),
+                        DataColumn(label: Text('Category')),
+                        DataColumn(label: Text('Type')),
+                        DataColumn(label: Text('Description')),
+                        DataColumn(label: Text('Weight')),
+                        DataColumn(label: Text('Quantity')),
+                        DataColumn(label: Text('Customer Price')),
+                        DataColumn(label: Text('Retailer Price')),
+                        DataColumn(
+                          label: Text('Actions'),
+                          tooltip: 'Update and Delete',
+                        ),
+                      ],
+                      rows: productDataList
+                          .where((productData) =>
+                              productData['type'] ==
+                              'Product') // Filter data by type
+                          .map((productData) {
+                        final id = productData['_id'];
+                        return DataRow(
+                          cells: <DataCell>[
+                            DataCell(Text(productData['name'] ?? '')),
+                            DataCell(Text(productData['category'] ?? '')),
+                            DataCell(Text(productData['type'] ?? '')),
+                            DataCell(Text(productData['description'] ?? '')),
+                            DataCell(
+                                Text(productData['weight'].toString() ?? '')),
+                            DataCell(
+                                Text(productData['quantity'].toString() ?? '')),
+                            DataCell(Text(
+                                productData['customerPrice'].toString() ?? '')),
+                            DataCell(Text(
+                                productData['retailerPrice'].toString() ?? '')),
+                            DataCell(
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: Icon(Icons.edit),
+                                    onPressed: () => updateData(id),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.delete),
+                                    onPressed: () => deleteData(id),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (currentPage > 1)
+                      ElevatedButton(
+                        onPressed: () {
+                          fetchData(page: currentPage - 1);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          primary: Colors.black,
+                        ),
+                        child: Text('Previous'),
+                      ),
+                    SizedBox(width: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        fetchData(page: currentPage + 1);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: Colors.black,
+                      ),
+                      child: Text('Next'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ));
   }
 }
