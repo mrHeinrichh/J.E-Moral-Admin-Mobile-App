@@ -286,6 +286,11 @@ class _HomePageState extends State<HomePage> {
                           Navigator.pushNamed(context, announcementRoute);
                         },
                       ),
+                      FaqIcon(
+                        onTap: () {
+                          Navigator.pushNamed(context, faqRoute);
+                        },
+                      ),
                     ],
                   ),
                 ),
