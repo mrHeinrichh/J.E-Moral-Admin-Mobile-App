@@ -2,6 +2,7 @@ import 'package:admin_app/routes/app_routes.dart';
 import 'package:admin_app/views/accessory.page.dart';
 import 'package:admin_app/views/active_orders.page.dart';
 import 'package:admin_app/views/appointment.page.dart';
+import 'package:admin_app/views/chat.page.dart';
 import 'package:admin_app/views/customer.page.dart';
 import 'package:admin_app/views/dashboard.page.dart';
 import 'package:admin_app/views/drivers.page.dart';
@@ -20,8 +21,9 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => UserProvider()),
-        // Other providers if any
+        ChangeNotifierProvider(
+            create: (context) => UserProvider()), // Add UserProvider
+        ChangeNotifierProvider(create: (context) => MessageProvider()),
       ],
       child: MyApp(),
     ),
