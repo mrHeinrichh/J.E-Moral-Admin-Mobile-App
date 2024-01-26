@@ -107,15 +107,11 @@ class _FaqPageState extends State<FaqPage> {
       if (response.statusCode == 200) {
         final responseBody = await response.stream.bytesToString();
         print("Image uploaded successfully: $responseBody");
-
-        // Parse the response JSON
         final parsedResponse = json.decode(responseBody);
 
-        // Check if 'data' is present in the response
         if (parsedResponse.containsKey('data')) {
           final List<dynamic> data = parsedResponse['data'];
 
-          // Check if 'path' is present in the first item of the 'data' array
           if (data.isNotEmpty && data[0].containsKey('path')) {
             final imageUrl = data[0]['path'];
             print("Image URL: $imageUrl");
@@ -141,64 +137,36 @@ class _FaqPageState extends State<FaqPage> {
     }
   }
 
-  void showCustomOverlay(BuildContext context, String message) {
-    final overlay = OverlayEntry(
-      builder: (context) => Positioned(
-        top: MediaQuery.of(context).size.height * 0.5,
-        left: 0,
-        right: 0,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            alignment: Alignment.center,
-            child: Card(
-              color: Colors.red,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  message,
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> addFaqToAPI(Map<String, dynamic> newFaq) async {
     final url = Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/faqs');
     final headers = {'Content-Type': 'application/json'};
 
-    try {
-      var uploadResponse = await uploadImageToServer(_image!);
-      print("Upload Response: $uploadResponse");
+    if (_image != null) {
+      var profileUploadResponse = await uploadImageToServer(_image!);
+      print("Upload Response: $profileUploadResponse");
 
-      if (uploadResponse != null) {
-        print("Image URL: ${uploadResponse["url"]}");
-        newFaq["image"] = uploadResponse["url"];
-
-        final response = await http.post(
-          url,
-          headers: headers,
-          body: jsonEncode(newFaq),
-        );
-
-        print("API Response: ${response.statusCode} - ${response.body}");
-
-        if (response.statusCode == 201 || response.statusCode == 200) {
-          fetchData();
-          Navigator.pop(context);
-        } else {
-          print(
-              'Failed to add or update the product. Status code: ${response.statusCode}');
-        }
+      if (profileUploadResponse != null) {
+        print("Image URL: ${profileUploadResponse["url"]}");
+        newFaq["image"] = profileUploadResponse["url"];
       } else {
-        print("Image upload failed");
+        print("FAQ Image upload failed");
+        return;
       }
-    } catch (e) {
-      print("Exception during API request: $e");
+    }
+
+    final response = await http.post(
+      url,
+      headers: headers,
+      body: jsonEncode(newFaq),
+    );
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      fetchData();
+      Navigator.pop(context);
+    } else {
+      print(
+          'Failed to add or update the customer. Status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
     }
   }
 
@@ -219,24 +187,19 @@ class _FaqPageState extends State<FaqPage> {
       setState(() {
         faqDataList = faqData;
       });
-    } else {
-      // Handle the case when the response status code is not 200
-    }
+    } else {}
   }
 
   void openAddFaqDialog() {
-    // Create controllers for each field
     TextEditingController questionController = TextEditingController();
     TextEditingController answerController = TextEditingController();
-
-    TextEditingController imageController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Add New FAQ'),
+          title: const Text('Add New FAQ'),
           content: SingleChildScrollView(
             child: Form(
               key: formKey,
@@ -244,20 +207,20 @@ class _FaqPageState extends State<FaqPage> {
                 children: [
                   TextFormField(
                     controller: questionController,
-                    decoration: InputDecoration(labelText: 'Question'),
+                    decoration: const InputDecoration(labelText: 'Question'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the faq question';
+                        return 'Please Enter the Frequently Asked Question';
                       }
                       return null;
                     },
                   ),
                   TextFormField(
                     controller: answerController,
-                    decoration: InputDecoration(labelText: 'Answer'),
+                    decoration: const InputDecoration(labelText: 'Answer'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the faq answer';
+                        return 'Please Enter the FAQ Answer';
                       }
                       return null;
                     },
@@ -316,28 +279,20 @@ class _FaqPageState extends State<FaqPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
                 if (formKey.currentState!.validate()) {
-                  // Additional conditions for image validation
-                  if (_image == null) {
-                    showCustomOverlay(context, 'Please Upload an Image');
-                  } else {
-                    // Create a new faq object from the input data
-                    Map<String, dynamic> newFaq = {
-                      "question": questionController.text,
-                      "answer": answerController.text,
-                      "image": imageController.text,
-                    };
-
-                    // Call the function to add the new faq to the API
-                    addFaqToAPI(newFaq);
-                  }
+                  Map<String, dynamic> newFaq = {
+                    "question": questionController.text,
+                    "answer": answerController.text,
+                    "image": "",
+                  };
+                  addFaqToAPI(newFaq);
                 }
               },
-              child: Text('Save'),
+              child: const Text('Save'),
             ),
           ],
         );
@@ -353,15 +308,14 @@ class _FaqPageState extends State<FaqPage> {
         TextEditingController(text: faqToEdit['question']);
     TextEditingController answerController =
         TextEditingController(text: faqToEdit['answer']);
-    TextEditingController imageController =
-        TextEditingController(text: faqToEdit['image']);
+
     final _formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Edit Data'),
+          title: const Text('Edit Data'),
           content: Form(
             key: _formKey,
             child: SingleChildScrollView(
@@ -369,20 +323,20 @@ class _FaqPageState extends State<FaqPage> {
                 children: [
                   TextFormField(
                     controller: questionController,
-                    decoration: InputDecoration(labelText: 'Question'),
+                    decoration: const InputDecoration(labelText: 'Question'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the faq question';
+                        return 'Please Enter the Frequently Asked Question';
                       }
                       return null;
                     },
                   ),
                   TextFormField(
                     controller: answerController,
-                    decoration: InputDecoration(labelText: 'Answer'),
+                    decoration: const InputDecoration(labelText: 'Answer'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the faq answer';
+                        return 'Please Enter the FAQ Answer';
                       }
                       return null;
                     },
@@ -445,17 +399,17 @@ class _FaqPageState extends State<FaqPage> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
                   faqToEdit['question'] = questionController.text;
                   faqToEdit['answer'] = answerController.text;
+                  faqToEdit['image'] = "";
 
-                  // Upload new image only if available
                   if (_image != null) {
                     var uploadResponse = await uploadImageToServer(_image!);
                     if (uploadResponse != null) {
@@ -484,7 +438,7 @@ class _FaqPageState extends State<FaqPage> {
                   }
                 }
               },
-              child: Text('Save'),
+              child: const Text('Save'),
             ),
           ],
         );
@@ -506,43 +460,37 @@ class _FaqPageState extends State<FaqPage> {
   }
 
   void deleteData(String id) async {
-    // Show a confirmation dialog to confirm the deletion
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete Data'),
-          content: Text('Are you sure you want to delete this data?'),
+          title: const Text('Delete Data'),
+          content: const Text('Are you sure you want to delete this data?'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
-                // Send a request to your API to delete the data
                 final url = Uri.parse(
                     'https://lpg-api-06n8.onrender.com/api/v1/faqs/$id');
                 final response = await http.delete(url);
 
                 if (response.statusCode == 200) {
-                  // Data has been successfully deleted
-                  // Update the UI to remove the deleted data
                   setState(() {
                     faqDataList.removeWhere((data) => data['_id'] == id);
                   });
 
-                  Navigator.pop(context); // Close the dialog
+                  Navigator.pop(context);
                 } else {
-                  // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
                   print(
                       'Failed to delete the data. Status code: ${response.statusCode}');
-                  // You can also display an error message to the announcement
                 }
               },
-              child: Text('Delete'),
+              child: const Text('Delete'),
             ),
           ],
         );
@@ -560,136 +508,133 @@ class _FaqPageState extends State<FaqPage> {
           'FAQ CRUD',
           style: TextStyle(color: Color(0xFF232937), fontSize: 24),
         ),
-        iconTheme: IconThemeData(color: Color(0xFF232937)),
+        iconTheme: const IconThemeData(color: Color(0xFF232937)),
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.add),
-            color: Color(0xFF232937),
+            icon: const Icon(Icons.add),
+            color: const Color(0xFF232937),
             onPressed: () {
-              // Open the dialog to add a new faq
               openAddFaqDialog();
             },
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search',
-                        border: InputBorder.none,
-                        // Remove input field border
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(15.0),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: searchController,
+                        decoration: const InputDecoration(
+                          hintText: 'Search',
+                          border: InputBorder.none,
+                        ),
                       ),
                     ),
+                    ElevatedButton(
+                      onPressed: () {
+                        search(searchController.text);
+                      },
+                      style: TextButton.styleFrom(
+                        primary: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: const Icon(Icons.search),
+                    ),
+                  ],
+                ),
+              ),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: const Color(0xFF232937),
+                      width: 1.0,
+                    ),
+                    borderRadius: BorderRadius.circular(12.0),
                   ),
+                  child: DataTable(
+                    columns: const <DataColumn>[
+                      DataColumn(label: Text('Question')),
+                      DataColumn(label: Text('Answer')),
+                      DataColumn(label: Text('Image')),
+                      DataColumn(
+                        label: Text('Actions'),
+                        tooltip: 'Update and Delete',
+                      ),
+                    ],
+                    rows: faqDataList.map((faqData) {
+                      final id = faqData['_id'];
+                      return DataRow(
+                        cells: <DataCell>[
+                          DataCell(Text(faqData['question'] ?? ''),
+                              placeholder: false),
+                          DataCell(Text(faqData['answer'] ?? ''),
+                              placeholder: false),
+                          DataCell(Text(faqData['image'] ?? ''),
+                              placeholder: false),
+                          DataCell(
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () => updateData(id),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete),
+                                  onPressed: () => deleteData(id),
+                                ),
+                              ],
+                            ),
+                            placeholder: false,
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (currentPage > 1)
+                    ElevatedButton(
+                      onPressed: () {
+                        fetchData(page: currentPage - 1);
+                      },
+                      style: TextButton.styleFrom(
+                        primary: Colors.black,
+                      ),
+                      child: const Text('Previous'),
+                    ),
+                  const SizedBox(width: 20),
                   ElevatedButton(
                     onPressed: () {
-                      // Handle the search button click
-                      search(searchController.text);
+                      fetchData(page: currentPage + 1);
                     },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors
-                          .black, // Change the button background color to black
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(20), // Apply border radius
-                      ),
+                    style: TextButton.styleFrom(
+                      primary: Colors.black,
                     ),
-                    child: Icon(Icons.search),
+                    child: const Text(
+                      'Next',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
-            ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Color(0xFF232937), // You can change the border color
-                    width: 1.0,
-                    // You can change the border width
-                  ),
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                child: DataTable(
-                  columns: <DataColumn>[
-                    DataColumn(label: Text('Question')),
-                    DataColumn(label: Text('Answer')),
-                    DataColumn(label: Text('Image')),
-                    DataColumn(
-                      label: Text('Actions'),
-                      tooltip: 'Update and Delete',
-                    ),
-                  ],
-                  rows: faqDataList.map((faqData) {
-                    final id = faqData['_id'];
-                    return DataRow(
-                      cells: <DataCell>[
-                        DataCell(Text(faqData['question'] ?? ''),
-                            placeholder: false),
-                        DataCell(Text(faqData['answer'] ?? ''),
-                            placeholder: false),
-                        DataCell(Text(faqData['image'] ?? ''),
-                            placeholder: false),
-                        DataCell(
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.edit),
-                                onPressed: () => updateData(id),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () => deleteData(id),
-                              ),
-                            ],
-                          ),
-                          placeholder: false,
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (currentPage > 1)
-                  ElevatedButton(
-                    onPressed: () {
-                      // Load the previous page of data
-                      fetchData(page: currentPage - 1);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors
-                          .black, // Change the button background color to black
-                    ),
-                    child: Text('Previous'),
-                  ),
-                SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    // Load the next page of data
-                    fetchData(page: currentPage + 1);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    primary: Colors
-                        .black, // Change the button background color to black
-                  ),
-                  child: Text('Next'),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
