@@ -19,9 +19,9 @@ class _transactionPageState extends State<transactionPage> {
   }
 
   int currentPage = 1;
-  // int limit = 2;
+  int limit = 10;
 
-  Future<void> fetchData({int page = 1, int limit = 10}) async {
+  Future<void> fetchData({int page = 1}) async {
     final response = await http.get(Uri.parse(
         'https://lpg-api-06n8.onrender.com/api/v1/transactions/?page=$page&limit=$limit'));
     if (response.statusCode == 200) {
@@ -62,44 +62,59 @@ class _transactionPageState extends State<transactionPage> {
   }
 
   Future<void> search(String query) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/transactions/?search=$query'));
+    if (query.isEmpty) {
+      // If the query is empty, fetch all transactions without applying the name filter
+      final response = await http.get(
+          Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions/'));
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
 
-      final List<Map<String, dynamic>> transactionData = (data['data'] as List)
-          .where((transactionData) =>
-              transactionData is Map<String, dynamic> &&
-              transactionData.containsKey('name') &&
-              transactionData['name']
-                  .toString()
-                  .toLowerCase()
-                  .contains(query.toLowerCase()))
-          .map((transactionData) => transactionData as Map<String, dynamic>)
-          .toList();
+        final List<Map<String, dynamic>> transactionData = (data['data']
+                as List)
+            .where((transactionData) =>
+                transactionData is Map<String, dynamic> &&
+                transactionData.containsKey('name'))
+            .map((transactionData) => transactionData as Map<String, dynamic>)
+            .toList();
 
-      setState(() {
-        transactionDataList = transactionData;
-      });
+        setState(() {
+          transactionDataList = transactionData;
+        });
+      } else {
+        // Handle error case if needed
+      }
     } else {
-      // Handle error case if needed
+      // If a query is provided, apply the name filter (case-insensitive)
+      final Map<String, dynamic> filter = {"name": query};
+      final String filterParam = Uri.encodeComponent(jsonEncode(filter));
+
+      final response = await http.get(Uri.parse(
+          'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter=$filterParam'));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+
+        final List<Map<String, dynamic>> transactionData = (data['data']
+                as List)
+            .where((transactionData) =>
+                transactionData is Map<String, dynamic> &&
+                transactionData.containsKey('name') &&
+                transactionData['name']
+                    .toString()
+                    .toLowerCase()
+                    .contains(query.toLowerCase()))
+            .map((transactionData) => transactionData as Map<String, dynamic>)
+            .toList();
+
+        setState(() {
+          transactionDataList = transactionData;
+        });
+      } else {
+        // Handle error case if needed
+      }
     }
   }
-
-  //     final List<Map<String, dynamic>> transactionData = (data['data'] as List)
-  //         .where((userData) =>
-  //             userData is Map<String, dynamic> &&
-  //             userData.containsKey('type') &&
-  //             userData['type'] == 'Walkin')
-  //         .map((userData) => userData as Map<String, dynamic>)
-  //         .toList();
-
-  //     setState(() {
-  //       transactionDataList = transactionData;
-  //     });
-  //   } else {}
-  // }
 
   void deleteData(String id) async {
     showDialog(
@@ -219,7 +234,7 @@ class _transactionPageState extends State<transactionPage> {
 
                   rows: transactionDataList
                       .where((transactionData) =>
-                          transactionData['type'] == 'Walkin' ||
+                          transactionData['__t'] == 'Delivery' ||
                           transactionData['type'] ==
                               '{Online}') // Filter data by type
                       .map((transactionData) {
