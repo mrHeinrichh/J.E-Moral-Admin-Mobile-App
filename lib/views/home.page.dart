@@ -281,6 +281,11 @@ class _HomePageState extends State<HomePage> {
                           // Action to perform when the card is clicked
                         },
                       ),
+                      AnnouncementIcon(
+                        onTap: () {
+                          Navigator.pushNamed(context, announcementRoute);
+                        },
+                      ),
                     ],
                   ),
                 ),

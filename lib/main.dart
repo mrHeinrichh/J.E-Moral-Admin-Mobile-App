@@ -11,6 +11,7 @@ import 'package:admin_app/views/login.page.dart';
 import 'package:admin_app/views/transaction.page.dart';
 import 'package:admin_app/views/user_provider.dart';
 import 'package:admin_app/views/walkin.page.dart';
+import 'package:admin_app/views/announcement.page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -44,6 +45,7 @@ class MyApp extends StatelessWidget {
         appointmentRoute: (context) => AppointmentPage(),
         newCustomerRoute: (context) => NewCustomers(),
         activeOrdersRoute: (context) => ActiveOrders(),
+        announcementRoute: (context) => AnnouncementPage(),
       },
     );
   }

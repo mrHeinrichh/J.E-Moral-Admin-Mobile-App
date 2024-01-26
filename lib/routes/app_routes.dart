@@ -9,3 +9,4 @@ const String transactionRoute = '/transactions';
 const String appointmentRoute = '/appointments';
 const String newCustomerRoute = '/newcustomer';
 const String activeOrdersRoute = '/activeorders';
+const String announcementRoute = '/announcements';

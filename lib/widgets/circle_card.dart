@@ -279,3 +279,38 @@ class FeedbackIcon extends StatelessWidget {
     );
   }
 }
+
+class AnnouncementIcon extends StatelessWidget {
+  final VoidCallback onTap;
+
+  AnnouncementIcon({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: onTap,
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(25.0), // Make the card circular
+              ),
+              elevation: 4, // Add a shadow to the card
+              child: const Padding(
+                padding: EdgeInsets.all(10.0),
+                child: Icon(Icons.announcement_outlined, size: 30),
+              ),
+            ),
+          ),
+          const Text(
+            "Announcement",
+            style: TextStyle(fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+}
