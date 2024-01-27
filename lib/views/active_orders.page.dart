@@ -33,6 +33,7 @@ class _ActiveOrdersState extends State<ActiveOrders> {
 
       if (_mounted) {
         if (response.statusCode == 200) {
+          print(response.body);
           final Map<String, dynamic> data = json.decode(response.body);
           if (data.containsKey("data")) {
             final List<dynamic> transactionData = data["data"];
@@ -40,7 +41,7 @@ class _ActiveOrdersState extends State<ActiveOrders> {
             // Filter out transactions where "active" is false
             final List<Map<String, dynamic>> filteredTransactions =
                 List<Map<String, dynamic>>.from(transactionData)
-                    .where((transaction) => transaction["active"] == true)
+                    .where((transaction) => transaction["status"] == 'On Going')
                     .toList();
 
             setState(() {
@@ -68,11 +69,7 @@ class _ActiveOrdersState extends State<ActiveOrders> {
   @override
   Widget build(BuildContext context) {
     List<Map<String, dynamic>> filteredTransactions = transactions
-        .where((transaction) =>
-            !transaction["isApproved"] &&
-            transaction["type"] == "Online" &&
-            transaction["type"] != "Walkin" &&
-            transaction["type"] != "")
+        .where((transaction) => transaction["pickedUp"] == true)
         .toList();
 
     filteredTransactions.sort((b, a) {
@@ -227,42 +224,6 @@ class _ActiveOrdersState extends State<ActiveOrders> {
                           ),
                           Text(
                             '${transaction['total']}',
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          const Text(
-                            "Order Status: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            transaction['isApproved'] ? 'Approved' : 'Pending',
-                            style: TextStyle(
-                              color: transaction['isApproved']
-                                  ? Colors.green
-                                  : Colors.red,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          const Text(
-                            "Active: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            transaction['active'] ? 'true' : 'false',
-                            style: TextStyle(
-                              color: transaction['active']
-                                  ? Colors.green
-                                  : Colors.red,
-                            ),
                           ),
                         ],
                       ),

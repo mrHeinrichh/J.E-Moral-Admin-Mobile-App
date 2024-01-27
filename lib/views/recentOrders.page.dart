@@ -73,6 +73,7 @@ class _RecentOrdersState extends State<RecentOrders> {
         print('Transaction updated successfully');
         print('Response: ${response.body}');
         print(response.statusCode);
+        await refreshData();
       } else {
         print(
             'Failed to update transaction. Status code: ${response.statusCode}');
@@ -141,7 +142,7 @@ class _RecentOrdersState extends State<RecentOrders> {
         elevation: 0,
         backgroundColor: Colors.white,
         title: Text(
-          'Recent Pending Orders',
+          'Pending Delivery Orders',
           style: TextStyle(color: Color(0xFF232937), fontSize: 24),
         ),
         automaticallyImplyLeading: false,
