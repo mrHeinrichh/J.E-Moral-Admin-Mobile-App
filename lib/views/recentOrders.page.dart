@@ -54,6 +54,35 @@ class _RecentOrdersState extends State<RecentOrders> {
     );
   }
 
+  Future<void> updateTransactionStatus(String transactionId) async {
+    try {
+      Map<String, dynamic> updateData = {
+        "status": "Approved",
+        "__t": "Delivery"
+      };
+
+      final String apiUrl =
+          'https://lpg-api-06n8.onrender.com/api/v1/transactions/$transactionId';
+      final http.Response response = await http.patch(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(updateData),
+      );
+
+      if (response.statusCode == 200) {
+        print('Transaction updated successfully');
+        print('Response: ${response.body}');
+        print(response.statusCode);
+      } else {
+        print(
+            'Failed to update transaction. Status code: ${response.statusCode}');
+        print('Response: ${response.body}');
+      }
+    } catch (error) {
+      print('Error updating transaction: $error');
+    }
+  }
+
   Future<void> fetchData() async {
     try {
       final response = await http.get(
@@ -66,10 +95,10 @@ class _RecentOrdersState extends State<RecentOrders> {
           if (data.containsKey("data")) {
             final List<dynamic> transactionData = data["data"];
 
-            // Filter out accepted transactions
+            // Remove isApproved condition from filtering
             final List<Map<String, dynamic>> filteredTransactions =
                 List<Map<String, dynamic>>.from(transactionData)
-                    .where((transaction) => !transaction["isApproved"])
+                    .where((transaction) => transaction["status"] == "Pending")
                     .toList();
 
             setState(() {
@@ -90,39 +119,6 @@ class _RecentOrdersState extends State<RecentOrders> {
     }
   }
 
-  Future<void> updateOrderInDatabase(
-    String id,
-    bool isApproved,
-    bool isDeleted,
-  ) async {
-    // Convert boolean to string
-    String isApprovedString = isApproved.toString();
-    String isDeletedString = isDeleted.toString();
-    try {
-      // Make an HTTP request or database query to update the value in the database
-      final response = await http.patch(
-        Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions/$id'),
-        body: {
-          'isApproved': isApprovedString,
-          'deleted': isDeletedString,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        print('Order updated successfully');
-        // print('Response body: ${response.body}');
-        print(response.statusCode);
-        print(response.body);
-      } else {
-        print('Failed to update order. Status code: ${response.statusCode}');
-        print('Response body: ${response.body}');
-        // Handle error accordingly
-      }
-    } catch (e) {
-      print('Error during update: $e');
-    }
-  }
-
   Future<void> refreshData() async {
     await fetchData();
   }
@@ -130,11 +126,7 @@ class _RecentOrdersState extends State<RecentOrders> {
   @override
   Widget build(BuildContext context) {
     List<Map<String, dynamic>> filteredTransactions = transactions
-        .where((transaction) =>
-            !transaction["isApproved"] &&
-            transaction["type"] == "Online" &&
-            transaction["type"] != "Walkin" &&
-            transaction["type"] != "")
+        .where((transaction) => transaction["status"] == "Pending")
         .toList();
 
     filteredTransactions.sort((b, a) {
@@ -149,7 +141,7 @@ class _RecentOrdersState extends State<RecentOrders> {
         elevation: 0,
         backgroundColor: Colors.white,
         title: Text(
-          'Recent Orders',
+          'Recent Pending Orders',
           style: TextStyle(color: Color(0xFF232937), fontSize: 24),
         ),
         automaticallyImplyLeading: false,
@@ -220,14 +212,12 @@ class _RecentOrdersState extends State<RecentOrders> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       Text(
                         "House#/Lot/Blk: ${transaction['houseLotBlk']}",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       Row(
                         children: [
                           Text(
@@ -241,14 +231,12 @@ class _RecentOrdersState extends State<RecentOrders> {
                           ),
                         ],
                       ),
-
                       Text(
                         "Payment Method: ${transaction['paymentMethod']}",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       Row(
                         children: [
                           Text(
@@ -309,17 +297,8 @@ class _RecentOrdersState extends State<RecentOrders> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
-                            transaction['isApproved'] ? 'Approved' : 'Pending',
-                            style: TextStyle(
-                              color: transaction['isApproved']
-                                  ? Colors.green
-                                  : Colors.red,
-                            ),
-                          ),
                         ],
                       ),
-                      // Text("Date: ${transaction['updatedAt']}"),
                       SizedBox(
                         height: 10,
                       ),
@@ -331,34 +310,13 @@ class _RecentOrdersState extends State<RecentOrders> {
                             width: 150,
                             child: ElevatedButton(
                               onPressed: () async {
-                                // Show accept confirmation dialog
-                                showConfirmationDialog(
+                                // Show confirmation dialog before updating the status
+                                await showConfirmationDialog(
                                   context,
-                                  "Are you sure you want to accept the order for ${transaction['name']}?",
-                                  () async {
-                                    // Handle accept logic here
-                                    print(
-                                        "Order Accepted: ${transaction['name']}");
-
-                                    // Update isApproved to true in the local state
-                                    setState(() {
-                                      transaction['isApproved'] = true;
-                                    });
-
-                                    // Update isApproved to true in the database
-                                    await updateOrderInDatabase(
-                                      transaction['_id'].toString(),
-                                      true,
-                                      false,
-                                    );
-
-                                    // Remove the accepted transaction from the displayed list
-                                    setState(() {
-                                      transactions.removeWhere((item) =>
-                                          item['_id'] == transaction['_id']);
-                                    });
-
-                                    Navigator.pop(context); // Close the dialog
+                                  'Are you sure you want to approve this transaction?',
+                                  () {
+                                    updateTransactionStatus(transaction['_id']);
+                                    Navigator.of(context).pop();
                                   },
                                 );
                               },
@@ -378,35 +336,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                             height: 45,
                             width: 150,
                             child: ElevatedButton(
-                              onPressed: () async {
-                                // Show decline confirmation dialog
-                                showConfirmationDialog(
-                                  context,
-                                  "Are you sure you want to decline the order for ${transaction['name']}?",
-                                  () async {
-                                    // Handle decline logic here
-                                    print(
-                                        "Order Declined: ${transaction['name']}");
-
-                                    // Update isApproved to false in the local state
-                                    setState(() {
-                                      transaction['isApproved'] = false;
-                                    });
-
-                                    // Update isApproved to false in the database
-                                    await updateOrderInDatabase(
-                                      transaction['_id'].toString(),
-                                      false,
-                                      true,
-                                    );
-
-                                    // Fetch data again to refresh the list
-                                    await fetchData();
-
-                                    Navigator.pop(context); // Close the dialog
-                                  },
-                                );
-                              },
+                              onPressed: () async {},
                               style: ElevatedButton.styleFrom(
                                 primary: Colors.red,
                               ),
