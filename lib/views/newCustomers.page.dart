@@ -85,19 +85,55 @@ class _NewCustomersState extends State<NewCustomers> {
         headers: {
           'Content-Type': 'application/json',
         },
+        body: jsonEncode({'verified': true}),
+      );
+
+      print('Update Verification Status Response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final int customerIndex =
+            customers.indexWhere((customer) => customer['_id'] == customerId);
+        if (customerIndex != -1) {
+          customers[customerIndex]['verified'] = true;
+        }
+        // Update local data (customers list) after successful verification
+        setState(() {});
+
+        print('Verification status updated successfully');
+      } else {
+        print('Error updating verification status: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  Future<void> updateVerificationStatusDiscount(String customerId) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/$customerId'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: jsonEncode({
           'verified': true,
+          'discounted': true,
         }),
       );
 
       print('Update Verification Status Response: ${response.body}');
 
       if (response.statusCode == 200) {
-        Map<String, dynamic> responseData = json.decode(response.body);
-        print('Updated User Data: ${responseData['data']}');
-        print(response.body);
+        final int customerIndex =
+            customers.indexWhere((customer) => customer['_id'] == customerId);
+        if (customerIndex != -1) {
+          // customers[customerIndex]['verified'] = true;
+          customers[customerIndex]['discounted'] = true;
+        }
+        // Update local data (customers list) after successful verification
+        setState(() {});
+
         print('Verification status updated successfully');
-        refreshData();
       } else {
         print('Error updating verification status: ${response.statusCode}');
       }
@@ -163,16 +199,57 @@ class _NewCustomersState extends State<NewCustomers> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             TextButton(
-                              onPressed: () {
+                              onPressed: () async {
                                 // Call the updateVerificationStatus function with the customer ID
-                                updateVerificationStatus(customer['_id']);
+                                await updateVerificationStatus(customer['_id']);
+
+                                // Show a SnackBar after approving
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content:
+                                        Text('Customer approved successfully'),
+                                    duration: Duration(
+                                        seconds:
+                                            2), // Adjust the duration as needed
+                                  ),
+                                );
                               },
                               child: Text('Approve'),
                             ),
                             TextButton(
-                              onPressed: () {
+                              onPressed: () async {
+                                // Call the updateVerificationStatus function with the customer ID
+                                await updateVerificationStatusDiscount(
+                                    customer['_id']);
+
+                                // Show a SnackBar after approving
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                        'Customer with discount approved successfully'),
+                                    duration: Duration(
+                                        seconds:
+                                            2), // Adjust the duration as needed
+                                  ),
+                                );
+                              },
+                              child: Text('Approve with Discount'),
+                            ),
+                            TextButton(
+                              onPressed: () async {
                                 // Call the deleteCustomer function with the customer ID
-                                deleteCustomer(customer['_id']);
+                                await deleteCustomer(customer['_id']);
+
+                                // Show a SnackBar after deletion
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content:
+                                        Text('Customer deleted successfully'),
+                                    duration: Duration(
+                                        seconds:
+                                            2), // Adjust the duration as needed
+                                  ),
+                                );
                               },
                               child: Text('Delete'),
                             ),
