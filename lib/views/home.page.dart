@@ -40,8 +40,7 @@ class _HomePageState extends State<HomePage> {
       final List<dynamic> data = json.decode(response.body)['data'];
       setState(() {
         transactions = List<Map<String, dynamic>>.from(
-          data.where(
-              (item) => item['type'] == 'Walkin' || item['type'] == '{Online}'),
+          data.where((item) => item['__t'] == 'Delivery'),
         );
       });
     }
@@ -60,7 +59,8 @@ class _HomePageState extends State<HomePage> {
       if (transactionDate.year == today.year &&
           transactionDate.month == today.month &&
           transactionDate.day == today.day &&
-          transaction['isApproved'] == true &&
+          transaction['status'] == "Completed" &&
+          transaction['__t'] == "Delivery" &&
           transaction['completed'] == true) {
         sum += (transaction['total'] ?? 0.0);
       }
@@ -73,8 +73,8 @@ class _HomePageState extends State<HomePage> {
     int count = 0;
     for (var transaction in transactions) {
       // Check if the transaction is of type "Online" and is not approved
-      if (transaction['type'] == '{Online}' &&
-          transaction['isApproved'] == false) {
+      if (transaction['__t'] == "Delivery" &&
+          transaction['status'] == "Pending") {
         count++;
       }
     }
@@ -89,7 +89,7 @@ class _HomePageState extends State<HomePage> {
     int onlineTransactionCount = 0;
     for (var transaction in transactions) {
       // Check if the transaction has type "Online"
-      if (transaction['type'] == '{Online}') {
+      if (transaction['__t'] == 'Delivery') {
         onlineTransactionCount++;
       }
     }
@@ -105,8 +105,8 @@ class _HomePageState extends State<HomePage> {
       DateTime transactionDate = DateTime.parse(transaction['createdAt']);
 
       // Check if the transaction has type "Online"
-      if (transaction['type'] == '{Online}' &&
-          transaction['isApproved'] == true &&
+      if (transaction['__t'] == "Delivery" &&
+          transaction['status'] == "Completed" &&
           transaction['completed'] == true &&
           transactionDate.year == today.year &&
           transactionDate.month == today.month &&
@@ -128,7 +128,6 @@ class _HomePageState extends State<HomePage> {
       DateTime transactionDate = DateTime.parse(transaction['createdAt']);
       return transactionDate.isAfter(cutoffDate) &&
           transactionDate.year == now.year;
-      ;
     }).toList();
 
     // Sort the filtered transactions in descending order based on createdAt
@@ -208,7 +207,7 @@ class _HomePageState extends State<HomePage> {
         DateTime transactionDate = DateTime.parse(transaction['createdAt']);
 
         // Check if the transaction is on the current day and is approved
-        if (transaction['isApproved'] == true &&
+        if (transaction['__t'] == "Delivery" &&
             transaction['completed'] == true) {
           totalRevenue += (transaction['total'] ?? 0.0);
         }
@@ -359,7 +358,7 @@ class _HomePageState extends State<HomePage> {
                   rows: [
                     ...selectedTransactions
                         .where((transaction) =>
-                            transaction['isApproved'] == true &&
+                            transaction['__t'] == "Delivery" &&
                             transaction['completed'] == true)
                         .map((transaction) {
                       return DataRow(
@@ -367,7 +366,7 @@ class _HomePageState extends State<HomePage> {
                           DataCell(Text(transaction['name'])),
                           DataCell(Text(
                               '\₱${(transaction['total'] ?? 0.0).toStringAsFixed(2)}')),
-                          DataCell(Text(transaction['type'])),
+                          DataCell(Text(transaction['__t'])),
                           DataCell(
                             Text(transaction['createdAt']),
                           ),
@@ -385,6 +384,7 @@ class _HomePageState extends State<HomePage> {
                           style: TextStyle(fontWeight: FontWeight.bold),
                         )),
                         DataCell(Text('')),
+                        // DataCell(Text('')),
                         DataCell(Text('')),
                       ],
                     ),
@@ -400,52 +400,52 @@ class _HomePageState extends State<HomePage> {
 
   List<PieChartSectionData> createPieChartSections(
       List<Map<String, dynamic>> transactions) {
-    List<Map<String, dynamic>> transactionTypes = [];
+    List<Map<String, dynamic>> deliveryTransactions = [];
+    List<Map<String, dynamic>> walkinTransactions = [];
 
     for (var transaction in transactions) {
-      final type = transaction['type'];
-      if (type != null) {
-        if (transactionTypes.any((element) => element['type'] == type)) {
-          final index =
-              transactionTypes.indexWhere((element) => element['type'] == type);
-          transactionTypes[index]['count']++;
-        } else {
-          transactionTypes.add({'type': type, 'count': 1});
-        }
+      final type = transaction['__t'];
+      final completed = transaction['completed'];
+      final status = transaction['status'];
+      //DITO KAKALIKUTIN KUNG ANO YUNG COLUMN NG ADMIN
+      final walk = transaction['__v'];
+
+      if (type == 'Delivery' && completed == true && status == 'Completed') {
+        deliveryTransactions.add(transaction);
+      } else if (walk == 0) {
+        //AT DITO PA SA ELSE IF STATEMENT NA 'TO.
+        walkinTransactions.add(transaction);
       }
     }
 
-    double totalTransactionCount = transactionTypes.fold(
-        0, (sum, transaction) => sum + (transaction['count'] ?? 0));
+    double totalDeliveryCount = deliveryTransactions.length.toDouble();
+    double totalWalkinCount = walkinTransactions.length.toDouble();
+    double totalTransactionCount = totalDeliveryCount + totalWalkinCount;
 
-    return transactionTypes.map((transaction) {
-      double percentage =
-          (transaction['count'] ?? 0) / totalTransactionCount * 100;
-
-      String sectionTitle = '';
-      Color sectionColor = Colors.black; // Default color
-
-      if (transaction['type'] == 'Walkin') {
-        sectionTitle =
-            'Walkin: ${transaction['count']} \n ${percentage.toStringAsFixed(2)}%';
-        sectionColor = Colors.grey; // Grey color for Walkin
-      } else if (transaction['type'] == '{Online}') {
-        sectionTitle =
-            'Online: ${transaction['count']} \n${percentage.toStringAsFixed(2)}%';
-        sectionColor = Colors.lime;
-      }
-
-      return PieChartSectionData(
-        color: sectionColor,
-        value: percentage,
-        title: sectionTitle,
+    return [
+      PieChartSectionData(
+        color: Colors.lime,
+        value: totalDeliveryCount / totalTransactionCount * 100,
+        title:
+            'Delivery: ${totalDeliveryCount.toInt()} \n ${(totalDeliveryCount / totalTransactionCount * 100).toStringAsFixed(2)}%',
         radius: 80,
         titleStyle: TextStyle(
-          color: Colors.black, // Text color
-          fontWeight: FontWeight.bold, // Bold font
+          color: Colors.black,
+          fontWeight: FontWeight.bold,
         ),
-      );
-    }).toList();
+      ),
+      PieChartSectionData(
+        color: Colors.grey,
+        value: totalWalkinCount / totalTransactionCount * 100,
+        title:
+            'Walkin: ${totalWalkinCount.toInt()} \n ${(totalWalkinCount / totalTransactionCount * 100).toStringAsFixed(2)}%',
+        radius: 80,
+        titleStyle: TextStyle(
+          color: Colors.black,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ];
   }
 }
 
