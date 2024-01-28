@@ -117,6 +117,7 @@ class _NewCustomersState extends State<NewCustomers> {
         body: jsonEncode({
           'verified': true,
           'discounted': true,
+          'type': 'Customer',
         }),
       );
 
@@ -126,11 +127,12 @@ class _NewCustomersState extends State<NewCustomers> {
         final int customerIndex =
             customers.indexWhere((customer) => customer['_id'] == customerId);
         if (customerIndex != -1) {
-          // customers[customerIndex]['verified'] = true;
+          customers[customerIndex]['verified'] = true;
           customers[customerIndex]['discounted'] = true;
         }
         // Update local data (customers list) after successful verification
         setState(() {});
+        print(response.body);
 
         print('Verification status updated successfully');
       } else {
