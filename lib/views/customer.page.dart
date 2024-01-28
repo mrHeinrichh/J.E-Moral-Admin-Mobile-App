@@ -15,7 +15,6 @@ class CustomerPage extends StatefulWidget {
 class _CustomerPageState extends State<CustomerPage> {
   File? _profileImage;
   File? _discountedImage;
-
   final _profileImageStreamController = StreamController<File?>.broadcast();
   final _discountedImageStreamController = StreamController<File?>.broadcast();
 

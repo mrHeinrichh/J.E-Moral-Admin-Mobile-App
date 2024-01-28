@@ -87,7 +87,6 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
             children: [
               Text('Name: ${nameController.text}'),
               Text('Contact Number: ${contactNumberController.text}'),
-              Text('Scheduled Date and Time: ${selectedDateTime.toString()}'),
             ],
           ),
           actions: [
@@ -128,7 +127,6 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
             children: [
               Text('Name: ${nameController.text}'),
               Text('Contact Number: ${contactNumberController.text}'),
-              Text('Scheduled Date and Time: ${selectedDateTime.toString()}'),
             ],
           ),
           actions: [
@@ -195,25 +193,10 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CustomizedButton(
-                onPressed: () async {
-                  final selectedDate = await showDateTimePicker(context);
-                  if (selectedDate != null) {
-                    setState(() {
-                      selectedDateTime = selectedDate;
-                      showConfirmationDialog();
-                    });
-                  }
-                },
-                text: 'Scheduled',
-                height: 50,
-                width: 180,
-                fontz: 20,
-              ),
-              CustomizedButton(
                 onPressed: () {
                   confirmDialog();
                 },
-                text: 'Deliver Now',
+                text: 'Save',
                 height: 50,
                 width: 180,
                 fontz: 20,

@@ -140,6 +140,16 @@ class _WalkinPageState extends State<WalkinPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        title: const Text(
+          'Walkin Orders',
+          style: TextStyle(color: Color(0xFF232937), fontSize: 24),
+        ),
+        iconTheme: IconThemeData(color: Color(0xFF232937)),
+        actions: <Widget>[],
+      ),
       body: Stack(
         children: [
           Column(
