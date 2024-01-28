@@ -11,4 +11,6 @@ const String newCustomerRoute = '/newcustomer';
 const String activeOrdersRoute = '/activeorders';
 const String announcementRoute = '/announcements';
 const String faqRoute = '/faqs';
-
+const String cartRoute = '/cart';
+const String productDetailsPage = '/productDetailsPage';
+const String setDeliveryPage = '/setDeliveryPage';

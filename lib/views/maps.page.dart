@@ -25,15 +25,21 @@ class _MapsPageState extends State<MapsPage> {
   bool isLoading = true;
   late Timer timer; // Declare a Timer variable
   Map<String, dynamic>? riderData; // Add this line to store rider data
-  bool isMarkerDataLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    fetchData(widget.transactionId);
+    if (widget.transactionId != null) {
+      fetchData(widget.transactionId);
+    }
     deliveryLocation = widget.deliveryLocation;
 
-    timer = Timer.periodic(Duration(seconds: 3), (Timer t) => fetchData());
+    timer = Timer.periodic(
+      Duration(seconds: 10),
+      (Timer t) {
+        fetchData(widget.transactionId);
+      },
+    );
   }
 
   @override
@@ -44,7 +50,6 @@ class _MapsPageState extends State<MapsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // fetchData();
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -144,7 +149,6 @@ class _MapsPageState extends State<MapsPage> {
     if (!isLoading) {
       return;
     }
-
     try {
       final response = await http.get(
         Uri.parse(
@@ -176,9 +180,15 @@ class _MapsPageState extends State<MapsPage> {
         });
       } else {
         print('Failed to load additional data: ${response.statusCode}');
+        // setState(() {
+        //   isLoading = false; // Set isLoading to false in case of an error
+        // });
       }
     } catch (e) {
       print('Error fetching additional data: $e');
+      setState(() {
+        isLoading = false; // Set isLoading to false in case of an error
+      });
     }
   }
 
