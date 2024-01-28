@@ -351,6 +351,7 @@ class _HomePageState extends State<HomePage> {
                 child: DataTable(
                   columns: [
                     DataColumn(label: Text('Name')),
+                    DataColumn(label: Text('Barangay')),
                     DataColumn(label: Text('Total')),
                     DataColumn(label: Text('Type')),
                     DataColumn(label: Text('Date')),
@@ -364,6 +365,7 @@ class _HomePageState extends State<HomePage> {
                       return DataRow(
                         cells: [
                           DataCell(Text(transaction['name'])),
+                          DataCell(Text(transaction['barangay'])),
                           DataCell(Text(
                               '\₱${(transaction['total'] ?? 0.0).toStringAsFixed(2)}')),
                           DataCell(Text(transaction['__t'])),
@@ -384,7 +386,7 @@ class _HomePageState extends State<HomePage> {
                           style: TextStyle(fontWeight: FontWeight.bold),
                         )),
                         DataCell(Text('')),
-                        // DataCell(Text('')),
+                        DataCell(Text('')),
                         DataCell(Text('')),
                       ],
                     ),
