@@ -84,6 +84,37 @@ class _RecentOrdersState extends State<RecentOrders> {
     }
   }
 
+  Future<void> declineTransactionStatus(String transactionId) async {
+    try {
+      Map<String, dynamic> updateData = {
+        "status": "Declined",
+        "deleted": "true",
+        "__t": "Delivery"
+      };
+
+      final String apiUrl =
+          'https://lpg-api-06n8.onrender.com/api/v1/transactions/$transactionId';
+      final http.Response response = await http.patch(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(updateData),
+      );
+
+      if (response.statusCode == 200) {
+        print('Transaction updated successfully');
+        print('Response: ${response.body}');
+        print(response.statusCode);
+        await refreshData();
+      } else {
+        print(
+            'Failed to update transaction. Status code: ${response.statusCode}');
+        print('Response: ${response.body}');
+      }
+    } catch (error) {
+      print('Error updating transaction: $error');
+    }
+  }
+
   Future<void> fetchData() async {
     try {
       final response = await http.get(
@@ -337,7 +368,18 @@ class _RecentOrdersState extends State<RecentOrders> {
                             height: 45,
                             width: 150,
                             child: ElevatedButton(
-                              onPressed: () async {},
+                              onPressed: () async {
+                                // Show confirmation dialog before updating the status
+                                await showConfirmationDialog(
+                                  context,
+                                  'Are you sure you want to decline this transaction?',
+                                  () {
+                                    declineTransactionStatus(
+                                        transaction['_id']);
+                                    Navigator.of(context).pop();
+                                  },
+                                );
+                              },
                               style: ElevatedButton.styleFrom(
                                 primary: Colors.red,
                               ),
