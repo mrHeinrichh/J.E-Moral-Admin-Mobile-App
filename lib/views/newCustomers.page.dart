@@ -85,21 +85,20 @@ class _NewCustomersState extends State<NewCustomers> {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'verified': true}),
+        body: jsonEncode({
+          'verified': true,
+          'type': 'Customer',
+        }),
       );
 
       print('Update Verification Status Response: ${response.body}');
 
       if (response.statusCode == 200) {
-        final int customerIndex =
-            customers.indexWhere((customer) => customer['_id'] == customerId);
-        if (customerIndex != -1) {
-          customers[customerIndex]['verified'] = true;
-        }
-        // Update local data (customers list) after successful verification
-        setState(() {});
-
+        Map<String, dynamic> responseData = json.decode(response.body);
+        print('Updated User Data: ${responseData['data']}');
+        print(response.body);
         print('Verification status updated successfully');
+        refreshData();
       } else {
         print('Error updating verification status: ${response.statusCode}');
       }
