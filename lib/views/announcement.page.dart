@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/services.dart';
+import 'package:admin_app/widgets/date_time_picker.dart';
 
 class AnnouncementPage extends StatefulWidget {
   @override
@@ -210,6 +211,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     }
   }
 
+//NOT YET WORKING
   Future<void> search(String query) async {
     final response = await http.get(Uri.parse(
         'https://lpg-api-06n8.onrender.com/api/v1/announcements/?search=$query'));
@@ -220,29 +222,101 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
       final List<Map<String, dynamic>> announcementData = (data['data'] as List)
           .where((announcementData) =>
               announcementData is Map<String, dynamic> &&
-              announcementData.containsKey('text'))
+              announcementData.containsKey('__v') &&
+              announcementData['__v'] == 0)
           .map((announcementData) => announcementData as Map<String, dynamic>)
           .toList();
 
       setState(() {
         announcementDataList = announcementData;
       });
-    } else {
-      // Handle the case when the response status code is not 200
-    }
+    } else {}
   }
 
+  // TextEditingController dateStartController = TextEditingController();
+  // DateTime? selectedStartDateTime;
+
+  // Future<void> _selectedStartDateTime(BuildContext context) async {
+  //   final DateTime? picked = await showDatePicker(
+  //     context: context,
+  //     initialDate: selectedStartDateTime ?? DateTime.now(),
+  //     firstDate: DateTime(2000),
+  //     lastDate: DateTime(2101),
+  //   );
+
+  //   if (picked != null) {
+  //     final TimeOfDay? startPickedTime = await showTimePicker(
+  //       context: context,
+  //       initialTime: selectedStartDateTime != null
+  //           ? TimeOfDay.fromDateTime(selectedStartDateTime!)
+  //           : TimeOfDay.now(),
+  //     );
+
+  //     if (startPickedTime != null) {
+  //       setState(() {
+  //         selectedStartDateTime = DateTime(
+  //           picked.year,
+  //           picked.month,
+  //           picked.day,
+  //           startPickedTime.hour,
+  //           startPickedTime.minute,
+  //         );
+  //         dateStartController.text = selectedStartDateTime.toString();
+  //       });
+  //     }
+  //   }
+  // }
+
+  // TextEditingController dateEndController = TextEditingController();
+  // DateTime? selectedEndDateTime;
+
+  // Future<void> _selectedEndDateTime(BuildContext context) async {
+  //   final DateTime? picked = await showDatePicker(
+  //     context: context,
+  //     initialDate: selectedEndDateTime ?? DateTime.now(),
+  //     firstDate: DateTime(2000),
+  //     lastDate: DateTime(2101),
+  //   );
+
+  //   if (picked != null) {
+  //     final TimeOfDay? endPickedTime = await showTimePicker(
+  //       context: context,
+  //       initialTime: selectedEndDateTime != null
+  //           ? TimeOfDay.fromDateTime(selectedEndDateTime!)
+  //           : TimeOfDay.now(),
+  //     );
+
+  //     if (endPickedTime != null) {
+  //       setState(() {
+  //         selectedEndDateTime = DateTime(
+  //           picked.year,
+  //           picked.month,
+  //           picked.day,
+  //           endPickedTime.hour,
+  //           endPickedTime.minute,
+  //         );
+  //         dateEndController.text = selectedEndDateTime.toString();
+  //       });
+  //     }
+  //   }
+  // }
+
   void openAddAnnouncementDialog() {
-    // Create controllers for each field
     TextEditingController textController = TextEditingController();
     TextEditingController imageController = TextEditingController();
+
+    TextEditingController dateStartController = TextEditingController();
+    TextEditingController dateEndController = TextEditingController();
+
     final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        // dateStartController.clear();
+        // dateEndController.clear();
         return AlertDialog(
-          title: Text('Add New Announcement'),
+          title: const Text('Add New Announcement'),
           content: SingleChildScrollView(
             child: Form(
               key: formKey,
@@ -250,20 +324,23 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                 children: [
                   TextFormField(
                     controller: textController,
-                    decoration: InputDecoration(labelText: 'Title'),
+                    decoration: const InputDecoration(labelText: 'Title'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the announcement title';
+                        return 'Please enter the Announcement Title';
                       }
                       return null;
                     },
                   ),
-                  Text(
-                    "\nAnnouncement Image",
-                    style: TextStyle(
-                      fontSize: 15.0,
-                      color: Colors.grey[700],
-                    ),
+                  const SizedBox(height: 10),
+                  DateTimePicker(
+                    controller: dateStartController,
+                    labelText: 'Starting Date and Time',
+                  ),
+                  const SizedBox(height: 10),
+                  DateTimePicker(
+                    controller: dateEndController,
+                    labelText: 'Ending Date and Time',
                   ),
                   StreamBuilder<File?>(
                     stream: _imageStreamController.stream,
@@ -292,7 +369,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                               await _pickImage();
                             },
                             child: const Text(
-                              "Upload Image",
+                              "Upload Announcement Image",
                               style: TextStyle(
                                 color: Colors.blue,
                                 fontSize: 15.0,
@@ -312,31 +389,25 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
                 if (formKey.currentState!.validate()) {
-                  // Additional conditions for image validation
                   if (_image == null) {
                     showCustomOverlay(context, 'Please Upload an Image');
                   } else {
-                    // Create a new announcement object from the input data
                     Map<String, dynamic> newAnnouncement = {
                       "text": textController.text,
                       "image": imageController.text,
-                      "start": DateTime.now().toIso8601String(),
-                      "end": DateTime.now()
-                          .add(Duration(days: 365))
-                          .toIso8601String(),
+                      "start": dateStartController.text,
+                      "end": dateEndController.text,
                     };
-
-                    // Call the function to add the new announcement to the API
                     addAnnouncementToAPI(newAnnouncement);
                   }
                 }
               },
-              child: Text('Save'),
+              child: const Text('Save'),
             ),
           ],
         );
@@ -350,15 +421,17 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
 
     TextEditingController textController =
         TextEditingController(text: announcementToEdit['text']);
-    TextEditingController imageController =
-        TextEditingController(text: announcementToEdit['image']);
+    TextEditingController dateStartController =
+        TextEditingController(text: announcementToEdit['start']);
+    TextEditingController dateEndController =
+        TextEditingController(text: announcementToEdit['end']);
     final _formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Edit Data'),
+          title: const Text('Edit Data'),
           content: Form(
             key: _formKey,
             child: SingleChildScrollView(
@@ -366,7 +439,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                 children: [
                   TextFormField(
                     controller: textController,
-                    decoration: InputDecoration(labelText: 'Title'),
+                    decoration: const InputDecoration(labelText: 'Title'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the announcement title';
@@ -374,12 +447,18 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                       return null;
                     },
                   ),
-                  Text(
-                    "\nAnnouncement Image",
-                    style: TextStyle(
-                      fontSize: 15.0,
-                      color: Colors.grey[700],
-                    ),
+                  const SizedBox(height: 10),
+                  DateTimePicker(
+                    controller: dateStartController,
+                    labelText: 'Starting Date and Time',
+                    initialDateTime:
+                        DateTime.parse(announcementToEdit['start']),
+                  ),
+                  const SizedBox(height: 10),
+                  DateTimePicker(
+                    controller: dateEndController,
+                    labelText: 'Ending Date and Time',
+                    initialDateTime: DateTime.parse(announcementToEdit['end']),
                   ),
                   StreamBuilder<File?>(
                     stream: _imageStreamController.stream,
@@ -416,7 +495,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                               await _pickImageForEdit();
                             },
                             child: const Text(
-                              "Upload Image",
+                              "Upload Announcement Image",
                               style: TextStyle(
                                 color: Colors.blue,
                                 fontSize: 15.0,
@@ -434,16 +513,17 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
                   announcementToEdit['text'] = textController.text;
+                  announcementToEdit['start'] = dateStartController.text;
+                  announcementToEdit['end'] = dateEndController.text;
 
-                  // Upload new image only if available
                   if (_image != null) {
                     var uploadResponse = await uploadImageToServer(_image!);
                     if (uploadResponse != null) {
@@ -453,6 +533,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                       print("Image upload failed");
                     }
                   }
+
                   final url = Uri.parse(
                       'https://lpg-api-06n8.onrender.com/api/v1/announcements/$id');
                   final headers = {'Content-Type': 'application/json'};
@@ -463,6 +544,8 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                     body: jsonEncode(announcementToEdit),
                   );
 
+                  print('Response Body: ${response.body}');
+
                   if (response.statusCode == 200) {
                     fetchData();
                     Navigator.pop(context);
@@ -472,7 +555,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                   }
                 }
               },
-              child: Text('Save'),
+              child: const Text('Save'),
             ),
           ],
         );
@@ -494,44 +577,38 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
   }
 
   void deleteData(String id) async {
-    // Show a confirmation dialog to confirm the deletion
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete Data'),
-          content: Text('Are you sure you want to delete this data?'),
+          title: const Text('Delete Data'),
+          content: const Text('Are you sure you want to delete this data?'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
-                // Send a request to your API to delete the data
                 final url = Uri.parse(
                     'https://lpg-api-06n8.onrender.com/api/v1/announcements/$id');
                 final response = await http.delete(url);
 
                 if (response.statusCode == 200) {
-                  // Data has been successfully deleted
-                  // Update the UI to remove the deleted data
                   setState(() {
                     announcementDataList
                         .removeWhere((data) => data['_id'] == id);
                   });
 
-                  Navigator.pop(context); // Close the dialog
+                  Navigator.pop(context);
                 } else {
-                  // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
                   print(
                       'Failed to delete the data. Status code: ${response.statusCode}');
-                  // You can also display an error message to the announcement
                 }
               },
-              child: Text('Delete'),
+              child: const Text('Delete'),
             ),
           ],
         );
@@ -549,13 +626,12 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
           'Announcements CRUD',
           style: TextStyle(color: Color(0xFF232937), fontSize: 24),
         ),
-        iconTheme: IconThemeData(color: Color(0xFF232937)),
+        iconTheme: const IconThemeData(color: Color(0xFF232937)),
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.add),
-            color: Color(0xFF232937),
+            icon: const Icon(Icons.add),
+            color: const Color(0xFF232937),
             onPressed: () {
-              // Open the dialog to add a new announcement
               openAddAnnouncementDialog();
             },
           ),
@@ -572,27 +648,23 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                   Expanded(
                     child: TextField(
                       controller: searchController,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Search',
                         border: InputBorder.none,
-                        // Remove input field border
                       ),
                     ),
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      // Handle the search button click
                       search(searchController.text);
                     },
                     style: ElevatedButton.styleFrom(
-                      primary: Colors
-                          .black, // Change the button background color to black
+                      primary: Colors.black,
                       shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(20), // Apply border radius
+                        borderRadius: BorderRadius.circular(20),
                       ),
                     ),
-                    child: Icon(Icons.search),
+                    child: const Icon(Icons.search),
                   ),
                 ],
               ),
@@ -602,14 +674,13 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
               child: Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: Color(0xFF232937), // You can change the border color
+                    color: const Color(0xFF232937),
                     width: 1.0,
-                    // You can change the border width
                   ),
                   borderRadius: BorderRadius.circular(12.0),
                 ),
                 child: DataTable(
-                  columns: <DataColumn>[
+                  columns: const <DataColumn>[
                     DataColumn(label: Text('Title')),
                     DataColumn(label: Text('Image')),
                     DataColumn(
@@ -629,11 +700,11 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                           Row(
                             children: [
                               IconButton(
-                                icon: Icon(Icons.edit),
+                                icon: const Icon(Icons.edit),
                                 onPressed: () => updateData(id),
                               ),
                               IconButton(
-                                icon: Icon(Icons.delete),
+                                icon: const Icon(Icons.delete),
                                 onPressed: () => deleteData(id),
                               ),
                             ],
@@ -652,26 +723,22 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                 if (currentPage > 1)
                   ElevatedButton(
                     onPressed: () {
-                      // Load the previous page of data
                       fetchData(page: currentPage - 1);
                     },
                     style: ElevatedButton.styleFrom(
-                      primary: Colors
-                          .black, // Change the button background color to black
+                      primary: Colors.black,
                     ),
-                    child: Text('Previous'),
+                    child: const Text('Previous'),
                   ),
-                SizedBox(width: 20),
+                const SizedBox(width: 20),
                 ElevatedButton(
                   onPressed: () {
-                    // Load the next page of data
                     fetchData(page: currentPage + 1);
                   },
                   style: ElevatedButton.styleFrom(
-                    primary: Colors
-                        .black, // Change the button background color to black
+                    primary: Colors.black,
                   ),
-                  child: Text('Next'),
+                  child: const Text('Next'),
                 ),
               ],
             ),
