@@ -1,12 +1,13 @@
 import 'package:admin_app/routes/app_routes.dart';
 import 'package:admin_app/views/cart_provider.dart';
 import 'package:admin_app/widgets/custom_button.dart';
-import 'package:admin_app/widgets/custom_timepicker.dart';
+// import 'package:admin_app/widgets/custom_timepicker.dart';
 import 'package:admin_app/widgets/text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 
 class SetDeliveryPage extends StatefulWidget {
   @override
@@ -14,6 +15,7 @@ class SetDeliveryPage extends StatefulWidget {
 }
 
 DateTime? selectedDateTime;
+final formKey = GlobalKey<FormState>();
 
 class _SetDeliveryPageState extends State<SetDeliveryPage> {
   List<String> searchResults = [];
@@ -80,7 +82,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Confirmation'),
+          title: const Text('Confirmation'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,7 +96,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
@@ -104,7 +106,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
                     .clearCart();
                 Navigator.pushNamed(currentContext, walkinRoute);
               },
-              child: Text('Confirm'),
+              child: const Text('Confirm'),
             ),
           ],
         );
@@ -120,13 +122,56 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Confirmation'),
+          title: const Text('Confirmation'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Name: ${nameController.text}'),
-              Text('Contact Number: ${contactNumberController.text}'),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      "Name:",
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelMedium!
+                          .copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      "${nameController.text}",
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium!
+                          .copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      "Contact Number:",
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelMedium!
+                          .copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      "${contactNumberController.text}",
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium!
+                          .copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
           actions: [
@@ -134,7 +179,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
@@ -144,7 +189,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
                     .clearCart();
                 Navigator.pushNamed(currentContext, walkinRoute);
               },
-              child: Text('Confirm'),
+              child: const Text('Confirm'),
             ),
           ],
         );
@@ -163,7 +208,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
           style: TextStyle(color: Color(0xFF232937), fontSize: 24),
         ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.pushReplacementNamed(context, dashboardRoute);
           },
@@ -173,20 +218,36 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
         children: [
           Padding(
             padding: const EdgeInsets.all(15.0),
-            child: Column(
-              children: [
-                CustomTextField1(
-                  labelText: 'Name',
-                  hintText: 'Enter your Name',
-                  controller: nameController,
-                ),
-                CustomTextField1(
-                  labelText: 'Contact Number',
-                  hintText: 'Enter your contact number',
-                  controller: contactNumberController,
-                ),
-                const SizedBox(height: 20),
-              ],
+            child: Form(
+              key: formKey,
+              child: Column(
+                children: [
+                  SetDeliveryText(
+                    labelText: 'Name',
+                    hintText: 'Enter Name',
+                    controller: nameController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please Enter the name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  SetDeliveryTextNumber(
+                    labelText: 'Contact Number',
+                    controller: contactNumberController,
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please Enter the Number';
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
           Row(
@@ -194,7 +255,9 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
             children: [
               CustomizedButton(
                 onPressed: () {
-                  confirmDialog();
+                  if (formKey.currentState?.validate() == true) {
+                    confirmDialog();
+                  }
                 },
                 text: 'Save',
                 height: 50,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+//Unused CustomTextField
 class CustomTextField extends StatelessWidget {
   final String labelText;
   final String hintText;
@@ -29,33 +31,82 @@ class CustomTextField extends StatelessWidget {
   }
 }
 
-class CustomTextField1 extends StatelessWidget {
+class SetDeliveryText extends StatelessWidget {
   final String labelText;
   final String hintText;
-  final double borderRadius;
-  final TextEditingController? controller; // Add controller parameter
+  final TextEditingController controller;
+  final String? Function(String?)? validator;
 
-  const CustomTextField1({
-    Key? key,
+  SetDeliveryText({
     required this.labelText,
     required this.hintText,
-    this.borderRadius = 10.0,
-    this.controller, // Provide a default value of null for the controller
-  }) : super(key: key);
+    required this.controller,
+    this.validator,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 4.0),
-      child: TextField(
-        controller: controller, // Use the provided controller
-        decoration: InputDecoration(
-          labelText: labelText,
-          labelStyle: const TextStyle(fontSize: 15.0),
-          hintText: hintText,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: TextFormField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: labelText,
+            labelStyle: const TextStyle(fontSize: 15.0),
+            hintText: hintText,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
           ),
+          validator: validator,
+        ),
+      ),
+    );
+  }
+}
+
+class SetDeliveryTextNumber extends StatelessWidget {
+  final String labelText;
+  final TextEditingController controller;
+  final String? Function(String?)? validator;
+  final int maxLength;
+
+  SetDeliveryTextNumber({
+    required this.labelText,
+    required this.controller,
+    this.validator,
+    this.maxLength = 10,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 4.0),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: TextFormField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: labelText,
+            labelStyle: const TextStyle(fontSize: 15.0),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+          ),
+          validator: validator,
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(maxLength),
+          ],
         ),
       ),
     );
