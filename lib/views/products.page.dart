@@ -31,6 +31,7 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   int currentPage = 1;
+  int limit = 10;
 
   Future<void> _pickImage() async {
     final pickedFile =
@@ -150,7 +151,7 @@ class _ProductsPageState extends State<ProductsPage> {
     });
   }
 
-  Future<void> fetchData({int page = 1, int limit = 12}) async {
+  Future<void> fetchData({int page = 1}) async {
     final response = await http.get(Uri.parse(
         'https://lpg-api-06n8.onrender.com/api/v1/items/?page=$page&limit=$limit'));
     if (response.statusCode == 200) {
