@@ -109,14 +109,11 @@ class _CustomerPageState extends State<CustomerPage> {
         final responseBody = await response.stream.bytesToString();
         print("Profile Image uploaded successfully: $responseBody");
 
-        // Parse the response JSON
         final parsedResponse = json.decode(responseBody);
 
-        // Check if 'data' is present in the response
         if (parsedResponse.containsKey('data')) {
           final List<dynamic> data = parsedResponse['data'];
 
-          // Check if 'path' is present in the first item of the 'data' array
           if (data.isNotEmpty && data[0].containsKey('path')) {
             final profileImageUrl = data[0]['path'];
             print("Image URL: $profileImageUrl");
@@ -211,14 +208,11 @@ class _CustomerPageState extends State<CustomerPage> {
         final responseBody = await response.stream.bytesToString();
         print("Discounted Image uploaded successfully: $responseBody");
 
-        // Parse the response JSON
         final parsedResponse = json.decode(responseBody);
 
-        // Check if 'data' is present in the response
         if (parsedResponse.containsKey('data')) {
           final List<dynamic> data = parsedResponse['data'];
 
-          // Check if 'path' is present in the first item of the 'data' array
           if (data.isNotEmpty && data[0].containsKey('path')) {
             final discountedImageUrl = data[0]['path'];
             print("Image URL: $discountedImageUrl");
@@ -253,16 +247,14 @@ class _CustomerPageState extends State<CustomerPage> {
 
       final List<Map<String, dynamic>> customerData = (data['data'] as List)
           .where((userData) =>
-              userData is Map<String, dynamic> &&
-              userData['__t'] == 'Customer') // Filter for 'Customer'
+              userData is Map<String, dynamic> && userData['__t'] == 'Customer')
           .map((userData) => userData as Map<String, dynamic>)
           .toList();
 
       setState(() {
-        // Clear the existing data before adding new data
         customerDataList.clear();
         customerDataList.addAll(customerData);
-        currentPage = page; // Update the current page number
+        currentPage = page;
       });
     } else {
       throw Exception('Failed to load data from the API');
@@ -301,35 +293,6 @@ class _CustomerPageState extends State<CustomerPage> {
       }
     }
 
-    // var profileUploadResponse =
-    //     await uploadProfileImageToServer(_profileImage!);
-    // print("Upload Response: $profileUploadResponse");
-
-    // if (profileUploadResponse != null) {
-    //   print("Image URL: ${profileUploadResponse["url"]}");
-    //   newCustomer["image"] = profileUploadResponse["url"];
-    // } else {
-    //   print("Profile Image upload failed");
-    //   return;
-    // }
-
-    // var discountedUploadResponse =
-    //     await uploadDiscountedImageToServer(_discountedImage!);
-    // print("Upload Response: $discountedUploadResponse");
-
-    // if (discountedUploadResponse != null) {
-    //   print("Image URL: ${discountedUploadResponse["url"]}");
-    //   newCustomer["discountIdImage"] = discountedUploadResponse["url"];
-    // } else {
-    //   print("Discounted Image upload failed");
-    //   return;
-    // }
-
-    // newCustomer["image"] = profileUploadResponse["url"];
-    // newCustomer["discountIdImage"] = discountedUploadResponse["url"];
-
-    // print("  newCustomer: $newCustomer");
-
     final response = await http.post(
       url,
       headers: headers,
@@ -347,11 +310,9 @@ class _CustomerPageState extends State<CustomerPage> {
   }
 
   void updateData(String id) {
-    // Find the customer data to edit
     Map<String, dynamic> customerToEdit =
         customerDataList.firstWhere((data) => data['_id'] == id);
 
-    // Create controllers for each field
     TextEditingController nameController =
         TextEditingController(text: customerToEdit['name'].toString());
     TextEditingController contactNumberController =
@@ -362,16 +323,8 @@ class _CustomerPageState extends State<CustomerPage> {
         TextEditingController(text: customerToEdit['verified'].toString());
     TextEditingController discountedController =
         TextEditingController(text: customerToEdit['discounted'].toString());
-    // TextEditingController typeController =
-    //     TextEditingController(text: customerToEdit['__t']);
-    // TextEditingController discountIdImageController = TextEditingController(
-    //     text: customerToEdit['discountIdImage'].toString());
-    // TextEditingController emailController =
-    //     TextEditingController(text: customerToEdit['email']);
-    // TextEditingController passwordController =
-    //     TextEditingController(text: customerToEdit['password']);
-    // TextEditingController imageController =
-    //     TextEditingController(text: customerToEdit['image'].toString());
+    TextEditingController emailController =
+        TextEditingController(text: customerToEdit['email']);
 
     showDialog(
       context: context,
@@ -501,6 +454,20 @@ class _CustomerPageState extends State<CustomerPage> {
                       discountedController.text = newValue.toString();
                     },
                   ),
+                  TextFormField(
+                    controller: emailController,
+                    decoration: const InputDecoration(labelText: 'Email'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter Email";
+                      } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}')
+                          .hasMatch(value!)) {
+                        return "Enter Correct Email";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
                   StreamBuilder<File?>(
                     stream: _discountedImageStreamController.stream,
                     builder: (context, snapshot) {
@@ -549,30 +516,6 @@ class _CustomerPageState extends State<CustomerPage> {
                       );
                     },
                   ),
-                  // TextFormField(
-                  //     controller: emailController,
-                  //     decoration: const InputDecoration(labelText: 'Email'),
-                  //     validator: (value) {
-                  //       if (value!.isEmpty) {
-                  //         return "Please Enter Email";
-                  //       } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}')
-                  //           .hasMatch(value!)) {
-                  //         return "Enter Correct Email";
-                  //       } else {
-                  //         return null;
-                  //       }s
-                  //     }),
-                  // TextFormField(
-                  //   controller: passwordController,
-                  //   decoration: const InputDecoration(labelText: 'Password'),
-                  //   validator: (value) {
-                  //     if (value == null || value.isEmpty) {
-                  //       return "Please Enter Password";
-                  //     } else {
-                  //       return null;
-                  //     }
-                  //   },
-                  // ),
                 ],
               ),
             ),
@@ -582,7 +525,7 @@ class _CustomerPageState extends State<CustomerPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
@@ -595,10 +538,9 @@ class _CustomerPageState extends State<CustomerPage> {
                       (verifiedController.text).toString();
                   customerToEdit['discounted'] =
                       (discountedController.text).toString();
-                  customerToEdit['__t'] = "Customer";
+                  customerToEdit['type'] = "Customer";
                   customerToEdit['discountIdImage'] = "";
-                  // customerToEdit['email'] = emailController.text;
-                  // customerToEdit['password'] = passwordController.text;
+                  customerToEdit['email'] = emailController.text;
                   customerToEdit['image'] = "";
 
                   if (_profileImage != null) {
@@ -683,19 +625,13 @@ class _CustomerPageState extends State<CustomerPage> {
   }
 
   void openAddCustomerDialog() {
-    // Create controllers for each field
     TextEditingController nameController = TextEditingController();
     TextEditingController contactNumberController = TextEditingController();
     TextEditingController addressController = TextEditingController();
     TextEditingController verifiedController = TextEditingController();
     TextEditingController discountedController = TextEditingController();
-    // TextEditingController typeController = TextEditingController();
-    // TextEditingController discountIdImageController = TextEditingController();
     TextEditingController emailController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
-    // TextEditingController imageController = TextEditingController();
-
-    // final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
     bool isProfileImageUploaded = false;
     // bool isDiscountedImageUploaded = false;
@@ -707,7 +643,6 @@ class _CustomerPageState extends State<CustomerPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          // key: _scaffoldKey,
           title: const Text('Add New Customer'),
           content: SingleChildScrollView(
             child: Form(
@@ -759,8 +694,6 @@ class _CustomerPageState extends State<CustomerPage> {
                       validator: (value) {
                         if (value!.isEmpty) {
                           return "Please Enter Name";
-                          // } else if (!RegExp(r'^[a-z A-Z]+$').hasMatch(value!)) {
-                          //   return "Enter Correct Name";
                         } else {
                           return null;
                         }
@@ -772,10 +705,6 @@ class _CustomerPageState extends State<CustomerPage> {
                     validator: (value) {
                       if (value!.isEmpty) {
                         return "Please Enter Number";
-                        // } else if (!RegExp(
-                        //         r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]+$')
-                        //     .hasMatch(value!)) {
-                        //   return "Enter Correct Phone Number";
                       } else {
                         return null;
                       }
@@ -930,10 +859,8 @@ class _CustomerPageState extends State<CustomerPage> {
                       "verified": verifiedController.text,
                       "discounted": discountedController.text,
                       "__t": "Customer",
-                      "discountIdImage": "",
                       "email": emailController.text,
                       "password": passwordController.text,
-                      "image": "",
                     };
                     addCustomerToAPI(newCustomer);
                   }
@@ -979,45 +906,38 @@ class _CustomerPageState extends State<CustomerPage> {
     });
   }
 
-// Function to handle data delete
   void deleteData(String id) async {
-    // Show a confirmation dialog to confirm the deletion
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete Data'),
-          content: Text('Are you sure you want to delete this data?'),
+          title: const Text('Delete Data'),
+          content: const Text('Are you sure you want to delete this data?'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
-                // Send a request to your API to delete the data
                 final url = Uri.parse(
                     'https://lpg-api-06n8.onrender.com/api/v1/users/$id');
                 final response = await http.delete(url);
 
                 if (response.statusCode == 200) {
-                  // Data has been successfully deleted
-                  // Update the UI to remove the deleted data
                   setState(() {
                     customerDataList.removeWhere((data) => data['_id'] == id);
                   });
 
-                  Navigator.pop(context); // Close the dialog
+                  Navigator.pop(context);
                 } else {
-                  // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
                   print(
                       'Failed to delete the data. Status code: ${response.statusCode}');
-                  // You can also display an error message to the user
                 }
               },
-              child: Text('Delete'),
+              child: const Text('Delete'),
             ),
           ],
         );
@@ -1038,11 +958,11 @@ class _CustomerPageState extends State<CustomerPage> {
           'Customer CRUD',
           style: TextStyle(color: Color(0xFF232937), fontSize: 24),
         ),
-        iconTheme: IconThemeData(color: Color(0xFF232937)),
+        iconTheme: const IconThemeData(color: Color(0xFF232937)),
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.add),
-            color: Color(0xFF232937),
+            icon: const Icon(Icons.add),
+            color: const Color(0xFF232937),
             onPressed: () {
               openAddCustomerDialog();
             },
@@ -1061,27 +981,23 @@ class _CustomerPageState extends State<CustomerPage> {
                     Expanded(
                       child: TextField(
                         controller: searchController,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           hintText: 'Search',
                           border: InputBorder.none,
-                          // Remove input field border
                         ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        // Handle the search button click
                         search(searchController.text);
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: Colors
-                            .black, // Change the button background color to black
+                        primary: Colors.black,
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(20), // Apply border radius
+                          borderRadius: BorderRadius.circular(20),
                         ),
                       ),
-                      child: Icon(Icons.search),
+                      child: const Icon(Icons.search),
                     ),
                   ],
                 ),
@@ -1091,15 +1007,13 @@ class _CustomerPageState extends State<CustomerPage> {
                 child: Container(
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color:
-                          Color(0xFF232937), // You can change the border color
+                      color: const Color(0xFF232937),
                       width: 1.0,
-                      // You can change the border width
                     ),
                     borderRadius: BorderRadius.circular(12.0),
                   ),
                   child: DataTable(
-                    columns: <DataColumn>[
+                    columns: const <DataColumn>[
                       DataColumn(label: Text('Name')),
                       DataColumn(label: Text('Contact Number')),
                       DataColumn(label: Text('Address')),
@@ -1133,11 +1047,11 @@ class _CustomerPageState extends State<CustomerPage> {
                             Row(
                               children: [
                                 IconButton(
-                                  icon: Icon(Icons.edit),
+                                  icon: const Icon(Icons.edit),
                                   onPressed: () => updateData(id),
                                 ),
                                 IconButton(
-                                  icon: Icon(Icons.delete),
+                                  icon: const Icon(Icons.delete),
                                   onPressed: () => deleteData(id),
                                 ),
                               ],
@@ -1156,26 +1070,22 @@ class _CustomerPageState extends State<CustomerPage> {
                   if (currentPage > 1)
                     ElevatedButton(
                       onPressed: () {
-                        // Load the previous page of data
                         fetchData(page: currentPage - 1);
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: Colors
-                            .black, // Change the button background color to black
+                        primary: Colors.black,
                       ),
-                      child: Text('Previous'),
+                      child: const Text('Previous'),
                     ),
                   SizedBox(width: 20),
                   ElevatedButton(
                     onPressed: () {
-                      // Load the next page of data
                       fetchData(page: currentPage + 1);
                     },
                     style: ElevatedButton.styleFrom(
-                      primary: Colors
-                          .black, // Change the button background color to black
+                      primary: Colors.black,
                     ),
-                    child: Text('Next'),
+                    child: const Text('Next'),
                   ),
                 ],
               ),
