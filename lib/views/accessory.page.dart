@@ -435,7 +435,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
           .where((accessoryData) =>
               accessoryData is Map<String, dynamic> &&
               accessoryData.containsKey('type') &&
-              accessoryData['category'] == 'Accessories')
+              accessoryData['category'] == 'Accessory')
           .map((accessoryData) => accessoryData as Map<String, dynamic>)
           .toList();
 
@@ -591,7 +591,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                     // Create a new accessory object from the input data
                     Map<String, dynamic> newAccessory = {
                       "name": nameController.text,
-                      "category": "Accessories",
+                      "category": "Accessory",
                       "description": descriptionController.text,
                       "weight": 0,
                       "quantity": quantityController.text,

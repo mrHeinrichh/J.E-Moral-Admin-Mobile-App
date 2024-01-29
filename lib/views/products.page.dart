@@ -268,7 +268,7 @@ class _ProductsPageState extends State<ProductsPage> {
                         categoryController.text = newValue!;
                       });
                     },
-                    items: ['Brandnew Tanks', 'Refill Tanks']
+                    items: ['Brand New Tanks', 'Refill Tanks']
                         .map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
@@ -514,8 +514,8 @@ class _ProductsPageState extends State<ProductsPage> {
                     decoration: const InputDecoration(labelText: 'Category'),
                     items: const [
                       DropdownMenuItem(
-                          value: 'Brandnew Tanks',
-                          child: Text('Brandnew Tanks')),
+                          value: 'Brand New Tanks',
+                          child: Text('Brand New Tanks')),
                       DropdownMenuItem(
                           value: 'Refill Tanks', child: Text('Refill Tanks')),
                     ],
