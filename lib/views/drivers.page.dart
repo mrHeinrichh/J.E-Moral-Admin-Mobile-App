@@ -27,8 +27,7 @@ class _DriversPageState extends State<DriversPage> {
 
   List<Map<String, dynamic>> riderDataList = [];
 
-  TextEditingController searchController =
-      TextEditingController(); // Controller for the search field
+  TextEditingController searchController = TextEditingController();
 
   @override
   void dispose() {
@@ -117,14 +116,11 @@ class _DriversPageState extends State<DriversPage> {
         final responseBody = await response.stream.bytesToString();
         print("Profile Image uploaded successfully: $responseBody");
 
-        // Parse the response JSON
         final parsedResponse = json.decode(responseBody);
 
-        // Check if 'data' is present in the response
         if (parsedResponse.containsKey('data')) {
           final List<dynamic> data = parsedResponse['data'];
 
-          // Check if 'path' is present in the first item of the 'data' array
           if (data.isNotEmpty && data[0].containsKey('path')) {
             final profileImageUrl = data[0]['path'];
             print("Image URL: $profileImageUrl");
@@ -216,14 +212,11 @@ class _DriversPageState extends State<DriversPage> {
         final responseBody = await response.stream.bytesToString();
         print("QR Image uploaded successfully: $responseBody");
 
-        // Parse the response JSON
         final parsedResponse = json.decode(responseBody);
 
-        // Check if 'data' is present in the response
         if (parsedResponse.containsKey('data')) {
           final List<dynamic> data = parsedResponse['data'];
 
-          // Check if 'path' is present in the first item of the 'data' array
           if (data.isNotEmpty && data[0].containsKey('path')) {
             final qrImageUrl = data[0]['path'];
             print("Image URL: $qrImageUrl");
@@ -317,14 +310,11 @@ class _DriversPageState extends State<DriversPage> {
         final responseBody = await response.stream.bytesToString();
         print("Driver Image uploaded successfully: $responseBody");
 
-        // Parse the response JSON
         final parsedResponse = json.decode(responseBody);
 
-        // Check if 'data' is present in the response
         if (parsedResponse.containsKey('data')) {
           final List<dynamic> data = parsedResponse['data'];
 
-          // Check if 'path' is present in the first item of the 'data' array
           if (data.isNotEmpty && data[0].containsKey('path')) {
             final driverImageUrl = data[0]['path'];
             print("Image URL: $driverImageUrl");
@@ -418,14 +408,11 @@ class _DriversPageState extends State<DriversPage> {
         final responseBody = await response.stream.bytesToString();
         print("Seminar Certificate Image uploaded successfully: $responseBody");
 
-        // Parse the response JSON
         final parsedResponse = json.decode(responseBody);
 
-        // Check if 'data' is present in the response
         if (parsedResponse.containsKey('data')) {
           final List<dynamic> data = parsedResponse['data'];
 
-          // Check if 'path' is present in the first item of the 'data' array
           if (data.isNotEmpty && data[0].containsKey('path')) {
             final certImageUrl = data[0]['path'];
             print("Image URL: $certImageUrl");
@@ -461,16 +448,14 @@ class _DriversPageState extends State<DriversPage> {
 
       final List<Map<String, dynamic>> riderData = (data['data'] as List)
           .where((userData) =>
-              userData is Map<String, dynamic> &&
-              userData['__t'] == 'Rider') // Filter for 'Rider'
+              userData is Map<String, dynamic> && userData['__t'] == 'Rider')
           .map((userData) => userData as Map<String, dynamic>)
           .toList();
 
       setState(() {
-        // Clear the existing data before adding new data
         riderDataList.clear();
         riderDataList.addAll(riderData);
-        currentPage = page; // Update the current page number
+        currentPage = page;
       });
     } else {
       throw Exception('Failed to load data from the API');
@@ -552,11 +537,9 @@ class _DriversPageState extends State<DriversPage> {
   }
 
   void updateData(String id) {
-    // Find the rider data to edit
     Map<String, dynamic> riderToEdit =
         riderDataList.firstWhere((data) => data['_id'] == id);
 
-    // Create controllers for each field
     TextEditingController nameController =
         TextEditingController(text: riderToEdit['name']);
     TextEditingController contactNumberController =
@@ -565,20 +548,8 @@ class _DriversPageState extends State<DriversPage> {
         TextEditingController(text: riderToEdit['address']);
     TextEditingController gcashController =
         TextEditingController(text: riderToEdit['gcash']);
-    // TextEditingController gcashQrController =
-    //     TextEditingController(text: riderToEdit['gcashQr'].toString());
-    // TextEditingController typeController =
-    //     TextEditingController(text: riderToEdit['__t']);
-    // TextEditingController licenseController =
-    //     TextEditingController(text: riderToEdit['license']);
-    // TextEditingController seminarCertController =
-    //     TextEditingController(text: riderToEdit['seminarCert']);
-    // TextEditingController emailController =
-    //     TextEditingController(text: riderToEdit['email']);
-    // TextEditingController passwordController =
-    //     TextEditingController(text: riderToEdit['password']);
-    // TextEditingController imageController =
-    //     TextEditingController(text: riderToEdit['image']);
+    TextEditingController emailController =
+        TextEditingController(text: riderToEdit['email']);
 
     showDialog(
       context: context,
@@ -733,8 +704,22 @@ class _DriversPageState extends State<DriversPage> {
                       );
                     },
                   ),
+                  TextFormField(
+                    controller: emailController,
+                    decoration: const InputDecoration(labelText: 'Email'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter Email";
+                      } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}')
+                          .hasMatch(value!)) {
+                        return "Enter Correct Email";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
                   StreamBuilder<File?>(
-                    stream: _qrImageStreamController.stream,
+                    stream: _driverImageStreamController.stream,
                     builder: (context, snapshot) {
                       return Column(
                         children: [
@@ -831,9 +816,9 @@ class _DriversPageState extends State<DriversPage> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
@@ -842,13 +827,8 @@ class _DriversPageState extends State<DriversPage> {
                   riderToEdit['contactNumber'] = contactNumberController.text;
                   riderToEdit['address'] = addressController.text;
                   riderToEdit['gcash'] = gcashController.text;
-                  riderToEdit['gcashQr'] = "";
-                  riderToEdit['__t'] = "Rider";
-                  riderToEdit['license'] = "";
-                  riderToEdit['seminarCert'] = "";
-                  // riderToEdit['email'] = emailController.text;
-                  // riderToEdit['password'] = passwordController.text;
-                  riderToEdit['image'] = "";
+                  riderToEdit['type'] = "Rider";
+                  riderToEdit['email'] = emailController.text;
 
                   if (_profileImage != null) {
                     var editProfileUploadResponse =
@@ -917,7 +897,6 @@ class _DriversPageState extends State<DriversPage> {
 
                   if (response.statusCode == 200) {
                     fetchData();
-                    // print('Updated Address: ${riderToEdit["address"]}');
 
                     Navigator.pop(context);
                   } else {
@@ -956,18 +935,12 @@ class _DriversPageState extends State<DriversPage> {
   }
 
   void openAddRiderDialog() {
-    // Create controllers for each field
     TextEditingController nameController = TextEditingController();
     TextEditingController contactNumberController = TextEditingController();
     TextEditingController addressController = TextEditingController();
     TextEditingController gcashController = TextEditingController();
-    // TextEditingController gcashQrController = TextEditingController();
-    // TextEditingController typeController = TextEditingController();
-    // TextEditingController licenseController = TextEditingController();
-    // TextEditingController seminarCertController = TextEditingController();
     TextEditingController emailController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
-    // TextEditingController imageController = TextEditingController();
 
     bool isProfileImageUploaded = false;
     bool isQrImageUploaded = false;
@@ -1307,45 +1280,38 @@ class _DriversPageState extends State<DriversPage> {
     });
   }
 
-// Function to handle data delete
   void deleteData(String id) async {
-    // Show a confirmation dialog to confirm the deletion
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete Data'),
-          content: Text('Are you sure you want to delete this data?'),
+          title: const Text('Delete Data'),
+          content: const Text('Are you sure you want to delete this data?'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
-                // Send a request to your API to delete the data
                 final url = Uri.parse(
                     'https://lpg-api-06n8.onrender.com/api/v1/users/$id');
                 final response = await http.delete(url);
 
                 if (response.statusCode == 200) {
-                  // Data has been successfully deleted
-                  // Update the UI to remove the deleted data
                   setState(() {
                     riderDataList.removeWhere((data) => data['_id'] == id);
                   });
 
-                  Navigator.pop(context); // Close the dialog
+                  Navigator.pop(context);
                 } else {
-                  // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
                   print(
                       'Failed to delete the data. Status code: ${response.statusCode}');
-                  // You can also display an error message to the user
                 }
               },
-              child: Text('Delete'),
+              child: const Text('Delete'),
             ),
           ],
         );
@@ -1478,7 +1444,7 @@ class _DriversPageState extends State<DriversPage> {
                     style: ElevatedButton.styleFrom(
                       primary: Colors.black,
                     ),
-                    child: Text('Previous'),
+                    child: const Text('Previous'),
                   ),
                 const SizedBox(width: 20),
                 ElevatedButton(
