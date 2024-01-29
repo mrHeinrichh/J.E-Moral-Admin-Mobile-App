@@ -29,17 +29,13 @@ class _MapsPageState extends State<MapsPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.transactionId != null) {
-      fetchData(widget.transactionId);
-    }
+
+    fetchData(widget.transactionId);
+
     deliveryLocation = widget.deliveryLocation;
 
     timer = Timer.periodic(
-      Duration(seconds: 10),
-      (Timer t) {
-        fetchData(widget.transactionId);
-      },
-    );
+        Duration(seconds: 3), (Timer t) => fetchData(widget.transactionId));
   }
 
   @override
@@ -327,22 +323,20 @@ class RiderDetails extends StatelessWidget {
   final Map<String, dynamic>? riderDetails;
 
   RiderDetails({required this.riderDetails});
+
   Future<void> _launchCaller(String contactNumber) async {
     final url = 'tel:$contactNumber';
     if (await canLaunch(url)) {
       await launch(url);
     } else {
-      // Handle the case where launching is not supported
       print('Could not launch $url');
-      // You can show a dialog, display a toast, or take any other appropriate action.
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Check if riderDetails is not null and contains the necessary data
     if (riderDetails != null && riderDetails!['status'] == 'success') {
-      final Map<String, dynamic> userData = riderDetails!['data']['user'];
+      final Map<String, dynamic> userData = riderDetails!['data'][0];
 
       return Positioned(
         bottom: 20,
@@ -372,7 +366,7 @@ class RiderDetails extends StatelessWidget {
                 ),
                 CircleAvatar(
                   backgroundImage: NetworkImage('${userData['image']}'),
-                  radius: 40.0, // Adjust the radius as needed
+                  radius: 40.0,
                 ),
                 SizedBox(height: 8.0),
                 Text('Name: ${userData['name']}'),
@@ -409,7 +403,6 @@ class RiderDetails extends StatelessWidget {
         ),
       );
     } else {
-      // If riderDetails is null or status is not 'success', display a placeholder or handle the error
       return Positioned(
         bottom: 20,
         child: Padding(
@@ -437,8 +430,7 @@ class RiderDetails extends StatelessWidget {
                   style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8.0),
-                Text('fetching rider details'),
-                // Handle error message or display a placeholder
+                Text('Unable to fetch rider details'),
               ],
             ),
           ),
