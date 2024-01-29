@@ -683,13 +683,13 @@ class _ProductsPageState extends State<ProductsPage> {
     );
   }
 
-  void deleteData(String id) async {
+  void ArchiveData(String id) async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete Data'),
-          content: Text('Are you sure you want to delete this data?'),
+          title: Text('Archive Data'),
+          content: Text('Are you sure you want to Archive this data?'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -699,7 +699,7 @@ class _ProductsPageState extends State<ProductsPage> {
             ),
             TextButton(
               onPressed: () async {
-                // Send a request to your API to delete the data
+                // Send a request to your API to Archive the data
                 final url = Uri.parse(
                     'https://lpg-api-06n8.onrender.com/api/v1/items/$id');
                 final response = await http.delete(url);
@@ -713,11 +713,11 @@ class _ProductsPageState extends State<ProductsPage> {
                 } else {
                   // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
                   print(
-                      'Failed to delete the data. Status code: ${response.statusCode}');
+                      'Failed to Archive the data. Status code: ${response.statusCode}');
                   // You can also display an error message to the user
                 }
               },
-              child: Text('Delete'),
+              child: Text('Archive'),
             ),
           ],
         );
@@ -809,7 +809,7 @@ class _ProductsPageState extends State<ProductsPage> {
                         DataColumn(label: Text('Retailer Price')),
                         DataColumn(
                           label: Text('Actions'),
-                          tooltip: 'Update and Delete',
+                          tooltip: 'Update and Archive',
                         ),
                       ],
                       rows: productDataList
@@ -840,8 +840,8 @@ class _ProductsPageState extends State<ProductsPage> {
                                     onPressed: () => updateData(id),
                                   ),
                                   IconButton(
-                                    icon: Icon(Icons.delete),
-                                    onPressed: () => deleteData(id),
+                                    icon: Icon(Icons.archive),
+                                    onPressed: () => ArchiveData(id),
                                   ),
                                 ],
                               ),

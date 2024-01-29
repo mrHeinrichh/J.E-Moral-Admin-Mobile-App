@@ -182,7 +182,9 @@ class _AppointmentPageState extends State<AppointmentPage> {
           .where((userData) =>
               userData is Map<String, dynamic> &&
               userData.containsKey('hasAppointment') &&
-              userData['hasAppointment'] == 'true')
+              userData['appointmentStatus'] == 'Pending' &&
+              userData['appointmentStatus'] == 'Approved' &&
+              userData['appointmentStatus'] == 'Declined')
           .map((userData) => userData as Map<String, dynamic>)
           .toList();
 
@@ -261,15 +263,15 @@ class _AppointmentPageState extends State<AppointmentPage> {
     );
   }
 
-// Function to handle data delete
-  void deleteData(String id) async {
+// Function to handle data archive
+  void archiveData(String id) async {
     // Show a confirmation dialog to confirm the deletion
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete Data'),
-          content: Text('Are you sure you want to delete this data?'),
+          title: Text('archive Data'),
+          content: Text('Are you sure you want to archive this data?'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -279,14 +281,14 @@ class _AppointmentPageState extends State<AppointmentPage> {
             ),
             TextButton(
               onPressed: () async {
-                // Send a request to your API to delete the data
+                // Send a request to your API to archive the data
                 final url = Uri.parse(
                     'https://lpg-api-06n8.onrender.com/api/v1/users/$id');
                 final response = await http.delete(url);
 
                 if (response.statusCode == 200) {
-                  // Data has been successfully deleted
-                  // Update the UI to remove the deleted data
+                  // Data has been successfully archived
+                  // Update the UI to remove the archived data
                   setState(() {
                     customerDataList.removeWhere((data) => data['_id'] == id);
                   });
@@ -295,11 +297,11 @@ class _AppointmentPageState extends State<AppointmentPage> {
                 } else {
                   // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
                   print(
-                      'Failed to delete the data. Status code: ${response.statusCode}');
+                      'Failed to archive the data. Status code: ${response.statusCode}');
                   // You can also display an error message to the user
                 }
               },
-              child: Text('Delete'),
+              child: Text('archive'),
             ),
           ],
         );
@@ -385,7 +387,7 @@ class _AppointmentPageState extends State<AppointmentPage> {
                     DataColumn(label: Text('HasAppointment')),
                     DataColumn(
                       label: Text('Actions'),
-                      tooltip: 'Update and Delete',
+                      tooltip: 'Update and archive',
                     ),
                   ],
                   rows: customerDataList.map((userData) {
@@ -413,8 +415,8 @@ class _AppointmentPageState extends State<AppointmentPage> {
                                 onPressed: () => updateData(id),
                               ),
                               IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () => deleteData(id),
+                                icon: Icon(Icons.archive),
+                                onPressed: () => archiveData(id),
                               ),
                             ],
                           ),

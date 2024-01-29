@@ -116,13 +116,13 @@ class _transactionPageState extends State<transactionPage> {
     }
   }
 
-  void deleteData(String id) async {
+  void ArchiveData(String id) async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete Data'),
-          content: Text('Are you sure you want to delete this data?'),
+          title: Text('Archive Data'),
+          content: Text('Are you sure you want to Archive this data?'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -145,10 +145,10 @@ class _transactionPageState extends State<transactionPage> {
                   Navigator.pop(context);
                 } else {
                   print(
-                      'Failed to delete the data. Status code: ${response.statusCode}');
+                      'Failed to Archive the data. Status code: ${response.statusCode}');
                 }
               },
-              child: Text('Delete'),
+              child: Text('Archive'),
             ),
           ],
         );
@@ -226,7 +226,7 @@ class _transactionPageState extends State<transactionPage> {
                     DataColumn(label: Text('Date and Time')),
                     DataColumn(
                       label: Text('Actions'),
-                      tooltip: 'Update and Delete',
+                      tooltip: 'Update and Archive',
                     ),
                   ],
                   // rows: transactionDataList.map((transactionData) {
@@ -350,8 +350,8 @@ class _transactionPageState extends State<transactionPage> {
                               //   onPressed: () => updateData(id),
                               // ),
                               IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () => deleteData(id),
+                                icon: Icon(Icons.archive),
+                                onPressed: () => ArchiveData(id),
                               ),
                             ],
                           ),

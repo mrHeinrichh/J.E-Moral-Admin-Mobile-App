@@ -1280,13 +1280,13 @@ class _DriversPageState extends State<DriversPage> {
     });
   }
 
-  void deleteData(String id) async {
+  void ArchiveData(String id) async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Delete Data'),
-          content: const Text('Are you sure you want to delete this data?'),
+          title: const Text('Archive Data'),
+          content: const Text('Are you sure you want to Archive this data?'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -1308,10 +1308,10 @@ class _DriversPageState extends State<DriversPage> {
                   Navigator.pop(context);
                 } else {
                   print(
-                      'Failed to delete the data. Status code: ${response.statusCode}');
+                      'Failed to Archive the data. Status code: ${response.statusCode}');
                 }
               },
-              child: const Text('Delete'),
+              child: const Text('Archive'),
             ),
           ],
         );
@@ -1392,7 +1392,7 @@ class _DriversPageState extends State<DriversPage> {
                       DataColumn(label: Text('Type')),
                       DataColumn(
                         label: Text('Actions'),
-                        tooltip: 'Update and Delete',
+                        tooltip: 'Update and Archive',
                       ),
                     ],
                     rows: riderDataList.map((userData) {
@@ -1419,8 +1419,8 @@ class _DriversPageState extends State<DriversPage> {
                                   onPressed: () => updateData(id),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.delete),
-                                  onPressed: () => deleteData(id),
+                                  icon: const Icon(Icons.archive),
+                                  onPressed: () => ArchiveData(id),
                                 ),
                               ],
                             ),
