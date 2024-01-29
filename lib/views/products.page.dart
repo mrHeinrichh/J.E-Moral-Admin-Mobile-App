@@ -86,14 +86,11 @@ class _ProductsPageState extends State<ProductsPage> {
         final responseBody = await response.stream.bytesToString();
         print("Image uploaded successfully: $responseBody");
 
-        // Parse the response JSON
         final parsedResponse = json.decode(responseBody);
 
-        // Check if 'data' is present in the response
         if (parsedResponse.containsKey('data')) {
           final List<dynamic> data = parsedResponse['data'];
 
-          // Check if 'path' is present in the first item of the 'data' array
           if (data.isNotEmpty && data[0].containsKey('path')) {
             final imageUrl = data[0]['path'];
             print("Image URL: $imageUrl");
@@ -135,7 +132,7 @@ class _ProductsPageState extends State<ProductsPage> {
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
                   message,
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white),
                 ),
               ),
             ),
@@ -146,7 +143,7 @@ class _ProductsPageState extends State<ProductsPage> {
 
     Overlay.of(context)!.insert(overlay);
 
-    Future.delayed(Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 2), () {
       overlay.remove();
     });
   }
@@ -237,15 +234,13 @@ class _ProductsPageState extends State<ProductsPage> {
         TextEditingController(text: productToEdit['customerPrice'].toString());
     TextEditingController retailerPriceController =
         TextEditingController(text: productToEdit['retailerPrice'].toString());
-    TextEditingController imageController =
-        TextEditingController(text: productToEdit['image']);
     final _formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Edit Data'),
+          title: const Text('Edit Data'),
           content: Form(
             key: _formKey,
             child: SingleChildScrollView(
@@ -253,7 +248,7 @@ class _ProductsPageState extends State<ProductsPage> {
                 children: [
                   TextFormField(
                     controller: nameController,
-                    decoration: InputDecoration(labelText: 'Name'),
+                    decoration: const InputDecoration(labelText: 'Name'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the product name';
@@ -275,13 +270,13 @@ class _ProductsPageState extends State<ProductsPage> {
                         child: Text(value),
                       );
                     }).toList(),
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Category',
                     ),
                   ),
                   TextFormField(
                     controller: descriptionController,
-                    decoration: InputDecoration(labelText: 'Description'),
+                    decoration: const InputDecoration(labelText: 'Description'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the product description';
@@ -291,7 +286,8 @@ class _ProductsPageState extends State<ProductsPage> {
                   ),
                   TextFormField(
                     controller: weightController,
-                    decoration: InputDecoration(labelText: 'Weight (in kg.)'),
+                    decoration:
+                        const InputDecoration(labelText: 'Weight (in kg.)'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the product weight (in kg.)';
@@ -305,7 +301,7 @@ class _ProductsPageState extends State<ProductsPage> {
                   ),
                   TextFormField(
                     controller: quantityController,
-                    decoration: InputDecoration(labelText: 'Quantity'),
+                    decoration: const InputDecoration(labelText: 'Quantity'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the product quantity';
@@ -319,7 +315,8 @@ class _ProductsPageState extends State<ProductsPage> {
                   ),
                   TextFormField(
                     controller: customerPriceController,
-                    decoration: InputDecoration(labelText: 'Customer Price'),
+                    decoration:
+                        const InputDecoration(labelText: 'Customer Price'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the product customer price';
@@ -331,7 +328,8 @@ class _ProductsPageState extends State<ProductsPage> {
                   ),
                   TextFormField(
                     controller: retailerPriceController,
-                    decoration: InputDecoration(labelText: 'Retailer Price'),
+                    decoration:
+                        const InputDecoration(labelText: 'Retailer Price'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the product retailer price';
@@ -402,7 +400,7 @@ class _ProductsPageState extends State<ProductsPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
@@ -415,7 +413,6 @@ class _ProductsPageState extends State<ProductsPage> {
                   productToEdit['customerPrice'] = customerPriceController.text;
                   productToEdit['retailerPrice'] = retailerPriceController.text;
 
-                  // Upload new image only if available
                   if (_image != null) {
                     var uploadResponse = await uploadImageToServer(_image!);
                     if (uploadResponse != null) {
@@ -444,7 +441,7 @@ class _ProductsPageState extends State<ProductsPage> {
                   }
                 }
               },
-              child: Text('Save'),
+              child: const Text('Save'),
             ),
           ],
         );
@@ -475,7 +472,6 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   void openAddProductDialog() {
-    // Create controllers for each field
     TextEditingController nameController = TextEditingController();
     TextEditingController categoryController = TextEditingController();
     TextEditingController descriptionController = TextEditingController();
@@ -483,7 +479,6 @@ class _ProductsPageState extends State<ProductsPage> {
     TextEditingController quantityController = TextEditingController();
     TextEditingController customerPriceController = TextEditingController();
     TextEditingController retailerPriceController = TextEditingController();
-    TextEditingController imageController = TextEditingController();
 
     final formKey = GlobalKey<FormState>();
 
@@ -491,7 +486,7 @@ class _ProductsPageState extends State<ProductsPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Add New Product'),
+          title: const Text('Add New Product'),
           content: SingleChildScrollView(
             child: Form(
               key: formKey,
@@ -499,7 +494,7 @@ class _ProductsPageState extends State<ProductsPage> {
                 children: [
                   TextFormField(
                     controller: nameController,
-                    decoration: InputDecoration(labelText: 'Name'),
+                    decoration: const InputDecoration(labelText: 'Name'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the product name';
@@ -532,7 +527,7 @@ class _ProductsPageState extends State<ProductsPage> {
                   ),
                   TextFormField(
                     controller: descriptionController,
-                    decoration: InputDecoration(labelText: 'Description'),
+                    decoration: const InputDecoration(labelText: 'Description'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the product description';
@@ -542,39 +537,37 @@ class _ProductsPageState extends State<ProductsPage> {
                   ),
                   TextFormField(
                     controller: weightController,
-                    decoration: InputDecoration(labelText: 'Weight (in kg.)'),
+                    decoration:
+                        const InputDecoration(labelText: 'Weight (in kg.)'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the product weight (in kg.)';
                       }
                       return null;
                     },
-                    keyboardType:
-                        TextInputType.number, // Set the keyboard type to number
+                    keyboardType: TextInputType.number,
                     inputFormatters: [
-                      FilteringTextInputFormatter
-                          .digitsOnly, // Allow only numeric input
+                      FilteringTextInputFormatter.digitsOnly,
                     ],
                   ),
                   TextFormField(
                     controller: quantityController,
-                    decoration: InputDecoration(labelText: 'Quantity'),
+                    decoration: const InputDecoration(labelText: 'Quantity'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the product quantity';
                       }
                       return null;
                     },
-                    keyboardType:
-                        TextInputType.number, // Set the keyboard type to number
+                    keyboardType: TextInputType.number,
                     inputFormatters: [
-                      FilteringTextInputFormatter
-                          .digitsOnly, // Allow only numeric input
+                      FilteringTextInputFormatter.digitsOnly,
                     ],
                   ),
                   TextFormField(
                     controller: customerPriceController,
-                    decoration: InputDecoration(labelText: 'Customer Price'),
+                    decoration:
+                        const InputDecoration(labelText: 'Customer Price'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the product customer price';
@@ -582,11 +575,12 @@ class _ProductsPageState extends State<ProductsPage> {
                       return null;
                     },
                     keyboardType:
-                        TextInputType.numberWithOptions(decimal: true),
+                        const TextInputType.numberWithOptions(decimal: true),
                   ),
                   TextFormField(
                     controller: retailerPriceController,
-                    decoration: InputDecoration(labelText: 'Retailer Price'),
+                    decoration:
+                        const InputDecoration(labelText: 'Retailer Price'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the product retailer price';
@@ -594,7 +588,7 @@ class _ProductsPageState extends State<ProductsPage> {
                       return null;
                     },
                     keyboardType:
-                        TextInputType.numberWithOptions(decimal: true),
+                        const TextInputType.numberWithOptions(decimal: true),
                   ),
                   Text(
                     "\nProduct Image",
@@ -650,12 +644,11 @@ class _ProductsPageState extends State<ProductsPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
                 if (formKey.currentState!.validate()) {
-                  // Additional conditions for image validation
                   if (_image == null) {
                     showCustomOverlay(context, 'Please Upload an Image');
                   } else {
@@ -668,14 +661,12 @@ class _ProductsPageState extends State<ProductsPage> {
                       "type": "Product",
                       "customerPrice": customerPriceController.text,
                       "retailerPrice": retailerPriceController.text,
-                      "image": "",
                     };
-                    // Call the function to add the new product to the API
                     addProductToAPI(newProduct);
                   }
                 }
               },
-              child: Text('Save'),
+              child: const Text('Save'),
             ),
           ],
         );
@@ -688,18 +679,17 @@ class _ProductsPageState extends State<ProductsPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Archive Data'),
-          content: Text('Are you sure you want to Archive this data?'),
+          title: const Text('Archive Data'),
+          content: const Text('Are you sure you want to Archive this data?'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
-                // Send a request to your API to Archive the data
                 final url = Uri.parse(
                     'https://lpg-api-06n8.onrender.com/api/v1/items/$id');
                 final response = await http.delete(url);
@@ -709,15 +699,13 @@ class _ProductsPageState extends State<ProductsPage> {
                     productDataList.removeWhere((data) => data['_id'] == id);
                   });
 
-                  Navigator.pop(context); // Close the dialog
+                  Navigator.pop(context);
                 } else {
-                  // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
                   print(
                       'Failed to Archive the data. Status code: ${response.statusCode}');
-                  // You can also display an error message to the user
                 }
               },
-              child: Text('Archive'),
+              child: const Text('Archive'),
             ),
           ],
         );
@@ -738,11 +726,11 @@ class _ProductsPageState extends State<ProductsPage> {
             'Product CRUD',
             style: TextStyle(color: Color(0xFF232937), fontSize: 24),
           ),
-          iconTheme: IconThemeData(color: Color(0xFF232937)),
+          iconTheme: const IconThemeData(color: Color(0xFF232937)),
           actions: <Widget>[
             IconButton(
-              icon: Icon(Icons.add),
-              color: Color(0xFF232937),
+              icon: const Icon(Icons.add),
+              color: const Color(0xFF232937),
               onPressed: () {
                 openAddProductDialog();
               },
@@ -761,27 +749,23 @@ class _ProductsPageState extends State<ProductsPage> {
                       Expanded(
                         child: TextField(
                           controller: searchController,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             hintText: 'Search',
                             border: InputBorder.none,
-                            // Remove input field border
                           ),
                         ),
                       ),
                       ElevatedButton(
                         onPressed: () {
-                          // Handle the search button click
                           search(searchController.text);
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: Colors
-                              .black, // Change the button background color to black
+                          primary: Colors.black,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                                20), // Apply border radius
+                            borderRadius: BorderRadius.circular(20),
                           ),
                         ),
-                        child: Icon(Icons.search),
+                        child: const Icon(Icons.search),
                       ),
                     ],
                   ),
@@ -791,14 +775,13 @@ class _ProductsPageState extends State<ProductsPage> {
                   child: Container(
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: Color(
-                            0xFF232937), // You can change the border color
+                        color: const Color(0xFF232937),
                         width: 1.0,
                       ),
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                     child: DataTable(
-                      columns: <DataColumn>[
+                      columns: const <DataColumn>[
                         DataColumn(label: Text('Name')),
                         DataColumn(label: Text('Category')),
                         DataColumn(label: Text('Type')),
@@ -813,9 +796,8 @@ class _ProductsPageState extends State<ProductsPage> {
                         ),
                       ],
                       rows: productDataList
-                          .where((productData) =>
-                              productData['type'] ==
-                              'Product') // Filter data by type
+                          .where(
+                              (productData) => productData['type'] == 'Product')
                           .map((productData) {
                         final id = productData['_id'];
                         return DataRow(
@@ -836,11 +818,11 @@ class _ProductsPageState extends State<ProductsPage> {
                               Row(
                                 children: [
                                   IconButton(
-                                    icon: Icon(Icons.edit),
+                                    icon: const Icon(Icons.edit),
                                     onPressed: () => updateData(id),
                                   ),
                                   IconButton(
-                                    icon: Icon(Icons.archive),
+                                    icon: const Icon(Icons.archive),
                                     onPressed: () => ArchiveData(id),
                                   ),
                                 ],
@@ -863,9 +845,9 @@ class _ProductsPageState extends State<ProductsPage> {
                         style: ElevatedButton.styleFrom(
                           primary: Colors.black,
                         ),
-                        child: Text('Previous'),
+                        child: const Text('Previous'),
                       ),
-                    SizedBox(width: 20),
+                    const SizedBox(width: 20),
                     ElevatedButton(
                       onPressed: () {
                         fetchData(page: currentPage + 1);
@@ -873,7 +855,7 @@ class _ProductsPageState extends State<ProductsPage> {
                       style: ElevatedButton.styleFrom(
                         primary: Colors.black,
                       ),
-                      child: Text('Next'),
+                      child: const Text('Next'),
                     ),
                   ],
                 ),
