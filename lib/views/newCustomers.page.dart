@@ -57,22 +57,22 @@ class _NewCustomersState extends State<NewCustomers> {
     await fetchCustomers();
   }
 
-  // Future<void> deleteCustomer(String customerId) async {
-  //   try {
-  //     final response = await http.delete(
-  //       Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/$customerId'),
-  //     );
+  Future<void> ArchivedCustomer(String customerId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/$customerId'),
+      );
 
-  //     if (response.statusCode == 200) {
-  //       print('Customer deleted successfully');
-  //       await refreshData();
-  //     } else {
-  //       print('Error deleting customer: ${response.statusCode}');
-  //     }
-  //   } catch (e) {
-  //     print('Error: $e');
-  //   }
-  // }
+      if (response.statusCode == 200) {
+        print('Customer deleted successfully');
+        await refreshData();
+      } else {
+        print('Error deleting customer: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
 
   Future<void> updateVerificationStatus(String customerId) async {
     try {
@@ -95,41 +95,6 @@ class _NewCustomersState extends State<NewCustomers> {
         print(response.body);
         print('Verification status updated successfully');
         refreshData();
-      } else {
-        print('Error updating verification status: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error: $e');
-    }
-  }
-
-  Future<void> updateVerificationStatusDiscount(String customerId) async {
-    try {
-      final response = await http.patch(
-        Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/$customerId'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'verified': true,
-          'discounted': true,
-          'type': 'Customer',
-        }),
-      );
-
-      print('Update Verification Status Response: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final int customerIndex =
-            customers.indexWhere((customer) => customer['_id'] == customerId);
-        if (customerIndex != -1) {
-          customers[customerIndex]['verified'] = true;
-          customers[customerIndex]['discounted'] = true;
-        }
-        setState(() {});
-        print(response.body);
-
-        print('Verification status updated successfully');
       } else {
         print('Error updating verification status: ${response.statusCode}');
       }
@@ -209,33 +174,18 @@ class _NewCustomersState extends State<NewCustomers> {
                             ),
                             TextButton(
                               onPressed: () async {
-                                await updateVerificationStatusDiscount(
-                                    customer['_id']);
+                                await ArchivedCustomer(customer['_id']);
 
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text(
-                                        'Customer with discount approved successfully'),
+                                    content:
+                                        Text('Customer Archived successfully'),
                                     duration: Duration(seconds: 2),
                                   ),
                                 );
                               },
-                              child: const Text('Approve with Discount'),
+                              child: const Text('Archive'),
                             ),
-                            // TextButton(
-                            //   onPressed: () async {
-                            //     await deleteCustomer(customer['_id']);
-
-                            //     ScaffoldMessenger.of(context).showSnackBar(
-                            //       const SnackBar(
-                            //         content:
-                            //             Text('Customer deleted successfully'),
-                            //         duration: Duration(seconds: 2),
-                            //       ),
-                            //     );
-                            //   },
-                            //   child: const Text('Delete'),
-                            // ),
                           ],
                         ),
                       ],
@@ -272,10 +222,9 @@ class _NewCustomersState extends State<NewCustomers> {
                 Text('Name: ${customer['name']}'),
                 Text('Contact Number: ${customer['contactNumber']}'),
                 Text('Address: ${customer['address']}'),
-                const Text('Discount ID:'),
-                customer['discountIdImage'] != null
+                customer['image'] != null
                     ? Image.network(
-                        customer['discountIdImage'],
+                        customer['image'],
                         width: 300,
                         height: 300,
                         fit: BoxFit.cover,
