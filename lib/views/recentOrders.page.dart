@@ -84,6 +84,37 @@ class _RecentOrdersState extends State<RecentOrders> {
     }
   }
 
+  Future<void> updateTransactionStatuswithDiscount(String transactionId) async {
+    try {
+      Map<String, dynamic> updateData = {
+        "status": "Approved",
+        "discounted": true,
+        "__t": "Delivery"
+      };
+
+      final String apiUrl =
+          'https://lpg-api-06n8.onrender.com/api/v1/transactions/$transactionId';
+      final http.Response response = await http.patch(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(updateData),
+      );
+
+      if (response.statusCode == 200) {
+        print('Transaction updated successfully');
+        print('Response: ${response.body}');
+        print(response.statusCode);
+        await refreshData();
+      } else {
+        print(
+            'Failed to update transaction. Status code: ${response.statusCode}');
+        print('Response: ${response.body}');
+      }
+    } catch (error) {
+      print('Error updating transaction: $error');
+    }
+  }
+
   Future<void> declineTransactionStatus(String transactionId) async {
     try {
       Map<String, dynamic> updateData = {
@@ -199,13 +230,9 @@ class _RecentOrdersState extends State<RecentOrders> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            "Transaction ID: ${transaction['_id']}",
+                            "ID: ${transaction['_id']}",
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          // Text(
-                          //   "Quantity: 1",
-                          //   style: TextStyle(fontWeight: FontWeight.bold),
-                          // ),
                         ],
                       ),
                       Divider(
@@ -285,20 +312,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                       Row(
                         children: [
                           Text(
-                            "Delivery Time: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            '${transaction['deliveryTime']}',
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Text(
-                            "Date Ordered: ",
+                            "Date/Time: ",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
@@ -321,16 +335,36 @@ class _RecentOrdersState extends State<RecentOrders> {
                           ),
                         ],
                       ),
+                      Divider(),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "Order Status: ",
+                            "Discounted: ",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          Text(
+                            '${transaction['discounted']}',
+                          ),
                         ],
                       ),
+                      if (transaction['discountIdImage'] != null)
+                        Container(
+                          width: 300,
+                          height: 300,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.rectangle,
+                            image: DecorationImage(
+                              fit: BoxFit.cover,
+                              image: NetworkImage(
+                                transaction['discountIdImage'] ??
+                                    'URL_TO_FALLBACK_IMAGE',
+                              ),
+                            ),
+                          ),
+                        ),
                       SizedBox(
                         height: 10,
                       ),
@@ -339,7 +373,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                         children: [
                           Container(
                             height: 45,
-                            width: 150,
+                            width: MediaQuery.of(context).size.width * 0.30,
                             child: ElevatedButton(
                               onPressed: () async {
                                 // Show confirmation dialog before updating the status
@@ -356,7 +390,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                                 primary: Color(0xFF232937),
                               ),
                               child: Text(
-                                "Accept",
+                                "Approve",
                                 style: TextStyle(
                                   color: Color.fromARGB(255, 255, 255, 255),
                                 ),
@@ -366,7 +400,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                           Spacer(),
                           Container(
                             height: 45,
-                            width: 150,
+                            width: MediaQuery.of(context).size.width * 0.35,
                             child: ElevatedButton(
                               onPressed: () async {
                                 // Show confirmation dialog before updating the status
@@ -392,6 +426,36 @@ class _RecentOrdersState extends State<RecentOrders> {
                             ),
                           ),
                         ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+                        child: Container(
+                          height: 45,
+                          width: MediaQuery.of(context).size.width * 0.90,
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              // Show confirmation dialog before updating the status
+                              await showConfirmationDialog(
+                                context,
+                                'Are you sure you want to Approve this transaction with discount?',
+                                () {
+                                  updateTransactionStatuswithDiscount(
+                                      transaction['_id']);
+                                  Navigator.of(context).pop();
+                                },
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              primary: Colors.green,
+                            ),
+                            child: Text(
+                              "Approve with Discount",
+                              style: TextStyle(
+                                color: Color.fromARGB(255, 255, 255, 255),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
