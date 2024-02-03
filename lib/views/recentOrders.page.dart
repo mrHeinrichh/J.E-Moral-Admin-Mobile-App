@@ -24,16 +24,64 @@ class _RecentOrdersState extends State<RecentOrders> {
     super.dispose();
   }
 
-  Future<void> showConfirmationDialog(
+  Future<void> showDeclineDialog(
     BuildContext context,
     String message,
-    VoidCallback onConfirm,
+    Function(String) onDecline,
+  ) async {
+    TextEditingController cancelReasonController = TextEditingController();
+
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Decline Confirmation'),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(message),
+              SizedBox(height: 10),
+              Text('Cancel Reason:'),
+              TextField(
+                controller: cancelReasonController,
+                decoration: InputDecoration(
+                  hintText: 'Enter cancel reason',
+                ),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                onDecline(cancelReasonController.text);
+                Navigator.of(context)
+                    .pop(); // Close the dialog after confirming
+              },
+              child: Text('Decline'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> showApproveDialog(
+    BuildContext context,
+    String message,
+    Function() onApprove,
   ) async {
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Confirmation'),
+          title: Text('Approve Confirmation'),
           content: Text(message),
           actions: <Widget>[
             TextButton(
@@ -44,7 +92,57 @@ class _RecentOrdersState extends State<RecentOrders> {
             ),
             TextButton(
               onPressed: () {
-                onConfirm();
+                onApprove();
+                Navigator.of(context)
+                    .pop(); // Close the dialog after confirming
+              },
+              child: Text('Approve'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> showConfirmationDialog(
+    BuildContext context,
+    String message,
+    Function(String) onConfirm,
+  ) async {
+    TextEditingController cancelReasonController = TextEditingController();
+
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirmation'),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(message),
+              SizedBox(height: 10),
+              Text('Cancel Reason:'),
+              TextField(
+                controller: cancelReasonController,
+                decoration: InputDecoration(
+                  hintText: 'Enter cancel reason',
+                ),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                onConfirm(cancelReasonController.text);
+                Navigator.of(context)
+                    .pop(); // Close the dialog after confirming
               },
               child: Text('Confirm'),
             ),
@@ -115,11 +213,12 @@ class _RecentOrdersState extends State<RecentOrders> {
     }
   }
 
-  Future<void> declineTransactionStatus(String transactionId) async {
+  Future<void> declineTransactionStatus(
+      String transactionId, String cancelReason) async {
     try {
       Map<String, dynamic> updateData = {
-        "status": "Declined",
-        "deleted": "true",
+        "status": "Cancelled",
+        "cancelReason": cancelReason,
         "__t": "Delivery"
       };
 
@@ -377,12 +476,11 @@ class _RecentOrdersState extends State<RecentOrders> {
                             child: ElevatedButton(
                               onPressed: () async {
                                 // Show confirmation dialog before updating the status
-                                await showConfirmationDialog(
+                                await showApproveDialog(
                                   context,
                                   'Are you sure you want to approve this transaction?',
                                   () {
                                     updateTransactionStatus(transaction['_id']);
-                                    Navigator.of(context).pop();
                                   },
                                 );
                               },
@@ -403,14 +501,13 @@ class _RecentOrdersState extends State<RecentOrders> {
                             width: MediaQuery.of(context).size.width * 0.35,
                             child: ElevatedButton(
                               onPressed: () async {
-                                // Show confirmation dialog before updating the status
-                                await showConfirmationDialog(
+                                // Show confirmation dialog before declining the transaction
+                                await showDeclineDialog(
                                   context,
                                   'Are you sure you want to decline this transaction?',
-                                  () {
+                                  (String cancelReason) {
                                     declineTransactionStatus(
-                                        transaction['_id']);
-                                    Navigator.of(context).pop();
+                                        transaction['_id'], cancelReason);
                                   },
                                 );
                               },
@@ -438,7 +535,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                               await showConfirmationDialog(
                                 context,
                                 'Are you sure you want to Approve this transaction with discount?',
-                                () {
+                                (String cancelReason) {
                                   updateTransactionStatuswithDiscount(
                                       transaction['_id']);
                                   Navigator.of(context).pop();
