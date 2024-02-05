@@ -16,6 +16,7 @@ class SetDeliveryPage extends StatefulWidget {
 
 DateTime? selectedDateTime;
 final formKey = GlobalKey<FormState>();
+bool isDiscounted = false;
 
 class _SetDeliveryPageState extends State<SetDeliveryPage> {
   List<String> searchResults = [];
@@ -49,6 +50,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
       "completed": "false",
       "type": "Transactions",
       "items": itemsList,
+      "discounted": isDiscounted,
     };
 
     try {
@@ -246,6 +248,15 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
                     },
                   ),
                   const SizedBox(height: 20),
+                  CheckboxListTile(
+                    title: Text('Apply Discount'),
+                    value: isDiscounted,
+                    onChanged: (value) {
+                      setState(() {
+                        isDiscounted = value!;
+                      });
+                    },
+                  ),
                 ],
               ),
             ),
