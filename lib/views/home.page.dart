@@ -285,11 +285,6 @@ class _HomePageState extends State<HomePage> {
                           Navigator.pushNamed(context, announcementRoute);
                         },
                       ),
-                      FaqIcon(
-                        onTap: () {
-                          Navigator.pushNamed(context, faqRoute);
-                        },
-                      ),
                     ],
                   ),
                 ),
@@ -409,13 +404,11 @@ class _HomePageState extends State<HomePage> {
       final type = transaction['__t'];
       final completed = transaction['completed'];
       final status = transaction['status'];
-      //DITO KAKALIKUTIN KUNG ANO YUNG COLUMN NG ADMIN
       final walk = transaction['__v'];
 
       if (type == 'Delivery' && completed == true && status == 'Completed') {
         deliveryTransactions.add(transaction);
       } else if (walk == 0) {
-        //AT DITO PA SA ELSE IF STATEMENT NA 'TO.
         walkinTransactions.add(transaction);
       }
     }
@@ -423,6 +416,11 @@ class _HomePageState extends State<HomePage> {
     double totalDeliveryCount = deliveryTransactions.length.toDouble();
     double totalWalkinCount = walkinTransactions.length.toDouble();
     double totalTransactionCount = totalDeliveryCount + totalWalkinCount;
+
+    // Handle division by zero
+    if (totalTransactionCount == 0) {
+      return [];
+    }
 
     return [
       PieChartSectionData(
