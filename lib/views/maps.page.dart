@@ -267,17 +267,21 @@ class _MapsPageState extends State<MapsPage> {
     try {
       routePoints.clear(); // Clear existing points before adding new ones
 
-      List<dynamic> segments =
-          routingData['features'][0]['geometry']['coordinates'];
+      List<dynamic>? segments =
+          routingData['features']?[0]['geometry']['coordinates'];
 
-      for (var segment in segments) {
-        List<LatLng> segmentPoints = [];
-        for (var coordinate in segment) {
-          double latitude = coordinate[1].toDouble();
-          double longitude = coordinate[0].toDouble();
-          segmentPoints.add(LatLng(latitude, longitude));
+      if (segments != null) {
+        for (var segment in segments) {
+          List<LatLng> segmentPoints = [];
+          for (var coordinate in segment) {
+            if (coordinate.length >= 2) {
+              double latitude = coordinate[1]?.toDouble() ?? 0.0;
+              double longitude = coordinate[0]?.toDouble() ?? 0.0;
+              segmentPoints.add(LatLng(latitude, longitude));
+            }
+          }
+          routePoints.addAll(segmentPoints);
         }
-        routePoints.addAll(segmentPoints);
       }
 
       // Only update the relevant parts of the UI
@@ -309,12 +313,24 @@ double calculateZoom(
 
   double diagonal = math.sqrt(latRange * latRange + lngRange * lngRange);
 
-  // 256 is the default tile size
-  double zoom =
-      (math.log(360.0 / 256.0 * (EarthRadius * math.pi) / diagonal) / math.ln2)
-          .floorToDouble();
+  print('Diagonal: $diagonal');
 
-  return zoom;
+  if (diagonal != 0) {
+    // Perform division only if diagonal is not zero
+    double zoom =
+        (math.log(360.0 / 256.0 * (EarthRadius * math.pi) / diagonal) /
+            math.ln2);
+
+    print('Calculated Zoom: $zoom');
+
+    // Check for NaN or Infinity and return a default value if needed
+    return zoom.isFinite
+        ? zoom.floorToDouble()
+        : 10.0; // You can change 10.0 to your preferred default value
+  } else {
+    // Handle the case where diagonal is zero (avoid division by zero)
+    return 0.0; // or another appropriate value
+  }
 }
 
 const double EarthRadius = 150;
