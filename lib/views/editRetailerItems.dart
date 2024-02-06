@@ -4,12 +4,14 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/services.dart';
 
-class EditRetailerItemsPage extends StatefulWidget {
+class _EditRetailerItemsPageState extends StatefulWidget {
   @override
-  _EditRetailerItemsPageState createState() => _EditRetailerItemsPageState();
+  __EditRetailerItemsPageStateState createState() =>
+      __EditRetailerItemsPageStateState();
 }
 
-class _EditRetailerItemsPageState extends State<EditRetailerItemsPage> {
+class __EditRetailerItemsPageStateState
+    extends State<_EditRetailerItemsPageState> {
   List<Map<String, dynamic>> productDataList = [];
   TextEditingController searchController = TextEditingController();
   ScrollController _scrollController = ScrollController();
@@ -60,7 +62,6 @@ class _EditRetailerItemsPageState extends State<EditRetailerItemsPage> {
   void updateData(String id) {
     Map<String, dynamic> productToEdit =
         productDataList.firstWhere((data) => data['_id'] == id);
-
     TextEditingController retailerPriceController =
         TextEditingController(text: productToEdit['retailerPrice'].toString());
     final _formKey = GlobalKey<FormState>();
@@ -100,16 +101,20 @@ class _EditRetailerItemsPageState extends State<EditRetailerItemsPage> {
             TextButton(
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
-                  productToEdit['retailerPrice'] = retailerPriceController.text;
+                  // Update the retailerPrice field for "price" and "type": "Retailer"
+                  Map<String, dynamic> updateData = {
+                    "price": retailerPriceController.text,
+                    "type": "Retailer"
+                  };
 
                   final url = Uri.parse(
-                      'https://lpg-api-06n8.onrender.com/api/v1/items/$id');
+                      'https://lpg-api-06n8.onrender.com/api/v1/items/$id/price');
                   final headers = {'Content-Type': 'application/json'};
 
                   final response = await http.patch(
                     url,
                     headers: headers,
-                    body: jsonEncode(productToEdit),
+                    body: jsonEncode(updateData),
                   );
 
                   if (response.statusCode == 200) {

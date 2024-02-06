@@ -60,11 +60,8 @@ class _EditItemsPageState extends State<EditItemsPage> {
   void updateData(String id) {
     Map<String, dynamic> productToEdit =
         productDataList.firstWhere((data) => data['_id'] == id);
-
     TextEditingController customerPriceController =
         TextEditingController(text: productToEdit['customerPrice'].toString());
-    TextEditingController retailerPriceController =
-        TextEditingController(text: productToEdit['retailerPrice'].toString());
     final _formKey = GlobalKey<FormState>();
 
     showDialog(
@@ -102,16 +99,20 @@ class _EditItemsPageState extends State<EditItemsPage> {
             TextButton(
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
-                  productToEdit['customerPrice'] = customerPriceController.text;
+                  // Update the customerPrice field for "price" and "type": "Customer"
+                  Map<String, dynamic> updateData = {
+                    "price": customerPriceController.text,
+                    "type": "Customer"
+                  };
 
                   final url = Uri.parse(
-                      'https://lpg-api-06n8.onrender.com/api/v1/items/$id');
+                      'https://lpg-api-06n8.onrender.com/api/v1/items/$id/price');
                   final headers = {'Content-Type': 'application/json'};
 
                   final response = await http.patch(
                     url,
                     headers: headers,
-                    body: jsonEncode(productToEdit),
+                    body: jsonEncode(updateData),
                   );
 
                   if (response.statusCode == 200) {
