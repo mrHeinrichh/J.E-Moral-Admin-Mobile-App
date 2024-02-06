@@ -313,32 +313,6 @@ class _ProductsPageState extends State<ProductsPage> {
                       FilteringTextInputFormatter.digitsOnly,
                     ],
                   ),
-                  TextFormField(
-                    controller: customerPriceController,
-                    decoration:
-                        const InputDecoration(labelText: 'Customer Price'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the product customer price';
-                      }
-                      return null;
-                    },
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  TextFormField(
-                    controller: retailerPriceController,
-                    decoration:
-                        const InputDecoration(labelText: 'Retailer Price'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the product retailer price';
-                      }
-                      return null;
-                    },
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                  ),
                   Text(
                     "\nProduct Image",
                     style: TextStyle(
