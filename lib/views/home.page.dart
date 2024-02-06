@@ -285,6 +285,16 @@ class _HomePageState extends State<HomePage> {
                           Navigator.pushNamed(context, announcementRoute);
                         },
                       ),
+                      EditProductIcon(
+                        onTap: () {
+                          Navigator.pushNamed(context, editItemsPage);
+                        },
+                      ),
+                      EditRetailerProductIcon(
+                        onTap: () {
+                          Navigator.pushNamed(context, editRetailerItemsPage);
+                        },
+                      ),
                     ],
                   ),
                 ),

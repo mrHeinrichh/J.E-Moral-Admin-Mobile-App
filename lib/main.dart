@@ -6,6 +6,8 @@ import 'package:admin_app/views/chat.page.dart';
 import 'package:admin_app/views/customer.page.dart';
 import 'package:admin_app/views/dashboard.page.dart';
 import 'package:admin_app/views/drivers.page.dart';
+import 'package:admin_app/views/ediIitems.dart';
+import 'package:admin_app/views/editRetailerItems.dart';
 import 'package:admin_app/views/newCustomers.page.dart';
 import 'package:admin_app/views/product_details.page.dart';
 import 'package:admin_app/views/products.page.dart';
@@ -52,12 +54,15 @@ class MyApp extends StatelessWidget {
         walkinRoute: (context) => WalkinPage(),
         cartRoute: (context) => CartView.CartPage(),
         setDeliveryPage: (context) => SetDeliveryPage(),
+        editItemsPage: (context) => EditItemsPage(),
+        editRetailerItemsPage: (context) => EditRetailerItemsPage(),
 
         transactionRoute: (context) => transactionPage(),
         appointmentRoute: (context) => AppointmentPage(),
         newCustomerRoute: (context) => NewCustomers(),
         activeOrdersRoute: (context) => ActiveOrders(),
         announcementRoute: (context) => AnnouncementPage(),
+
         faqRoute: (context) => FaqPage(),
         productDetailsPage: (context) {
           const productName = "Placeholder Name";

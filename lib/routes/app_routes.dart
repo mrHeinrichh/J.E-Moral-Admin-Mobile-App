@@ -14,3 +14,5 @@ const String faqRoute = '/faqs';
 const String cartRoute = '/cart';
 const String productDetailsPage = '/productDetailsPage';
 const String setDeliveryPage = '/setDeliveryPage';
+const String editItemsPage = '/editItemsPage';
+const String editRetailerItemsPage = '/editRetailerItemsPage';

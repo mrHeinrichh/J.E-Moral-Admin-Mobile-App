@@ -315,6 +315,76 @@ class AnnouncementIcon extends StatelessWidget {
   }
 }
 
+class EditProductIcon extends StatelessWidget {
+  final VoidCallback onTap;
+
+  EditProductIcon({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: onTap,
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(25.0), // Make the card circular
+              ),
+              elevation: 4, // Add a shadow to the card
+              child: const Padding(
+                padding: EdgeInsets.all(10.0),
+                child: Icon(Icons.edit, size: 30),
+              ),
+            ),
+          ),
+          const Text(
+            "Customer Prices",
+            style: TextStyle(fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class EditRetailerProductIcon extends StatelessWidget {
+  final VoidCallback onTap;
+
+  EditRetailerProductIcon({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: onTap,
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(25.0), // Make the card circular
+              ),
+              elevation: 4, // Add a shadow to the card
+              child: const Padding(
+                padding: EdgeInsets.all(10.0),
+                child: Icon(Icons.edit, size: 30),
+              ),
+            ),
+          ),
+          const Text(
+            "Retailer Prices",
+            style: TextStyle(fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class FaqIcon extends StatelessWidget {
   final VoidCallback onTap;
 
