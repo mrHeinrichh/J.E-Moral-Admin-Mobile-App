@@ -275,6 +275,11 @@ class _HomePageState extends State<HomePage> {
                           Navigator.pushNamed(context, appointmentRoute);
                         },
                       ),
+                      FaqIcon(
+                        onTap: () {
+                          Navigator.pushNamed(context, faqRoute);
+                        },
+                      ),
                       FeedbackIcon(
                         onTap: () {
                           // Action to perform when the card is clicked
