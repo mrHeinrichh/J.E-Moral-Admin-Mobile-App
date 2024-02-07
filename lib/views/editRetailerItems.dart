@@ -4,14 +4,14 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/services.dart';
 
-class _EditRetailerItemsPageState extends StatefulWidget {
+class EditRetailerItemsPage extends StatefulWidget {
   @override
   __EditRetailerItemsPageStateState createState() =>
       __EditRetailerItemsPageStateState();
 }
 
 class __EditRetailerItemsPageStateState
-    extends State<_EditRetailerItemsPageState> {
+    extends State<EditRetailerItemsPage> {
   List<Map<String, dynamic>> productDataList = [];
   TextEditingController searchController = TextEditingController();
   ScrollController _scrollController = ScrollController();

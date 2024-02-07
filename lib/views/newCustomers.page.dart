@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+import 'package:mailer/mailer.dart';
+import 'package:mailer/smtp_server.dart';
 
 class NewCustomers extends StatefulWidget {
   @override
@@ -74,7 +76,36 @@ class _NewCustomersState extends State<NewCustomers> {
     }
   }
 
-  Future<void> updateVerificationStatus(String customerId) async {
+  // Future<void> updateVerificationStatus(String customerId) async {
+  //   try {
+  //     final response = await http.patch(
+  //       Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/$customerId'),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: jsonEncode({
+  //         'verified': true,
+  //         'type': 'Customer',
+  //       }),
+  //     );
+
+  //     print('Update Verification Status Response: ${response.body}');
+
+  //     if (response.statusCode == 200) {
+  //       Map<String, dynamic> responseData = json.decode(response.body);
+  //       print('Updated User Data: ${responseData['data']}');
+  //       print(response.body);
+  //       print('Verification status updated successfully');
+  //       refreshData();
+  //     } else {
+  //       print('Error updating verification status: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     print('Error: $e');
+  //   }
+  // }
+  Future<void> updateVerificationStatus(
+      String customerId, String userEmail) async {
     try {
       final response = await http.patch(
         Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/$customerId'),
@@ -92,14 +123,47 @@ class _NewCustomersState extends State<NewCustomers> {
       if (response.statusCode == 200) {
         Map<String, dynamic> responseData = json.decode(response.body);
         print('Updated User Data: ${responseData['data']}');
-        print(response.body);
         print('Verification status updated successfully');
         refreshData();
+
+        // Send confirmation email to the customer's email address
+        await sendConfirmationEmail(userEmail);
       } else {
         print('Error updating verification status: ${response.statusCode}');
       }
     } catch (e) {
       print('Error: $e');
+    }
+  }
+
+  Future<void> sendConfirmationEmail(String userEmail) async {
+    String username =
+        'madridanthonycharles@gmail.com'; // Update with your email address
+    String password = 'lqllbqsftvgihlll'; // Update with your email password
+
+    // Create a SMTP server configuration
+    final smtpServer = gmail(username, password);
+
+    // Create a plain text message
+    final message = Message()
+      ..from = Address(username, 'J.E. Moral LPG Dealer Store')
+      ..subject = 'Account Verification'
+      ..html = '''
+      <p>Dear user,</p>
+      <p>Your account has been successfully verified. You can now login to the application. Happy Shopping!</p>
+      <p><img src="https://raw.githubusercontent.com/mrHeinrichh/J.E-Moral-cdn/main/assets/png/logo-main.png" alt="Verification Image" width="200" height="200"></p>
+
+    ''';
+    // Add recipient
+    message.recipients
+        .add(Address(userEmail)); // Send to the provided email address
+
+    // Send the email
+    try {
+      final sendReport = await send(message, smtpServer);
+      print('Email sent');
+    } catch (e) {
+      print('Error sending email: $e');
     }
   }
 
@@ -160,7 +224,8 @@ class _NewCustomersState extends State<NewCustomers> {
                           children: [
                             TextButton(
                               onPressed: () async {
-                                await updateVerificationStatus(customer['_id']);
+                                await updateVerificationStatus(
+                                    customer['_id'], customer['email']);
 
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
