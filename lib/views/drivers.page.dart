@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
+import 'package:admin_app/widgets/custom_image_upload.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -26,7 +27,6 @@ class _DriversPageState extends State<DriversPage> {
   final formKey = GlobalKey<FormState>();
 
   List<Map<String, dynamic>> riderDataList = [];
-
   TextEditingController searchController = TextEditingController();
 
   @override
@@ -45,28 +45,30 @@ class _DriversPageState extends State<DriversPage> {
   }
 
   int currentPage = 1;
-  int limit = 10;
+  int limit = 100;
 
-  Future<void> _profilePickImage() async {
-    final profilePickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+  Future<void> _profileTakeImage() async {
+    final profilepickedFile =
+        await ImagePicker().pickImage(source: ImageSource.camera);
 
-    if (profilePickedFile != null) {
-      final profileImageFile = File(profilePickedFile.path);
+    if (profilepickedFile != null) {
+      final profileImageFile = File(profilepickedFile.path);
       _profileImageStreamController.sink.add(profileImageFile);
+
       setState(() {
         _profileImage = profileImageFile;
       });
     }
   }
 
-  Future<void> _editProfilePickImage() async {
-    final profilePickedFile =
+  Future<void> _profilePickImage() async {
+    final profilepickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
 
-    if (profilePickedFile != null) {
-      final profileImageFile = File(profilePickedFile.path);
+    if (profilepickedFile != null) {
+      final profileImageFile = File(profilepickedFile.path);
       _profileImageStreamController.sink.add(profileImageFile);
+
       setState(() {
         _profileImage = profileImageFile;
       });
@@ -146,9 +148,9 @@ class _DriversPageState extends State<DriversPage> {
     }
   }
 
-  Future<void> _qrPickImage() async {
+  Future<void> _qrTakeImage() async {
     final qrPickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+        await ImagePicker().pickImage(source: ImageSource.camera);
 
     if (qrPickedFile != null) {
       final qrImageFile = File(qrPickedFile.path);
@@ -159,7 +161,7 @@ class _DriversPageState extends State<DriversPage> {
     }
   }
 
-  Future<void> _editQrPickImage() async {
+  Future<void> _qrPickImage() async {
     final qrPickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
 
@@ -242,9 +244,9 @@ class _DriversPageState extends State<DriversPage> {
     }
   }
 
-  Future<void> _driverPickImage() async {
+  Future<void> _driverTakeImage() async {
     final driverPickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+        await ImagePicker().pickImage(source: ImageSource.camera);
 
     if (driverPickedFile != null) {
       final driverImageFile = File(driverPickedFile.path);
@@ -255,7 +257,7 @@ class _DriversPageState extends State<DriversPage> {
     }
   }
 
-  Future<void> _editDriverPickImage() async {
+  Future<void> _driverPickImage() async {
     final driverPickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
 
@@ -340,9 +342,9 @@ class _DriversPageState extends State<DriversPage> {
     }
   }
 
-  Future<void> _certPickImage() async {
+  Future<void> _certTakeImage() async {
     final certPickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+        await ImagePicker().pickImage(source: ImageSource.camera);
 
     if (certPickedFile != null) {
       final certImageFile = File(certPickedFile.path);
@@ -353,7 +355,7 @@ class _DriversPageState extends State<DriversPage> {
     }
   }
 
-  Future<void> _editCertPickImage() async {
+  Future<void> _certPickImage() async {
     final certPickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
 
@@ -519,8 +521,6 @@ class _DriversPageState extends State<DriversPage> {
       }
     }
 
-    print("Request Data: $newRider");
-
     final response = await http.post(
       url,
       headers: headers,
@@ -534,383 +534,6 @@ class _DriversPageState extends State<DriversPage> {
       print(
           'Failed to add or update the rider. Status code: ${response.statusCode}');
     }
-  }
-
-  void updateData(String id) {
-    Map<String, dynamic> riderToEdit =
-        riderDataList.firstWhere((data) => data['_id'] == id);
-
-    TextEditingController nameController =
-        TextEditingController(text: riderToEdit['name']);
-    TextEditingController contactNumberController =
-        TextEditingController(text: riderToEdit['contactNumber']);
-    TextEditingController addressController =
-        TextEditingController(text: riderToEdit['address']);
-    TextEditingController gcashController =
-        TextEditingController(text: riderToEdit['gcash']);
-    TextEditingController emailController =
-        TextEditingController(text: riderToEdit['email']);
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Edit Rider'),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                children: [
-                  StreamBuilder<File?>(
-                    stream: _profileImageStreamController.stream,
-                    builder: (context, snapshot) {
-                      return Column(
-                        children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? (riderToEdit['image']?.toString() ?? '')
-                                      .isNotEmpty
-                                  ? CircleAvatar(
-                                      radius: 50,
-                                      backgroundImage: NetworkImage(
-                                          riderToEdit['image']?.toString() ??
-                                              ''),
-                                    )
-                                  : const CircleAvatar(
-                                      radius: 50,
-                                      child: Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 50,
-                                      ),
-                                    )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
-                                ),
-                          TextButton(
-                            onPressed: () async {
-                              await _editProfilePickImage();
-                            },
-                            child: const Text(
-                              "Upload Profile Image",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  TextFormField(
-                      controller: nameController,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please Enter Name";
-                        } else {
-                          return null;
-                        }
-                      }),
-                  TextFormField(
-                    controller: contactNumberController,
-                    decoration:
-                        const InputDecoration(labelText: 'Contact Number'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return "Please Enter Number";
-                      } else {
-                        return null;
-                      }
-                    },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  TextFormField(
-                    controller: addressController,
-                    decoration: const InputDecoration(labelText: 'Address'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return "Please Enter Address";
-                      } else {
-                        return null;
-                      }
-                    },
-                  ),
-                  TextFormField(
-                    controller: gcashController,
-                    decoration:
-                        const InputDecoration(labelText: 'GCash Number'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return "Please Enter Number";
-                      } else {
-                        return null;
-                      }
-                    },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  StreamBuilder<File?>(
-                    stream: _qrImageStreamController.stream,
-                    builder: (context, snapshot) {
-                      return Column(
-                        children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? (riderToEdit['gcashQr']?.toString() ?? '')
-                                      .isNotEmpty
-                                  ? CircleAvatar(
-                                      radius: 50,
-                                      backgroundImage: NetworkImage(
-                                          riderToEdit['gcashQr']?.toString() ??
-                                              ''),
-                                    )
-                                  : const CircleAvatar(
-                                      radius: 50,
-                                      child: Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 50,
-                                      ),
-                                    )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
-                                ),
-                          TextButton(
-                            onPressed: () async {
-                              await _editQrPickImage();
-                            },
-                            child: const Text(
-                              "Upload GCash Qr",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  TextFormField(
-                    controller: emailController,
-                    decoration: const InputDecoration(labelText: 'Email'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return "Please Enter Email";
-                      } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}')
-                          .hasMatch(value!)) {
-                        return "Enter Correct Email";
-                      } else {
-                        return null;
-                      }
-                    },
-                  ),
-                  StreamBuilder<File?>(
-                    stream: _driverImageStreamController.stream,
-                    builder: (context, snapshot) {
-                      return Column(
-                        children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? (riderToEdit['license']?.toString() ?? '')
-                                      .isNotEmpty
-                                  ? CircleAvatar(
-                                      radius: 50,
-                                      backgroundImage: NetworkImage(
-                                          riderToEdit['license']?.toString() ??
-                                              ''),
-                                    )
-                                  : const CircleAvatar(
-                                      radius: 50,
-                                      child: Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 50,
-                                      ),
-                                    )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
-                                ),
-                          TextButton(
-                            onPressed: () async {
-                              await _editDriverPickImage();
-                            },
-                            child: const Text(
-                              "Upload Driver License",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  StreamBuilder<File?>(
-                    stream: _certImageStreamController.stream,
-                    builder: (context, snapshot) {
-                      return Column(
-                        children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? (riderToEdit['seminarCert']?.toString() ?? '')
-                                      .isNotEmpty
-                                  ? CircleAvatar(
-                                      radius: 50,
-                                      backgroundImage: NetworkImage(
-                                          riderToEdit['seminarCert']
-                                                  ?.toString() ??
-                                              ''),
-                                    )
-                                  : const CircleAvatar(
-                                      radius: 50,
-                                      child: Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 50,
-                                      ),
-                                    )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
-                                ),
-                          TextButton(
-                            onPressed: () async {
-                              await _editCertPickImage();
-                            },
-                            child: const Text(
-                              "Upload Seminar Certificate",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (formKey.currentState!.validate()) {
-                  riderToEdit['name'] = nameController.text;
-                  riderToEdit['contactNumber'] = contactNumberController.text;
-                  riderToEdit['address'] = addressController.text;
-                  riderToEdit['gcash'] = gcashController.text;
-                  riderToEdit['type'] = "Rider";
-                  riderToEdit['email'] = emailController.text;
-
-                  if (_profileImage != null) {
-                    var editProfileUploadResponse =
-                        await uploadProfileImageToServer(_profileImage!);
-                    print("Upload Response: $editProfileUploadResponse");
-
-                    if (editProfileUploadResponse != null) {
-                      print("Image URL: ${editProfileUploadResponse["url"]}");
-                      riderToEdit["image"] = editProfileUploadResponse["url"];
-                    } else {
-                      print("Profile Image upload failed");
-                      return;
-                    }
-                  }
-
-                  if (_qrImage != null) {
-                    var editQrUploadResponse =
-                        await uploadProfileImageToServer(_qrImage!);
-                    print("Upload Response: $editQrUploadResponse");
-
-                    if (editQrUploadResponse != null) {
-                      print("Image URL: ${editQrUploadResponse["url"]}");
-                      riderToEdit["gcashQr"] = editQrUploadResponse["url"];
-                    } else {
-                      print("QR Image upload failed");
-                      return;
-                    }
-                  }
-                  if (_driverImage != null) {
-                    var editDriverUploadResponse =
-                        await uploadProfileImageToServer(_driverImage!);
-                    print("Upload Response: $editDriverUploadResponse");
-
-                    if (editDriverUploadResponse != null) {
-                      print("Image URL: ${editDriverUploadResponse["url"]}");
-                      riderToEdit["license"] = editDriverUploadResponse["url"];
-                    } else {
-                      print("Driver License Image upload failed");
-                      return;
-                    }
-                  }
-                  if (_certImage != null) {
-                    var editCertUploadResponse =
-                        await uploadProfileImageToServer(_certImage!);
-                    print("Upload Response: $editCertUploadResponse");
-
-                    if (editCertUploadResponse != null) {
-                      print("Image URL: ${editCertUploadResponse["url"]}");
-                      riderToEdit["seminarCert"] =
-                          editCertUploadResponse["url"];
-                    } else {
-                      print("Seminar Certificate Image upload failed");
-                      return;
-                    }
-                  }
-
-                  final url = Uri.parse(
-                      'https://lpg-api-06n8.onrender.com/api/v1/users/$id');
-                  final headers = {'Content-Type': 'application/json'};
-
-                  final response = await http.patch(
-                    url,
-                    headers: headers,
-                    body: jsonEncode(riderToEdit),
-                  );
-
-                  if (response.statusCode == 200) {
-                    fetchData();
-
-                    Navigator.pop(context);
-                  } else {
-                    print(
-                        'Failed to update the rider. Status code: ${response.statusCode}');
-                  }
-                }
-              },
-              child: Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Future<void> search(String query) async {
@@ -942,60 +565,63 @@ class _DriversPageState extends State<DriversPage> {
     TextEditingController emailController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
 
-    bool isProfileImageUploaded = false;
-    bool isQrImageUploaded = false;
-    bool isDriverImageUploaded = false;
-    bool isCertImageUploaded = false;
-
-    File? profileImage;
-    File? qrImage;
-    File? driverImage;
-    File? certImage;
+    bool isProfileImageSelected = false;
+    bool isQrImageSelected = false;
+    bool isDriverImageSelected = false;
+    bool isCertImageSelected = false;
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Add New Rider'),
+          title: const Text(
+            'Add New Delivery Driver',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
           content: SingleChildScrollView(
             child: Form(
               key: formKey,
               child: Column(
                 children: [
+                  const Divider(),
+                  const SizedBox(height: 10.0),
                   StreamBuilder<File?>(
                     stream: _profileImageStreamController.stream,
                     builder: (context, snapshot) {
-                      profileImage = snapshot.data;
                       return Column(
                         children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? const CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 50,
-                                  ),
-                                )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
-                                ),
-                          TextButton(
-                            onPressed: () async {
-                              await _profilePickImage();
-                            },
-                            child: const Text(
-                              "Upload Profile Image",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              CircleAvatar(
+                                radius: 50,
+                                backgroundImage: snapshot.data != null
+                                    ? FileImage(snapshot.data!)
+                                    : null,
+                                backgroundColor: Colors.grey,
+                                child: snapshot.data == null
+                                    ? const Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 50,
+                                      )
+                                    : null,
                               ),
-                            ),
+                            ],
+                          ),
+                          ImageUploaderValidator(
+                            takeImage: _profileTakeImage,
+                            pickImage: _profilePickImage,
+                            buttonText: "Upload Profile Image",
+                            onImageSelected: (isSelected) {
+                              setState(() {
+                                isProfileImageSelected = isSelected;
+                              });
+                            },
                           ),
                         ],
                       );
@@ -1054,40 +680,56 @@ class _DriversPageState extends State<DriversPage> {
                       FilteringTextInputFormatter.digitsOnly,
                     ],
                   ),
+                  const SizedBox(height: 10),
                   StreamBuilder<File?>(
                     stream: _qrImageStreamController.stream,
                     builder: (context, snapshot) {
-                      qrImage = snapshot.data;
                       return Column(
                         children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? const CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 50,
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
                                   ),
-                                )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                          TextButton(
-                            onPressed: () async {
-                              await _qrPickImage();
-                            },
-                            child: const Text(
-                              "Upload GCash QR",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : Image.file(
+                                              snapshot.data!,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                            ),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
+                          ),
+                          ImageUploaderValidator(
+                            takeImage: _qrTakeImage,
+                            pickImage: _qrPickImage,
+                            buttonText: "Upload GCash QR Image",
+                            onImageSelected: (isSelected) {
+                              setState(() {
+                                isQrImageSelected = isSelected;
+                              });
+                            },
                           ),
                         ],
                       );
@@ -1117,40 +759,56 @@ class _DriversPageState extends State<DriversPage> {
                       }
                     },
                   ),
+                  const SizedBox(height: 10),
                   StreamBuilder<File?>(
                     stream: _driverImageStreamController.stream,
                     builder: (context, snapshot) {
-                      driverImage = snapshot.data;
                       return Column(
                         children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? const CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 50,
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
                                   ),
-                                )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                          TextButton(
-                            onPressed: () async {
-                              await _driverPickImage();
-                            },
-                            child: const Text(
-                              "Upload Driver License",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : Image.file(
+                                              snapshot.data!,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                            ),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
+                          ),
+                          ImageUploaderValidator(
+                            takeImage: _driverTakeImage,
+                            pickImage: _driverPickImage,
+                            buttonText: "Upload Driver License Image",
+                            onImageSelected: (isSelected) {
+                              setState(() {
+                                isDriverImageSelected = isSelected;
+                              });
+                            },
                           ),
                         ],
                       );
@@ -1159,37 +817,52 @@ class _DriversPageState extends State<DriversPage> {
                   StreamBuilder<File?>(
                     stream: _certImageStreamController.stream,
                     builder: (context, snapshot) {
-                      certImage = snapshot.data;
                       return Column(
                         children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? const CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 50,
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
                                   ),
-                                )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                          TextButton(
-                            onPressed: () async {
-                              await _certPickImage();
-                            },
-                            child: const Text(
-                              "Upload Seminar Certificate",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : Image.file(
+                                              snapshot.data!,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                            ),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
+                          ),
+                          ImageUploaderValidator(
+                            takeImage: _certTakeImage,
+                            pickImage: _certPickImage,
+                            buttonText: "Upload Seminar Certificate Image",
+                            onImageSelected: (isSelected) {
+                              setState(() {
+                                isCertImageSelected = isSelected;
+                              });
+                            },
                           ),
                         ],
                       );
@@ -1208,19 +881,13 @@ class _DriversPageState extends State<DriversPage> {
             ),
             TextButton(
               onPressed: () {
-                setState(() {
-                  isProfileImageUploaded = profileImage != null;
-                  isQrImageUploaded = qrImage != null;
-                  isDriverImageUploaded = driverImage != null;
-                  isCertImageUploaded = certImage != null;
-                });
-                if (!isProfileImageUploaded) {
+                if (!isProfileImageSelected) {
                   showCustomOverlay(context, 'Please Upload a Profile Image');
-                } else if (!isQrImageUploaded) {
+                } else if (!isQrImageSelected) {
                   showCustomOverlay(context, 'Please Upload a GCash QR');
-                } else if (!isDriverImageUploaded) {
+                } else if (!isDriverImageSelected) {
                   showCustomOverlay(context, 'Please Upload a Driver License');
-                } else if (!isCertImageUploaded) {
+                } else if (!isCertImageSelected) {
                   showCustomOverlay(
                       context, 'Please Upload a Seminar Certificate');
                 } else {
@@ -1229,13 +896,13 @@ class _DriversPageState extends State<DriversPage> {
                     "contactNumber": contactNumberController.text,
                     "address": addressController.text,
                     "gcash": gcashController.text,
-                    "gcashQr": "",
                     "__t": "Rider",
-                    "license": "",
-                    "seminarCert": "",
                     "email": emailController.text,
                     "password": passwordController.text,
                     "image": "",
+                    "gcashQr": "",
+                    "license": "",
+                    "seminarCert": "",
                   };
                   addRiderToAPI(newRider);
                 }
@@ -1252,21 +919,27 @@ class _DriversPageState extends State<DriversPage> {
     final overlay = OverlayEntry(
       builder: (context) => Positioned(
         top: MediaQuery.of(context).size.height * 0.5,
-        left: 0,
-        right: 0,
+        left: 20,
+        right: 20,
         child: Material(
           color: Colors.transparent,
           child: Container(
-            alignment: Alignment.center,
-            child: Card(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            decoration: BoxDecoration(
               color: Colors.red,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  message,
-                  style: const TextStyle(color: Colors.white),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
                 ),
-              ),
+              ],
+            ),
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+              textAlign: TextAlign.center,
             ),
           ),
         ),
@@ -1278,6 +951,410 @@ class _DriversPageState extends State<DriversPage> {
     Future.delayed(const Duration(seconds: 2), () {
       overlay.remove();
     });
+  }
+
+  void updateData(String id) {
+    Map<String, dynamic> riderToEdit =
+        riderDataList.firstWhere((data) => data['_id'] == id);
+
+    TextEditingController nameController =
+        TextEditingController(text: riderToEdit['name']);
+    TextEditingController contactNumberController =
+        TextEditingController(text: riderToEdit['contactNumber']);
+    TextEditingController addressController =
+        TextEditingController(text: riderToEdit['address']);
+    TextEditingController gcashController =
+        TextEditingController(text: riderToEdit['gcash']);
+    TextEditingController emailController =
+        TextEditingController(text: riderToEdit['email']);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Edit Delivery Driver',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                children: [
+                  const Divider(),
+                  StreamBuilder<File?>(
+                    stream: _profileImageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              Center(
+                                child: snapshot.data != null
+                                    ? CircleAvatar(
+                                        radius: 50,
+                                        backgroundImage:
+                                            FileImage(snapshot.data!),
+                                      )
+                                    : (riderToEdit['image'] != null &&
+                                            riderToEdit['image']
+                                                .toString()
+                                                .isNotEmpty)
+                                        ? CircleAvatar(
+                                            radius: 50,
+                                            backgroundImage: NetworkImage(
+                                              riderToEdit['image'].toString(),
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.person,
+                                            color: Colors.white,
+                                            size: 50,
+                                          ),
+                              ),
+                            ],
+                          ),
+                          ImageUploader(
+                            takeImage: _profileTakeImage,
+                            pickImage: _profilePickImage,
+                            buttonText: "Upload Profile Image",
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  TextFormField(
+                      controller: nameController,
+                      decoration: const InputDecoration(labelText: 'Name'),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return "Please Enter Name";
+                        } else {
+                          return null;
+                        }
+                      }),
+                  TextFormField(
+                    controller: contactNumberController,
+                    decoration:
+                        const InputDecoration(labelText: 'Contact Number'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter Number";
+                      } else {
+                        return null;
+                      }
+                    },
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  TextFormField(
+                    controller: addressController,
+                    decoration: const InputDecoration(labelText: 'Address'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter Address";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                  TextFormField(
+                    controller: gcashController,
+                    decoration:
+                        const InputDecoration(labelText: 'GCash Number'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter Number";
+                      } else {
+                        return null;
+                      }
+                    },
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  StreamBuilder<File?>(
+                    stream: _qrImageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null &&
+                                              (riderToEdit['gcashQr'] ?? '')
+                                                  .isEmpty
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : snapshot.data != null
+                                              ? Image.file(
+                                                  snapshot.data!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                )
+                                              : Image.network(
+                                                  riderToEdit['gcashQr']!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ImageUploader(
+                            takeImage: _qrTakeImage,
+                            pickImage: _qrPickImage,
+                            buttonText: "Upload GCash QR Image",
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  TextFormField(
+                    controller: emailController,
+                    decoration: const InputDecoration(labelText: 'Email'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter Email";
+                      } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}')
+                          .hasMatch(value!)) {
+                        return "Enter Correct Email";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  StreamBuilder<File?>(
+                    stream: _driverImageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null &&
+                                              (riderToEdit['license'] ?? '')
+                                                  .isEmpty
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : snapshot.data != null
+                                              ? Image.file(
+                                                  snapshot.data!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                )
+                                              : Image.network(
+                                                  riderToEdit['license']!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ImageUploader(
+                            takeImage: _driverTakeImage,
+                            pickImage: _driverPickImage,
+                            buttonText: "Upload Driver License Image",
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  StreamBuilder<File?>(
+                    stream: _certImageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null &&
+                                              (riderToEdit['seminarCert'] ?? '')
+                                                  .isEmpty
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : snapshot.data != null
+                                              ? Image.file(
+                                                  snapshot.data!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                )
+                                              : Image.network(
+                                                  riderToEdit['seminarCert']!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ImageUploader(
+                            takeImage: _certTakeImage,
+                            pickImage: _certPickImage,
+                            buttonText: "Upload Seminar Certificate Image",
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  riderToEdit['name'] = nameController.text;
+                  riderToEdit['contactNumber'] = contactNumberController.text;
+                  riderToEdit['address'] = addressController.text;
+                  riderToEdit['gcash'] = gcashController.text;
+                  riderToEdit['type'] = "Rider";
+                  riderToEdit['email'] = emailController.text;
+
+                  if (_profileImage != null) {
+                    var editProfileUploadResponse =
+                        await uploadProfileImageToServer(_profileImage!);
+                    if (editProfileUploadResponse != null) {
+                      riderToEdit["image"] = editProfileUploadResponse["url"];
+                    }
+                  }
+
+                  if (_qrImage != null) {
+                    var editQrUploadResponse =
+                        await uploadProfileImageToServer(_qrImage!);
+                    if (editQrUploadResponse != null) {
+                      riderToEdit["gcashQr"] = editQrUploadResponse["url"];
+                    }
+                  }
+                  if (_driverImage != null) {
+                    var editDriverUploadResponse =
+                        await uploadProfileImageToServer(_driverImage!);
+                    if (editDriverUploadResponse != null) {
+                      riderToEdit["license"] = editDriverUploadResponse["url"];
+                    }
+                  }
+                  if (_certImage != null) {
+                    var editCertUploadResponse =
+                        await uploadProfileImageToServer(_certImage!);
+                    if (editCertUploadResponse != null) {
+                      riderToEdit["seminarCert"] =
+                          editCertUploadResponse["url"];
+                    }
+                  }
+
+                  final url = Uri.parse(
+                      'https://lpg-api-06n8.onrender.com/api/v1/users/$id');
+                  final headers = {'Content-Type': 'application/json'};
+
+                  final response = await http.patch(
+                    url,
+                    headers: headers,
+                    body: jsonEncode(riderToEdit),
+                  );
+
+                  if (response.statusCode == 200) {
+                    setState(() {
+                      _profileImage = null;
+                      _qrImage = null;
+                      _driverImage = null;
+                      _certImage = null;
+                    });
+
+                    fetchData();
+                    Navigator.pop(context);
+                  } else {
+                    print(
+                        'Failed to update the rider. Status code: ${response.statusCode}');
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void ArchiveData(String id) async {
@@ -1323,142 +1400,198 @@ class _DriversPageState extends State<DriversPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        title: const Text(
-          'Rider CRUD',
-          style: TextStyle(color: Color(0xFF232937), fontSize: 24),
-        ),
-        iconTheme: const IconThemeData(color: Color(0xFF232937)),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.add),
-            color: const Color(0xFF232937),
-            onPressed: () {
-              openAddRiderDialog();
-            },
-          ),
-        ],
+        title: const Text('Delivery Driver List'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: searchController,
-                      decoration: const InputDecoration(
-                        hintText: 'Search',
-                        border: InputBorder.none,
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      search(searchController.text);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    child: const Icon(Icons.search),
-                  ),
-                ],
-              ),
-            ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: SingleChildScrollView(
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: const Color(0xFF232937),
-                      width: 1.0,
-                    ),
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  child: DataTable(
-                    columns: const <DataColumn>[
-                      DataColumn(label: Text('Name')),
-                      DataColumn(label: Text('Contact Number')),
-                      DataColumn(label: Text('Address')),
-                      DataColumn(label: Text('Gcash')),
-                      DataColumn(label: Text('Type')),
-                      DataColumn(
-                        label: Text('Actions'),
-                        tooltip: 'Update and Archive',
-                      ),
-                    ],
-                    rows: riderDataList.map((userData) {
-                      final id = userData['_id'];
-
-                      return DataRow(
-                        cells: <DataCell>[
-                          DataCell(Text(userData['name'] ?? ''),
-                              placeholder: false),
-                          DataCell(
-                              Text(userData['contactNumber'].toString() ?? ''),
-                              placeholder: false),
-                          DataCell(Text(userData['address'].toString() ?? ''),
-                              placeholder: false),
-                          DataCell(Text(userData['gcash'].toString() ?? ''),
-                              placeholder: false),
-                          DataCell(Text(userData['__t'] ?? ''),
-                              placeholder: false),
-                          DataCell(
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () => updateData(id),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.archive),
-                                  onPressed: () => ArchiveData(id),
-                                ),
-                              ],
-                            ),
-                            placeholder: false,
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+        padding: const EdgeInsets.all(12),
+        child: RefreshIndicator(
+          onRefresh: () => fetchData(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
               children: [
-                if (currentPage > 1)
-                  ElevatedButton(
-                    onPressed: () {
-                      fetchData(page: currentPage - 1);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors.black,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: IntrinsicWidth(
+                          child: TextField(
+                            controller: searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Search',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              isDense: true,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              suffixIcon: InkWell(
+                                onTap: () {
+                                  search(searchController.text);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  child: const Icon(
+                                    Icons.search,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    child: const Text('Previous'),
-                  ),
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    fetchData(page: currentPage + 1);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    primary: Colors.black,
-                  ),
-                  child: const Text('Next'),
+                    ElevatedButton(
+                      onPressed: () {
+                        openAddRiderDialog();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: const Color(0xFF232937),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'Add Delivery Driver',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 10),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: riderDataList.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final userData = riderDataList[index];
+                    final id = userData['_id'];
+
+                    return Column(
+                      children: [
+                        Card(
+                          elevation: 4,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ListTile(
+                                leading: CircleAvatar(
+                                  radius: 30,
+                                  backgroundImage: NetworkImage(
+                                    userData['image'] ?? '',
+                                  ),
+                                ),
+                                title: Text(
+                                  userData['name'] ?? '',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium!
+                                      .copyWith(fontWeight: FontWeight.bold),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Divider(),
+                                    Text(
+                                      'Contact #: ${userData['contactNumber'] ?? ''}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium!
+                                          .copyWith(
+                                              fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                    Text(
+                                      'GCash #: ${userData['gcash'] ?? ''}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium!
+                                          .copyWith(
+                                              fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                    Text(
+                                      'Address: ${userData['address'] ?? ''}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium!
+                                          .copyWith(
+                                              fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                  ],
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: 40,
+                                      child: IconButton(
+                                        icon: const Icon(Icons.edit),
+                                        onPressed: () => updateData(id),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 20,
+                                      child: IconButton(
+                                        icon: const Icon(Icons.archive),
+                                        onPressed: () => ArchiveData(id),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (currentPage > 1)
+                      ElevatedButton(
+                        onPressed: () {
+                          fetchData(page: currentPage - 1);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          primary: const Color(0xFF232937),
+                        ),
+                        child: const Text(
+                          'Previous',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        fetchData(page: currentPage + 1);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: const Color(0xFF232937),
+                      ),
+                      child: const Text(
+                        'Next',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

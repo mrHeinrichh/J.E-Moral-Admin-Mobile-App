@@ -313,6 +313,313 @@ class _CustomerPageState extends State<CustomerPage> {
     }
   }
 
+  Future<void> search(String query) async {
+    if (query.isEmpty) {
+      await fetchData();
+    } else {
+      final response = await http.get(Uri.parse(
+          'https://lpg-api-06n8.onrender.com/api/v1/users/?search=$query'));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+
+        final List<Map<String, dynamic>> customerData = (data['data'] as List)
+            .where((userData) =>
+                userData is Map<String, dynamic> &&
+                userData.containsKey('__t') &&
+                userData['__t'] == 'Customer')
+            .map((userData) => userData as Map<String, dynamic>)
+            .toList();
+
+        setState(() {
+          customerDataList = customerData;
+        });
+      } else {}
+    }
+  }
+
+  void openAddCustomerDialog() {
+    TextEditingController nameController = TextEditingController();
+    TextEditingController contactNumberController = TextEditingController();
+    TextEditingController addressController = TextEditingController();
+    TextEditingController discountedController = TextEditingController();
+    TextEditingController emailController = TextEditingController();
+    TextEditingController passwordController = TextEditingController();
+
+    bool isProfileImageSelected = false;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Add New Customer',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                children: [
+                  const Divider(),
+                  const SizedBox(height: 10.0),
+                  StreamBuilder<File?>(
+                    stream: _profileImageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              CircleAvatar(
+                                radius: 50,
+                                backgroundImage: snapshot.data != null
+                                    ? FileImage(snapshot.data!)
+                                    : null,
+                                backgroundColor: Colors.grey,
+                                child: snapshot.data == null
+                                    ? const Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 50,
+                                      )
+                                    : null,
+                              ),
+                            ],
+                          ),
+                          ImageUploaderValidator(
+                            takeImage: _profileTakeImage,
+                            pickImage: _profilePickImage,
+                            buttonText: "Upload Profile Image",
+                            onImageSelected: (isSelected) {
+                              setState(() {
+                                isProfileImageSelected = isSelected;
+                              });
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  TextFormField(
+                      controller: nameController,
+                      decoration: const InputDecoration(labelText: 'Name'),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return "Please Enter Name";
+                        } else {
+                          return null;
+                        }
+                      }),
+                  TextFormField(
+                    controller: contactNumberController,
+                    decoration:
+                        const InputDecoration(labelText: 'Contact Number'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter Number";
+                        // } else if (!RegExp(
+                        //         r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]+$')
+                        //     .hasMatch(value!)) {
+                        //   return "Enter Correct Phone Number";
+                      } else {
+                        return null;
+                      }
+                    },
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  TextFormField(
+                    controller: addressController,
+                    decoration: const InputDecoration(labelText: 'Address'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter Address";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                  DropdownButtonFormField(
+                    value: discountedController.text.isNotEmpty
+                        ? discountedController.text
+                        : null,
+                    decoration:
+                        const InputDecoration(labelText: 'Discount Status'),
+                    items: const [
+                      DropdownMenuItem(value: 'true', child: Text('Approved')),
+                      DropdownMenuItem(
+                          value: 'false', child: Text('Not Approved')),
+                    ],
+                    onChanged: (newValue) {
+                      discountedController.text = newValue.toString();
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please Select a Discount Status';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  StreamBuilder<File?>(
+                    stream: _discountedImageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : Image.file(
+                                              snapshot.data!,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ImageUploader(
+                            takeImage: _discountedTakeImage,
+                            pickImage: _discountedPickImage,
+                            buttonText: "Upload Discounted ID Image",
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  TextFormField(
+                      controller: emailController,
+                      decoration: const InputDecoration(labelText: 'Email'),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return "Please Enter Email";
+                        } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}')
+                            .hasMatch(value!)) {
+                          return "Enter Correct Email";
+                        } else {
+                          return null;
+                        }
+                      }),
+                  TextFormField(
+                    controller: passwordController,
+                    decoration: const InputDecoration(labelText: 'Password'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Please Enter Password";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (!isProfileImageSelected) {
+                  showCustomOverlay(context, 'Please Upload a Profile Image');
+                } else {
+                  if (formKey.currentState!.validate()) {
+                    Map<String, dynamic> newCustomer = {
+                      "name": nameController.text,
+                      "contactNumber": contactNumberController.text,
+                      "address": addressController.text,
+                      "verified": "true",
+                      "discounted": discountedController.text,
+                      "__t": "Customer",
+                      "email": emailController.text,
+                      "password": passwordController.text,
+                      "image": "",
+                      'discountIdImage': "",
+                    };
+                    addCustomerToAPI(newCustomer);
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void showCustomOverlay(BuildContext context, String message) {
+    final overlay = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).size.height * 0.5,
+        left: 20,
+        right: 20,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context)!.insert(overlay);
+
+    Future.delayed(const Duration(seconds: 2), () {
+      overlay.remove();
+    });
+  }
+
   void updateData(String id) {
     Map<String, dynamic> customerToEdit =
         customerDataList.firstWhere((data) => data['_id'] == id);
@@ -334,7 +641,14 @@ class _CustomerPageState extends State<CustomerPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Edit Customer'),
+          title: const Text(
+            'Edit Customer',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
           content: SingleChildScrollView(
             child: Form(
               key: formKey,
@@ -606,306 +920,6 @@ class _CustomerPageState extends State<CustomerPage> {
     );
   }
 
-  Future<void> search(String query) async {
-    if (query.isEmpty) {
-      await fetchData();
-    } else {
-      final response = await http.get(Uri.parse(
-          'https://lpg-api-06n8.onrender.com/api/v1/users/?search=$query'));
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-
-        final List<Map<String, dynamic>> customerData = (data['data'] as List)
-            .where((userData) =>
-                userData is Map<String, dynamic> &&
-                userData.containsKey('__t') &&
-                userData['__t'] == 'Customer')
-            .map((userData) => userData as Map<String, dynamic>)
-            .toList();
-
-        setState(() {
-          customerDataList = customerData;
-        });
-      } else {}
-    }
-  }
-
-  void openAddCustomerDialog() {
-    TextEditingController nameController = TextEditingController();
-    TextEditingController contactNumberController = TextEditingController();
-    TextEditingController addressController = TextEditingController();
-    TextEditingController discountedController = TextEditingController();
-    TextEditingController emailController = TextEditingController();
-    TextEditingController passwordController = TextEditingController();
-
-    bool isImageSelected = false;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add New Customer'),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                children: [
-                  const Divider(),
-                  const SizedBox(height: 10.0),
-                  StreamBuilder<File?>(
-                    stream: _profileImageStreamController.stream,
-                    builder: (context, snapshot) {
-                      return Column(
-                        children: [
-                          Stack(
-                            alignment: Alignment.topRight,
-                            children: [
-                              CircleAvatar(
-                                radius: 50,
-                                backgroundImage: snapshot.data != null
-                                    ? FileImage(snapshot.data!)
-                                    : null,
-                                backgroundColor: Colors.grey,
-                                child: snapshot.data == null
-                                    ? const Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 50,
-                                      )
-                                    : null,
-                              ),
-                            ],
-                          ),
-                          ImageUploaderValidator(
-                            takeImage: _profileTakeImage,
-                            pickImage: _profilePickImage,
-                            buttonText: "Upload Profile Image",
-                            onImageSelected: (isSelected) {
-                              setState(() {
-                                isImageSelected = isSelected;
-                              });
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  TextFormField(
-                      controller: nameController,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please Enter Name";
-                        } else {
-                          return null;
-                        }
-                      }),
-                  TextFormField(
-                    controller: contactNumberController,
-                    decoration:
-                        const InputDecoration(labelText: 'Contact Number'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return "Please Enter Number";
-                        // } else if (!RegExp(
-                        //         r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]+$')
-                        //     .hasMatch(value!)) {
-                        //   return "Enter Correct Phone Number";
-                      } else {
-                        return null;
-                      }
-                    },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  TextFormField(
-                    controller: addressController,
-                    decoration: const InputDecoration(labelText: 'Address'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return "Please Enter Address";
-                      } else {
-                        return null;
-                      }
-                    },
-                  ),
-                  DropdownButtonFormField(
-                    value: discountedController.text.isNotEmpty
-                        ? discountedController.text
-                        : null,
-                    decoration:
-                        const InputDecoration(labelText: 'Discount Status'),
-                    items: const [
-                      DropdownMenuItem(value: 'true', child: Text('Approved')),
-                      DropdownMenuItem(
-                          value: 'false', child: Text('Not Approved')),
-                    ],
-                    onChanged: (newValue) {
-                      discountedController.text = newValue.toString();
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please Select a Discount Status';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  StreamBuilder<File?>(
-                    stream: _discountedImageStreamController.stream,
-                    builder: (context, snapshot) {
-                      return Column(
-                        children: [
-                          Stack(
-                            alignment: Alignment.topRight,
-                            children: [
-                              DecoratedBox(
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Colors.black,
-                                    width: 1.0,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  height: 100,
-                                  child: Center(
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: snapshot.data == null
-                                          ? const Icon(
-                                              Icons.image,
-                                              color: Colors.white,
-                                              size: 50,
-                                            )
-                                          : Image.file(
-                                              snapshot.data!,
-                                              fit: BoxFit.cover,
-                                              width: double.infinity,
-                                              height: double.infinity,
-                                            ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          ImageUploader(
-                            takeImage: _discountedTakeImage,
-                            pickImage: _discountedPickImage,
-                            buttonText: "Upload Discounted ID Image",
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  TextFormField(
-                      controller: emailController,
-                      decoration: const InputDecoration(labelText: 'Email'),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please Enter Email";
-                        } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}')
-                            .hasMatch(value!)) {
-                          return "Enter Correct Email";
-                        } else {
-                          return null;
-                        }
-                      }),
-                  TextFormField(
-                    controller: passwordController,
-                    decoration: const InputDecoration(labelText: 'Password'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Please Enter Password";
-                      } else {
-                        return null;
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                if (!isImageSelected) {
-                  showCustomOverlay(context, 'Please Upload a Profile Image');
-                } else {
-                  if (formKey.currentState!.validate()) {
-                    Map<String, dynamic> newCustomer = {
-                      "name": nameController.text,
-                      "contactNumber": contactNumberController.text,
-                      "address": addressController.text,
-                      "verified": "true",
-                      "discounted": discountedController.text,
-                      "__t": "Customer",
-                      "email": emailController.text,
-                      "password": passwordController.text,
-                      "image": "",
-                      'discountIdImage': "",
-                    };
-                    addCustomerToAPI(newCustomer);
-                  }
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void showCustomOverlay(BuildContext context, String message) {
-    final overlay = OverlayEntry(
-      builder: (context) => Positioned(
-        top: MediaQuery.of(context).size.height * 0.5,
-        left: 20,
-        right: 20,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-            decoration: BoxDecoration(
-              color: Colors.red,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.5),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Text(
-              message,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-      ),
-    );
-
-    Overlay.of(context)!.insert(overlay);
-
-    Future.delayed(const Duration(seconds: 2), () {
-      overlay.remove();
-    });
-  }
-
   void ArchiveData(String id) async {
     showDialog(
       context: context,
@@ -1040,6 +1054,7 @@ class _CustomerPageState extends State<CustomerPage> {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            const Divider(),
                             Text(
                               'Contact #: ${userData['contactNumber'] ?? ''}',
                               style: Theme.of(context)

@@ -49,11 +49,15 @@ class ImageUploaderValidator extends StatelessWidget {
               },
             );
           },
-          child: Text(
-            buttonText,
-            style: const TextStyle(
-              color: Colors.blue,
-              fontSize: 15.0,
+          child: Align(
+            alignment: Alignment.center,
+            child: Text(
+              buttonText,
+              style: const TextStyle(
+                color: Colors.blue,
+                fontSize: 15.0,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         ),
@@ -108,11 +112,15 @@ class ImageUploader extends StatelessWidget {
               },
             );
           },
-          child: Text(
-            buttonText,
-            style: const TextStyle(
-              color: Colors.blue,
-              fontSize: 15.0,
+          child: Align(
+            alignment: Alignment.center,
+            child: Text(
+              buttonText,
+              style: const TextStyle(
+                color: Colors.blue,
+                fontSize: 15.0,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         ),
