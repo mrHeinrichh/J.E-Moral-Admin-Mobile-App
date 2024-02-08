@@ -556,6 +556,32 @@ class _AccessoryPageState extends State<AccessoryPage> {
                       FilteringTextInputFormatter.digitsOnly,
                     ],
                   ),
+                  TextFormField(
+                    controller: customerPriceController,
+                    decoration:
+                        const InputDecoration(labelText: 'Customer Price'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the accessory customer price';
+                      }
+                      return null;
+                    },
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  TextFormField(
+                    controller: retailerPriceController,
+                    decoration:
+                        const InputDecoration(labelText: 'Retailer Price'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the accessory retailer price';
+                      }
+                      return null;
+                    },
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                  ),
                 ],
               ),
             ),

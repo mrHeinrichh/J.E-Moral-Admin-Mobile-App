@@ -1,5 +1,6 @@
 import 'package:admin_app/routes/app_routes.dart';
 import 'package:admin_app/widgets/circle_card.dart';
+import 'package:admin_app/widgets/custom_card.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -17,10 +18,12 @@ class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> selectedTransactions = [];
   int currentPage = 1;
   int transactionsPerPage = 10;
+
   @override
   void initState() {
     super.initState();
     fetchData();
+    fetchProduct();
   }
 
   Future<void> fetchData() async {
@@ -43,6 +46,72 @@ class _HomePageState extends State<HomePage> {
           data.where((item) => item['__t'] == 'Delivery'),
         );
       });
+    }
+  }
+
+  int lowQuantityThreshold = 5;
+  // int mediumQuantityMinThreshold = 6;
+  // int mediumQuantityMaxThreshold = 10;
+
+  Future<void> fetchProduct() async {
+    final response = await http
+        .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items/'));
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final List<Map<String, dynamic>> allProductData = (data['data'] as List)
+          .where((productData) => productData is Map<String, dynamic>)
+          .map((productData) => productData as Map<String, dynamic>)
+          .toList();
+
+      final List<Map<String, dynamic>> lowQuantityProducts = allProductData
+          .where((productData) =>
+              (productData['quantity'] ?? 0) <= lowQuantityThreshold)
+          .toList();
+
+      if (lowQuantityProducts.isNotEmpty) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(
+                'Low Quantity Products',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              content: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Divider(),
+                  for (var product in lowQuantityProducts)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Product: ${product['name']}'),
+                        Text('Category: ${product['category']}'),
+                        Text('Quantity: ${product['quantity']}'),
+                        Divider(),
+                      ],
+                    )
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } else {
+      throw Exception('Failed to load data from the API');
     }
   }
 
@@ -229,214 +298,220 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            children: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, walkinRoute);
-                },
-                style: ElevatedButton.styleFrom(
-                  primary: const Color(0xFF232937),
-                  elevation: 4,
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await fetchData();
+          await fetchProduct();
+        },
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, walkinRoute);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    primary: const Color(0xFF232937),
+                    elevation: 4,
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.directions_walk,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 5),
+                      Text(
+                        'Walk-Ins',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.directions_walk,
-                      color: Colors.white,
+                const SizedBox(height: 10),
+                SizedBox(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        // WalkInIcon(
+                        //   onTap: () {
+                        //     Navigator.pushNamed(context, walkinRoute);
+                        //   },
+                        // ),
+                        CustomerIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, customerRoute);
+                          },
+                        ),
+                        RiderIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, driversRoute);
+                          },
+                        ),
+                        ProductsIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, productsRoute);
+                          },
+                        ),
+                        AccessoriesIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, accessoriesRoute);
+                          },
+                        ),
+                        FaqIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, faqRoute);
+                          },
+                        ),
+                        TransactionsIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, transactionRoute);
+                          },
+                        ),
+                        AppointmentIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, appointmentRoute);
+                          },
+                        ),
+
+                        FeedbackIcon(
+                          onTap: () {
+                            // Action to perform when the card is clicked
+                          },
+                        ),
+                        AnnouncementIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, announcementRoute);
+                          },
+                        ),
+                        EditProductIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, editItemsPage);
+                          },
+                        ),
+                        EditRetailerProductIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, editRetailerItemsPage);
+                          },
+                        ),
+                      ],
                     ),
-                    SizedBox(width: 5),
-                    Text(
-                      'Walk-Ins',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    RectangleCard(
+                      title: 'Today Revenue',
+                      value: '\₱${calculateTotalSumToday().toStringAsFixed(2)}',
+                    ),
+                    RectangleCard(
+                      title: 'Pending Online Orders',
+                      value: '${calculateTotalOnlineTransactionsNotApproved()}',
+                    ),
+                    RectangleCard(
+                      title: 'Completed Online Today',
+                      value: '${calculateNumberOfOnlineTransactionsToday()}',
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    DropdownButton<String>(
+                      value: selectedRange,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          selectedRange = newValue!;
+                        });
+                      },
+                      items: ['Today', 'This Month', 'This Year']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
+                    SizedBox(
+                      height: 300,
+                      child: PieChart(
+                        PieChartData(
+                          sections: selectedSections,
+                          borderData: FlBorderData(show: false),
+                          centerSpaceRadius: 40,
+                          sectionsSpace: 0,
+                          startDegreeOffset: -90,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                child: SingleChildScrollView(
+                SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // WalkInIcon(
-                      //   onTap: () {
-                      //     Navigator.pushNamed(context, walkinRoute);
-                      //   },
-                      // ),
-                      CustomerIcon(
-                        onTap: () {
-                          Navigator.pushNamed(context, customerRoute);
-                        },
-                      ),
-                      RiderIcon(
-                        onTap: () {
-                          Navigator.pushNamed(context, driversRoute);
-                        },
-                      ),
-                      ProductsIcon(
-                        onTap: () {
-                          Navigator.pushNamed(context, productsRoute);
-                        },
-                      ),
-                      AccessoriesIcon(
-                        onTap: () {
-                          Navigator.pushNamed(context, accessoriesRoute);
-                        },
-                      ),
-                      FaqIcon(
-                        onTap: () {
-                          Navigator.pushNamed(context, faqRoute);
-                        },
-                      ),
-                      TransactionsIcon(
-                        onTap: () {
-                          Navigator.pushNamed(context, transactionRoute);
-                        },
-                      ),
-                      AppointmentIcon(
-                        onTap: () {
-                          Navigator.pushNamed(context, appointmentRoute);
-                        },
-                      ),
-
-                      FeedbackIcon(
-                        onTap: () {
-                          // Action to perform when the card is clicked
-                        },
-                      ),
-                      AnnouncementIcon(
-                        onTap: () {
-                          Navigator.pushNamed(context, announcementRoute);
-                        },
-                      ),
-                      EditProductIcon(
-                        onTap: () {
-                          Navigator.pushNamed(context, editItemsPage);
-                        },
-                      ),
-                      EditRetailerProductIcon(
-                        onTap: () {
-                          Navigator.pushNamed(context, editRetailerItemsPage);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  RectangleCard(
-                    title: 'Today Revenue',
-                    value: '\₱${calculateTotalSumToday().toStringAsFixed(2)}',
-                  ),
-                  RectangleCard(
-                    title: 'Pending Online Orders',
-                    value: '${calculateTotalOnlineTransactionsNotApproved()}',
-                  ),
-                  RectangleCard(
-                    title: 'Completed Online Today',
-                    value: '${calculateNumberOfOnlineTransactionsToday()}',
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  DropdownButton<String>(
-                    value: selectedRange,
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        selectedRange = newValue!;
-                      });
-                    },
-                    items: ['Today', 'This Month', 'This Year']
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                  SizedBox(
-                    height: 300,
-                    child: PieChart(
-                      PieChartData(
-                        sections: selectedSections,
-                        borderData: FlBorderData(show: false),
-                        centerSpaceRadius: 40,
-                        sectionsSpace: 0,
-                        startDegreeOffset: -90,
-                      ),
+                  child: SizedBox(
+                    height: 400,
+                    child: DataTable(
+                      columns: const [
+                        DataColumn(label: Text('Name')),
+                        DataColumn(label: Text('Barangay')),
+                        DataColumn(label: Text('Total')),
+                        DataColumn(label: Text('Type')),
+                        DataColumn(label: Text('Date')),
+                      ],
+                      rows: [
+                        ...selectedTransactions
+                            .where((transaction) =>
+                                transaction['__t'] == "Delivery" &&
+                                transaction['completed'] == true)
+                            .map((transaction) {
+                          return DataRow(
+                            cells: [
+                              DataCell(Text(transaction['name'])),
+                              DataCell(Text(transaction['barangay'])),
+                              DataCell(Text(
+                                  '\₱${(transaction['total'] ?? 0.0).toStringAsFixed(2)}')),
+                              DataCell(Text(transaction['__t'])),
+                              DataCell(
+                                Text(transaction['createdAt']),
+                              ),
+                            ],
+                          );
+                        }),
+                        DataRow(
+                          cells: [
+                            DataCell(Text(
+                              'Total',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            )),
+                            DataCell(Text(
+                              '\₱${calculateTotalRevenueForToday().toStringAsFixed(2)}',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            )),
+                            DataCell(Text('')),
+                            DataCell(Text('')),
+                            DataCell(Text('')),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  height: 400,
-                  child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text('Name')),
-                      DataColumn(label: Text('Barangay')),
-                      DataColumn(label: Text('Total')),
-                      DataColumn(label: Text('Type')),
-                      DataColumn(label: Text('Date')),
-                    ],
-                    rows: [
-                      ...selectedTransactions
-                          .where((transaction) =>
-                              transaction['__t'] == "Delivery" &&
-                              transaction['completed'] == true)
-                          .map((transaction) {
-                        return DataRow(
-                          cells: [
-                            DataCell(Text(transaction['name'])),
-                            DataCell(Text(transaction['barangay'])),
-                            DataCell(Text(
-                                '\₱${(transaction['total'] ?? 0.0).toStringAsFixed(2)}')),
-                            DataCell(Text(transaction['__t'])),
-                            DataCell(
-                              Text(transaction['createdAt']),
-                            ),
-                          ],
-                        );
-                      }),
-                      DataRow(
-                        cells: [
-                          DataCell(Text(
-                            'Total',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          )),
-                          DataCell(Text(
-                            '\₱${calculateTotalRevenueForToday().toStringAsFixed(2)}',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          )),
-                          DataCell(Text('')),
-                          DataCell(Text('')),
-                          DataCell(Text('')),
-                        ],
-                      ),
-                    ],
-                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -494,56 +569,5 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     ];
-  }
-}
-
-class RectangleCard extends StatelessWidget {
-  final String title;
-  final String value;
-
-  RectangleCard({
-    required this.title,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 110,
-      height: 110,
-      decoration: BoxDecoration(
-        shape: BoxShape.rectangle,
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15.0), // Make the card circular
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
-            spreadRadius: 3,
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center, // Center align text
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
