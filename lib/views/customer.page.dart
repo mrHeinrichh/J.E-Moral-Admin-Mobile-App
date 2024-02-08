@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
+import 'package:admin_app/widgets/custom_image_upload.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -21,8 +22,7 @@ class _CustomerPageState extends State<CustomerPage> {
   final formKey = GlobalKey<FormState>();
 
   List<Map<String, dynamic>> customerDataList = [];
-  TextEditingController searchController =
-      TextEditingController(); // Controller for the search field
+  TextEditingController searchController = TextEditingController();
 
   @override
   void dispose() {
@@ -38,7 +38,21 @@ class _CustomerPageState extends State<CustomerPage> {
   }
 
   int currentPage = 1;
-  int limit = 5;
+  int limit = 100;
+
+  Future<void> _profileTakeImage() async {
+    final profilepickedFile =
+        await ImagePicker().pickImage(source: ImageSource.camera);
+
+    if (profilepickedFile != null) {
+      final profileImageFile = File(profilepickedFile.path);
+      _profileImageStreamController.sink.add(profileImageFile);
+
+      setState(() {
+        _profileImage = profileImageFile;
+      });
+    }
+  }
 
   Future<void> _profilePickImage() async {
     final profilepickedFile =
@@ -47,19 +61,7 @@ class _CustomerPageState extends State<CustomerPage> {
     if (profilepickedFile != null) {
       final profileImageFile = File(profilepickedFile.path);
       _profileImageStreamController.sink.add(profileImageFile);
-      setState(() {
-        _profileImage = profileImageFile;
-      });
-    }
-  }
 
-  Future<void> _editProfilePickImage() async {
-    final profilepickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-
-    if (profilepickedFile != null) {
-      final profileImageFile = File(profilepickedFile.path);
-      _profileImageStreamController.sink.add(profileImageFile);
       setState(() {
         _profileImage = profileImageFile;
       });
@@ -139,6 +141,20 @@ class _CustomerPageState extends State<CustomerPage> {
     }
   }
 
+  Future<void> _discountedTakeImage() async {
+    final discountedpickedFile =
+        await ImagePicker().pickImage(source: ImageSource.camera);
+
+    if (discountedpickedFile != null) {
+      final discountedImageFile = File(discountedpickedFile.path);
+      _discountedImageStreamController.sink.add(discountedImageFile);
+
+      setState(() {
+        _discountedImage = discountedImageFile;
+      });
+    }
+  }
+
   Future<void> _discountedPickImage() async {
     final discountedpickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -146,19 +162,7 @@ class _CustomerPageState extends State<CustomerPage> {
     if (discountedpickedFile != null) {
       final discountedImageFile = File(discountedpickedFile.path);
       _discountedImageStreamController.sink.add(discountedImageFile);
-      setState(() {
-        _discountedImage = discountedImageFile;
-      });
-    }
-  }
 
-  Future<void> _editDiscountedPickImage() async {
-    final discountedpickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-
-    if (discountedpickedFile != null) {
-      final discountedImageFile = File(discountedpickedFile.path);
-      _discountedImageStreamController.sink.add(discountedImageFile);
       setState(() {
         _discountedImage = discountedImageFile;
       });
@@ -268,10 +272,10 @@ class _CustomerPageState extends State<CustomerPage> {
     if (_profileImage != null) {
       var profileUploadResponse =
           await uploadProfileImageToServer(_profileImage!);
-      print("Upload Response: $profileUploadResponse");
+      print("Upload Response for Profile Image: $profileUploadResponse");
 
       if (profileUploadResponse != null) {
-        print("Image URL: ${profileUploadResponse["url"]}");
+        print("Profile Image URL: ${profileUploadResponse["url"]}");
         newCustomer["image"] = profileUploadResponse["url"];
       } else {
         print("Profile Image upload failed");
@@ -282,10 +286,10 @@ class _CustomerPageState extends State<CustomerPage> {
     if (_discountedImage != null) {
       var discountedUploadResponse =
           await uploadDiscountedImageToServer(_discountedImage!);
-      print("Upload Response: $discountedUploadResponse");
+      print("Upload Response for Discounted Image: $discountedUploadResponse");
 
       if (discountedUploadResponse != null) {
-        print("Image URL: ${discountedUploadResponse["url"]}");
+        print("Discounted Image URL: ${discountedUploadResponse["url"]}");
         newCustomer["discountIdImage"] = discountedUploadResponse["url"];
       } else {
         print("Discounted Image upload failed");
@@ -336,46 +340,45 @@ class _CustomerPageState extends State<CustomerPage> {
               key: formKey,
               child: Column(
                 children: [
+                  const Divider(),
                   StreamBuilder<File?>(
                     stream: _profileImageStreamController.stream,
                     builder: (context, snapshot) {
                       return Column(
                         children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? (customerToEdit['image']?.toString() ?? '')
-                                      .isNotEmpty
-                                  ? CircleAvatar(
-                                      radius: 50,
-                                      backgroundImage: NetworkImage(
-                                          customerToEdit['image']?.toString() ??
-                                              ''),
-                                    )
-                                  : const CircleAvatar(
-                                      radius: 50,
-                                      child: Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 50,
-                                      ),
-                                    )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
-                                ),
-                          TextButton(
-                            onPressed: () async {
-                              await _editProfilePickImage();
-                            },
-                            child: const Text(
-                              "Upload Profile Image",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              Center(
+                                child: snapshot.data != null
+                                    ? CircleAvatar(
+                                        radius: 50,
+                                        backgroundImage:
+                                            FileImage(snapshot.data!),
+                                      )
+                                    : (customerToEdit['image'] != null &&
+                                            customerToEdit['image']
+                                                .toString()
+                                                .isNotEmpty)
+                                        ? CircleAvatar(
+                                            radius: 50,
+                                            backgroundImage: NetworkImage(
+                                              customerToEdit['image']
+                                                  .toString(),
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.person,
+                                            color: Colors.white,
+                                            size: 50,
+                                          ),
                               ),
-                            ),
+                            ],
+                          ),
+                          ImageUploader(
+                            takeImage: _profileTakeImage,
+                            pickImage: _profilePickImage,
+                            buttonText: "Upload Profile Image",
                           ),
                         ],
                       );
@@ -387,8 +390,6 @@ class _CustomerPageState extends State<CustomerPage> {
                       validator: (value) {
                         if (value!.isEmpty) {
                           return "Please Enter Name";
-                          // } else if (!RegExp(r'^[a-z A-Z]+$').hasMatch(value!)) {
-                          //   return "Enter Correct Name";
                         } else {
                           return null;
                         }
@@ -454,6 +455,68 @@ class _CustomerPageState extends State<CustomerPage> {
                       discountedController.text = newValue.toString();
                     },
                   ),
+                  const SizedBox(height: 10.0),
+                  StreamBuilder<File?>(
+                    stream: _discountedImageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null &&
+                                              (customerToEdit[
+                                                          'discountIdImage'] ??
+                                                      '')
+                                                  .isEmpty
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : snapshot.data != null
+                                              ? Image.file(
+                                                  snapshot.data!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                )
+                                              : Image.network(
+                                                  customerToEdit[
+                                                      'discountIdImage']!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ImageUploader(
+                            takeImage: _discountedTakeImage,
+                            pickImage: _discountedPickImage,
+                            buttonText: "Upload Discounted ID Image",
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                   TextFormField(
                     controller: emailController,
                     decoration: const InputDecoration(labelText: 'Email'),
@@ -466,54 +529,6 @@ class _CustomerPageState extends State<CustomerPage> {
                       } else {
                         return null;
                       }
-                    },
-                  ),
-                  StreamBuilder<File?>(
-                    stream: _discountedImageStreamController.stream,
-                    builder: (context, snapshot) {
-                      return Column(
-                        children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? (customerToEdit['discountIdImage']
-                                              ?.toString() ??
-                                          '')
-                                      .isNotEmpty
-                                  ? CircleAvatar(
-                                      radius: 50,
-                                      backgroundImage: NetworkImage(
-                                          customerToEdit['discountIdImage']
-                                                  ?.toString() ??
-                                              ''),
-                                    )
-                                  : const CircleAvatar(
-                                      radius: 50,
-                                      child: Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 50,
-                                      ),
-                                    )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
-                                ),
-                          TextButton(
-                            onPressed: () async {
-                              await _editDiscountedPickImage();
-                            },
-                            child: const Text(
-                              "Upload Discounted Image",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
                     },
                   ),
                 ],
@@ -539,46 +554,29 @@ class _CustomerPageState extends State<CustomerPage> {
                   customerToEdit['discounted'] =
                       (discountedController.text).toString();
                   customerToEdit['type'] = "Customer";
-                  customerToEdit['discountIdImage'] = "";
                   customerToEdit['email'] = emailController.text;
-                  customerToEdit['image'] = "";
 
                   if (_profileImage != null) {
                     var editprofileUploadResponse =
                         await uploadProfileImageToServer(_profileImage!);
-                    print("Upload Response: $editprofileUploadResponse");
-
                     if (editprofileUploadResponse != null) {
-                      print("Image URL: ${editprofileUploadResponse["url"]}");
                       customerToEdit["image"] =
                           editprofileUploadResponse["url"];
-                    } else {
-                      print("Profile Image upload failed");
-                      return;
                     }
                   }
 
                   if (_discountedImage != null) {
                     var editDiscountedUploadResponse =
                         await uploadDiscountedImageToServer(_discountedImage!);
-                    print("Upload Response: $editDiscountedUploadResponse");
-
                     if (editDiscountedUploadResponse != null) {
-                      print(
-                          "Image URL: ${editDiscountedUploadResponse["url"]}");
                       customerToEdit["discountIdImage"] =
                           editDiscountedUploadResponse["url"];
-                    } else {
-                      print("Discounted Image upload failed");
-                      return;
                     }
                   }
 
                   final url = Uri.parse(
                       'https://lpg-api-06n8.onrender.com/api/v1/users/$id');
                   final headers = {'Content-Type': 'application/json'};
-
-                  print("Address: ${customerToEdit['address']}");
 
                   final response = await http.patch(
                     url,
@@ -587,6 +585,11 @@ class _CustomerPageState extends State<CustomerPage> {
                   );
 
                   if (response.statusCode == 200) {
+                    setState(() {
+                      _profileImage = null;
+                      _discountedImage = null;
+                    });
+
                     fetchData();
                     Navigator.pop(context);
                   } else {
@@ -595,7 +598,7 @@ class _CustomerPageState extends State<CustomerPage> {
                   }
                 }
               },
-              child: Text('Save'),
+              child: const Text('Save'),
             ),
           ],
         );
@@ -604,40 +607,39 @@ class _CustomerPageState extends State<CustomerPage> {
   }
 
   Future<void> search(String query) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/users/?search=$query'));
+    if (query.isEmpty) {
+      await fetchData();
+    } else {
+      final response = await http.get(Uri.parse(
+          'https://lpg-api-06n8.onrender.com/api/v1/users/?search=$query'));
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
 
-      final List<Map<String, dynamic>> customerData = (data['data'] as List)
-          .where((userData) =>
-              userData is Map<String, dynamic> &&
-              userData.containsKey('__t') &&
-              userData['__t'] == 'Customer')
-          .map((userData) => userData as Map<String, dynamic>)
-          .toList();
+        final List<Map<String, dynamic>> customerData = (data['data'] as List)
+            .where((userData) =>
+                userData is Map<String, dynamic> &&
+                userData.containsKey('__t') &&
+                userData['__t'] == 'Customer')
+            .map((userData) => userData as Map<String, dynamic>)
+            .toList();
 
-      setState(() {
-        customerDataList = customerData;
-      });
-    } else {}
+        setState(() {
+          customerDataList = customerData;
+        });
+      } else {}
+    }
   }
 
   void openAddCustomerDialog() {
     TextEditingController nameController = TextEditingController();
     TextEditingController contactNumberController = TextEditingController();
     TextEditingController addressController = TextEditingController();
-    TextEditingController verifiedController = TextEditingController();
     TextEditingController discountedController = TextEditingController();
     TextEditingController emailController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
 
-    bool isProfileImageUploaded = false;
-    // bool isDiscountedImageUploaded = false;
-
-    File? profileImage;
-    // File? discountedImage;
+    bool isImageSelected = false;
 
     showDialog(
       context: context,
@@ -649,40 +651,41 @@ class _CustomerPageState extends State<CustomerPage> {
               key: formKey,
               child: Column(
                 children: [
+                  const Divider(),
+                  const SizedBox(height: 10.0),
                   StreamBuilder<File?>(
                     stream: _profileImageStreamController.stream,
                     builder: (context, snapshot) {
-                      profileImage = snapshot.data;
                       return Column(
                         children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? const CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 50,
-                                  ),
-                                )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
-                                ),
-                          TextButton(
-                            onPressed: () async {
-                              await _profilePickImage();
-                            },
-                            child: const Text(
-                              "Upload Profile Image",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              CircleAvatar(
+                                radius: 50,
+                                backgroundImage: snapshot.data != null
+                                    ? FileImage(snapshot.data!)
+                                    : null,
+                                backgroundColor: Colors.grey,
+                                child: snapshot.data == null
+                                    ? const Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 50,
+                                      )
+                                    : null,
                               ),
-                            ),
+                            ],
+                          ),
+                          ImageUploaderValidator(
+                            takeImage: _profileTakeImage,
+                            pickImage: _profilePickImage,
+                            buttonText: "Upload Profile Image",
+                            onImageSelected: (isSelected) {
+                              setState(() {
+                                isImageSelected = isSelected;
+                              });
+                            },
                           ),
                         ],
                       );
@@ -705,6 +708,10 @@ class _CustomerPageState extends State<CustomerPage> {
                     validator: (value) {
                       if (value!.isEmpty) {
                         return "Please Enter Number";
+                        // } else if (!RegExp(
+                        //         r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]+$')
+                        //     .hasMatch(value!)) {
+                        //   return "Enter Correct Phone Number";
                       } else {
                         return null;
                       }
@@ -726,28 +733,6 @@ class _CustomerPageState extends State<CustomerPage> {
                     },
                   ),
                   DropdownButtonFormField(
-                    value: verifiedController.text.isNotEmpty
-                        ? verifiedController.text
-                        : null,
-                    decoration:
-                        const InputDecoration(labelText: 'Verification Status'),
-                    items: const [
-                      DropdownMenuItem(value: 'true', child: Text('Verified')),
-                      DropdownMenuItem(
-                          value: 'false', child: Text('Not Verified')),
-                    ],
-                    onChanged: (newValue) {
-                      verifiedController.text = newValue.toString();
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Please Select Verified Status";
-                      } else {
-                        return null;
-                      }
-                    },
-                  ),
-                  DropdownButtonFormField(
                     value: discountedController.text.isNotEmpty
                         ? discountedController.text
                         : null,
@@ -763,46 +748,56 @@ class _CustomerPageState extends State<CustomerPage> {
                     },
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "Please Select Discounted Status";
-                      } else {
-                        return null;
+                        return 'Please Select a Discount Status';
                       }
+                      return null;
                     },
                   ),
+                  const SizedBox(height: 10),
                   StreamBuilder<File?>(
                     stream: _discountedImageStreamController.stream,
                     builder: (context, snapshot) {
-                      // discountedImage = snapshot.data;
                       return Column(
                         children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? const CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 50,
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
                                   ),
-                                )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                          TextButton(
-                            onPressed: () async {
-                              await _discountedPickImage();
-                            },
-                            child: const Text(
-                              "Upload Discounted Image",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : Image.file(
+                                              snapshot.data!,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                            ),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
+                          ),
+                          ImageUploader(
+                            takeImage: _discountedTakeImage,
+                            pickImage: _discountedPickImage,
+                            buttonText: "Upload Discounted ID Image",
                           ),
                         ],
                       );
@@ -839,16 +834,13 @@ class _CustomerPageState extends State<CustomerPage> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
               child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
-                setState(() {
-                  isProfileImageUploaded = profileImage != null;
-                });
-                if (!isProfileImageUploaded) {
+                if (!isImageSelected) {
                   showCustomOverlay(context, 'Please Upload a Profile Image');
                 } else {
                   if (formKey.currentState!.validate()) {
@@ -856,11 +848,13 @@ class _CustomerPageState extends State<CustomerPage> {
                       "name": nameController.text,
                       "contactNumber": contactNumberController.text,
                       "address": addressController.text,
-                      "verified": verifiedController.text,
+                      "verified": "true",
                       "discounted": discountedController.text,
                       "__t": "Customer",
                       "email": emailController.text,
                       "password": passwordController.text,
+                      "image": "",
+                      'discountIdImage': "",
                     };
                     addCustomerToAPI(newCustomer);
                   }
@@ -878,21 +872,27 @@ class _CustomerPageState extends State<CustomerPage> {
     final overlay = OverlayEntry(
       builder: (context) => Positioned(
         top: MediaQuery.of(context).size.height * 0.5,
-        left: 0,
-        right: 0,
+        left: 20,
+        right: 20,
         child: Material(
           color: Colors.transparent,
           child: Container(
-            alignment: Alignment.center,
-            child: Card(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            decoration: BoxDecoration(
               color: Colors.red,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  message,
-                  style: const TextStyle(color: Colors.white),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
                 ),
-              ),
+              ],
+            ),
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+              textAlign: TextAlign.center,
             ),
           ),
         ),
@@ -947,149 +947,177 @@ class _CustomerPageState extends State<CustomerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
     return Scaffold(
-      key: _scaffoldKey,
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        title: const Text(
-          'Customer CRUD',
-          style: TextStyle(color: Color(0xFF232937), fontSize: 24),
-        ),
-        iconTheme: const IconThemeData(color: Color(0xFF232937)),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.add),
-            color: const Color(0xFF232937),
-            onPressed: () {
-              openAddCustomerDialog();
-            },
-          ),
-        ],
+        title: const Text('Customer List'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Form(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Row(
+        padding: const EdgeInsets.all(12),
+        child: RefreshIndicator(
+          onRefresh: () => fetchData(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: TextField(
-                        controller: searchController,
-                        decoration: const InputDecoration(
-                          hintText: 'Search',
-                          border: InputBorder.none,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: IntrinsicWidth(
+                          child: TextField(
+                            controller: searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Search',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              isDense: true,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              suffixIcon: InkWell(
+                                onTap: () {
+                                  search(searchController.text);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  child: const Icon(
+                                    Icons.search,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        search(searchController.text);
+                        openAddCustomerDialog();
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: Colors.black,
+                        primary: const Color(0xFF232937),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Icon(Icons.search),
+                      child: const Text(
+                        'Add Customer',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 ),
-              ),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: const Color(0xFF232937),
-                      width: 1.0,
-                    ),
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  child: DataTable(
-                    columns: const <DataColumn>[
-                      DataColumn(label: Text('Name')),
-                      DataColumn(label: Text('Contact Number')),
-                      DataColumn(label: Text('Address')),
-                      DataColumn(label: Text('Verified')),
-                      DataColumn(label: Text('Discounted')),
-                      DataColumn(label: Text('Type')),
-                      DataColumn(
-                        label: Text('Actions'),
-                        tooltip: 'Update and Archive',
-                      ),
-                    ],
-                    rows: customerDataList.map((userData) {
-                      final id = userData['_id'];
+                const SizedBox(height: 10),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: customerDataList.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final userData = customerDataList[index];
+                    final id = userData['_id'];
 
-                      return DataRow(
-                        cells: <DataCell>[
-                          DataCell(Text(userData['name'] ?? ''),
-                              placeholder: false),
-                          DataCell(Text(userData['contactNumber'] ?? ''),
-                              placeholder: false),
-                          DataCell(Text(userData['address'] ?? ''),
-                              placeholder: false),
-                          DataCell(Text(userData['verified'].toString() ?? ''),
-                              placeholder: false),
-                          DataCell(
-                              Text(userData['discounted'].toString() ?? ''),
-                              placeholder: false),
-                          DataCell(Text(userData['__t'] ?? ''),
-                              placeholder: false),
-                          DataCell(
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () => updateData(id),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.archive),
-                                  onPressed: () => ArchiveData(id),
-                                ),
-                              ],
-                            ),
-                            placeholder: false,
+                    return Card(
+                      elevation: 4,
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          radius: 30,
+                          backgroundImage: NetworkImage(
+                            userData['image'] ?? '',
                           ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
+                        ),
+                        title: Text(
+                          userData['name'] ?? '',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium!
+                              .copyWith(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Contact #: ${userData['contactNumber'] ?? ''}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium!
+                                  .copyWith(fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                            Text(
+                              'Address: ${userData['address'] ?? ''}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium!
+                                  .copyWith(fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ],
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 40,
+                              child: IconButton(
+                                icon: const Icon(Icons.edit),
+                                onPressed: () => updateData(id),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 20,
+                              child: IconButton(
+                                icon: const Icon(Icons.archive),
+                                onPressed: () => ArchiveData(id),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (currentPage > 1)
+                const SizedBox(height: 5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (currentPage > 1)
+                      ElevatedButton(
+                        onPressed: () {
+                          fetchData(page: currentPage - 1);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          primary: const Color(0xFF232937),
+                        ),
+                        child: const Text(
+                          'Previous',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    const SizedBox(width: 10),
                     ElevatedButton(
                       onPressed: () {
-                        fetchData(page: currentPage - 1);
+                        fetchData(page: currentPage + 1);
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: Colors.black,
+                        primary: const Color(0xFF232937),
                       ),
-                      child: const Text('Previous'),
+                      child: const Text(
+                        'Next',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
-                  SizedBox(width: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      fetchData(page: currentPage + 1);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors.black,
-                    ),
-                    child: const Text('Next'),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
           ),
         ),
       ),

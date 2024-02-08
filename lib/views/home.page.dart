@@ -223,28 +223,59 @@ class _HomePageState extends State<HomePage> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         centerTitle: true,
-        title: Text(
+        title: const Text(
           "Dashboard",
           style: TextStyle(color: Colors.black),
         ),
         actions: [],
       ),
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            SizedBox(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, walkinRoute);
+                },
+                style: ElevatedButton.styleFrom(
+                  primary: const Color(0xFF232937),
+                  elevation: 4,
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.directions_walk,
+                      color: Colors.white,
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'Walk-Ins',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      WalkInIcon(
-                        onTap: () {
-                          Navigator.pushNamed(context, walkinRoute);
-                        },
-                      ),
+                      // WalkInIcon(
+                      //   onTap: () {
+                      //     Navigator.pushNamed(context, walkinRoute);
+                      //   },
+                      // ),
                       CustomerIcon(
                         onTap: () {
                           Navigator.pushNamed(context, customerRoute);
@@ -265,6 +296,11 @@ class _HomePageState extends State<HomePage> {
                           Navigator.pushNamed(context, accessoriesRoute);
                         },
                       ),
+                      FaqIcon(
+                        onTap: () {
+                          Navigator.pushNamed(context, faqRoute);
+                        },
+                      ),
                       TransactionsIcon(
                         onTap: () {
                           Navigator.pushNamed(context, transactionRoute);
@@ -275,11 +311,7 @@ class _HomePageState extends State<HomePage> {
                           Navigator.pushNamed(context, appointmentRoute);
                         },
                       ),
-                      FaqIcon(
-                        onTap: () {
-                          Navigator.pushNamed(context, faqRoute);
-                        },
-                      ),
+
                       FeedbackIcon(
                         onTap: () {
                           // Action to perform when the card is clicked
@@ -304,107 +336,108 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                RectangleCard(
-                  title: 'Today Revenue',
-                  value: '\₱${calculateTotalSumToday().toStringAsFixed(2)}',
-                ),
-                RectangleCard(
-                  title: 'Pending Online Orders',
-                  value: '${calculateTotalOnlineTransactionsNotApproved()}',
-                ),
-                RectangleCard(
-                  title: 'Completed Online Today',
-                  value: '${calculateNumberOfOnlineTransactionsToday()}',
-                ),
-              ],
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                DropdownButton<String>(
-                  value: selectedRange,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      selectedRange = newValue!;
-                    });
-                  },
-                  items: ['Today', 'This Month', 'This Year']
-                      .map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                ),
-                SizedBox(
-                  height: 300,
-                  child: PieChart(
-                    PieChartData(
-                      sections: selectedSections,
-                      borderData: FlBorderData(show: false),
-                      centerSpaceRadius: 40,
-                      sectionsSpace: 0,
-                      startDegreeOffset: -90,
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  RectangleCard(
+                    title: 'Today Revenue',
+                    value: '\₱${calculateTotalSumToday().toStringAsFixed(2)}',
+                  ),
+                  RectangleCard(
+                    title: 'Pending Online Orders',
+                    value: '${calculateTotalOnlineTransactionsNotApproved()}',
+                  ),
+                  RectangleCard(
+                    title: 'Completed Online Today',
+                    value: '${calculateNumberOfOnlineTransactionsToday()}',
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  DropdownButton<String>(
+                    value: selectedRange,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedRange = newValue!;
+                      });
+                    },
+                    items: ['Today', 'This Month', 'This Year']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                  SizedBox(
+                    height: 300,
+                    child: PieChart(
+                      PieChartData(
+                        sections: selectedSections,
+                        borderData: FlBorderData(show: false),
+                        centerSpaceRadius: 40,
+                        sectionsSpace: 0,
+                        startDegreeOffset: -90,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: SizedBox(
-                height: 400,
-                child: DataTable(
-                  columns: [
-                    DataColumn(label: Text('Name')),
-                    DataColumn(label: Text('Barangay')),
-                    DataColumn(label: Text('Total')),
-                    DataColumn(label: Text('Type')),
-                    DataColumn(label: Text('Date')),
-                  ],
-                  rows: [
-                    ...selectedTransactions
-                        .where((transaction) =>
-                            transaction['__t'] == "Delivery" &&
-                            transaction['completed'] == true)
-                        .map((transaction) {
-                      return DataRow(
+                ],
+              ),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  height: 400,
+                  child: DataTable(
+                    columns: const [
+                      DataColumn(label: Text('Name')),
+                      DataColumn(label: Text('Barangay')),
+                      DataColumn(label: Text('Total')),
+                      DataColumn(label: Text('Type')),
+                      DataColumn(label: Text('Date')),
+                    ],
+                    rows: [
+                      ...selectedTransactions
+                          .where((transaction) =>
+                              transaction['__t'] == "Delivery" &&
+                              transaction['completed'] == true)
+                          .map((transaction) {
+                        return DataRow(
+                          cells: [
+                            DataCell(Text(transaction['name'])),
+                            DataCell(Text(transaction['barangay'])),
+                            DataCell(Text(
+                                '\₱${(transaction['total'] ?? 0.0).toStringAsFixed(2)}')),
+                            DataCell(Text(transaction['__t'])),
+                            DataCell(
+                              Text(transaction['createdAt']),
+                            ),
+                          ],
+                        );
+                      }),
+                      DataRow(
                         cells: [
-                          DataCell(Text(transaction['name'])),
-                          DataCell(Text(transaction['barangay'])),
                           DataCell(Text(
-                              '\₱${(transaction['total'] ?? 0.0).toStringAsFixed(2)}')),
-                          DataCell(Text(transaction['__t'])),
-                          DataCell(
-                            Text(transaction['createdAt']),
-                          ),
+                            'Total',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          )),
+                          DataCell(Text(
+                            '\₱${calculateTotalRevenueForToday().toStringAsFixed(2)}',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          )),
+                          DataCell(Text('')),
+                          DataCell(Text('')),
+                          DataCell(Text('')),
                         ],
-                      );
-                    }),
-                    DataRow(
-                      cells: [
-                        DataCell(Text(
-                          'Total',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        )),
-                        DataCell(Text(
-                          '\₱${calculateTotalRevenueForToday().toStringAsFixed(2)}',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        )),
-                        DataCell(Text('')),
-                        DataCell(Text('')),
-                        DataCell(Text('')),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -476,8 +509,8 @@ class RectangleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 120,
-      height: 120,
+      width: 110,
+      height: 110,
       decoration: BoxDecoration(
         shape: BoxShape.rectangle,
         color: Colors.white,
@@ -487,7 +520,7 @@ class RectangleCard extends StatelessWidget {
             color: Colors.grey.withOpacity(0.5),
             spreadRadius: 3,
             blurRadius: 5,
-            offset: Offset(0, 3),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -496,16 +529,16 @@ class RectangleCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: TextStyle(
-              fontSize: 18,
+            style: const TextStyle(
+              fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center, // Center align text
           ),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 20,
+            style: const TextStyle(
+              fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
