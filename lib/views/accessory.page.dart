@@ -1,3 +1,5 @@
+import 'package:admin_app/widgets/custom_image_upload.dart';
+import 'package:admin_app/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -16,6 +18,8 @@ class _AccessoryPageState extends State<AccessoryPage> {
   File? _image;
   final _imageStreamController = StreamController<File?>.broadcast();
 
+  final formKey = GlobalKey<FormState>();
+
   List<Map<String, dynamic>> accessoryDataList = [];
   TextEditingController searchController = TextEditingController();
 
@@ -31,11 +35,11 @@ class _AccessoryPageState extends State<AccessoryPage> {
   }
 
   int currentPage = 1;
-  int limit = 21;
+  int limit = 20;
 
-  Future<void> _pickImage() async {
+  Future<void> _takeImage() async {
     final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+        await ImagePicker().pickImage(source: ImageSource.camera);
 
     if (pickedFile != null) {
       final imageFile = File(pickedFile.path);
@@ -46,64 +50,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
     }
   }
 
-  Future<void> fetchData({int page = 1}) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/items/?page=$page&limit=$limit'));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-
-      final List<Map<String, dynamic>> accessoryData = (data['data'] as List)
-          .where((accessoryData) => accessoryData is Map<String, dynamic>)
-          .map((accessoryData) => accessoryData as Map<String, dynamic>)
-          .toList();
-
-      setState(() {
-        accessoryDataList.clear();
-        accessoryDataList.addAll(accessoryData);
-        currentPage = page;
-      });
-    } else {
-      throw Exception('Failed to load data from the API');
-    }
-  }
-
-  Future<void> addAccessoryToAPI(Map<String, dynamic> newAccessory) async {
-    final url = Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items');
-    final headers = {'Content-Type': 'application/json'};
-
-    try {
-      var uploadResponse = await uploadImageToServer(_image!);
-      print("Upload Response: $uploadResponse");
-
-      if (uploadResponse != null) {
-        print("Image URL: ${uploadResponse["url"]}");
-        newAccessory["image"] = uploadResponse["url"];
-
-        final response = await http.post(
-          url,
-          headers: headers,
-          body: jsonEncode(newAccessory),
-        );
-
-        print("API Response: ${response.statusCode} - ${response.body}");
-
-        if (response.statusCode == 201 || response.statusCode == 200) {
-          fetchData();
-          Navigator.pop(context);
-        } else {
-          print(
-              'Failed to add or update the product. Status code: ${response.statusCode}');
-        }
-      } else {
-        print("Image upload failed");
-      }
-    } catch (e) {
-      print("Exception during API request: $e");
-    }
-  }
-
-  Future<void> _pickImageForEdit() async {
+  Future<void> _pickImage() async {
     final pickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
 
@@ -186,208 +133,59 @@ class _AccessoryPageState extends State<AccessoryPage> {
     }
   }
 
-  void showCustomOverlay(BuildContext context, String message) {
-    final overlay = OverlayEntry(
-      builder: (context) => Positioned(
-        top: MediaQuery.of(context).size.height * 0.5,
-        left: 0,
-        right: 0,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            alignment: Alignment.center,
-            child: Card(
-              color: Colors.red,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  message,
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+  Future<void> fetchData({int page = 1}) async {
+    final response = await http.get(Uri.parse(
+        'https://lpg-api-06n8.onrender.com/api/v1/items/?page=$page&limit=$limit'));
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final List<Map<String, dynamic>> accessoryData = (data['data'] as List)
+          .where((accessoryData) => accessoryData is Map<String, dynamic>)
+          .map((accessoryData) => accessoryData as Map<String, dynamic>)
+          .toList();
 
-    Overlay.of(context)!.insert(overlay);
-
-    Future.delayed(const Duration(seconds: 2), () {
-      overlay.remove();
-    });
+      setState(() {
+        accessoryDataList.clear();
+        accessoryDataList.addAll(accessoryData);
+        currentPage = page;
+      });
+    } else {
+      throw Exception('Failed to load data from the API');
+    }
   }
 
-  void updateData(String id) {
-    Map<String, dynamic> accessoryToEdit =
-        accessoryDataList.firstWhere((data) => data['_id'] == id);
+  Future<void> addAccessoryToAPI(Map<String, dynamic> newAccessory) async {
+    final url = Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items');
+    final headers = {'Content-Type': 'application/json'};
 
-    TextEditingController nameController =
-        TextEditingController(text: accessoryToEdit['name']);
-    TextEditingController descriptionController =
-        TextEditingController(text: accessoryToEdit['description']);
-    TextEditingController quantityController =
-        TextEditingController(text: accessoryToEdit['quantity'].toString());
-    TextEditingController customerPriceController = TextEditingController(
-        text: accessoryToEdit['customerPrice'].toString());
-    TextEditingController retailerPriceController = TextEditingController(
-        text: accessoryToEdit['retailerPrice'].toString());
+    try {
+      var uploadResponse = await uploadImageToServer(_image!);
+      print("Upload Response: $uploadResponse");
 
-    final _formKey = GlobalKey<FormState>();
+      if (uploadResponse != null) {
+        print("Image URL: ${uploadResponse["url"]}");
+        newAccessory["image"] = uploadResponse["url"];
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Edit Data'),
-          content: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Name'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the accesory name';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: descriptionController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the accessory decription';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: quantityController,
-                    decoration: const InputDecoration(labelText: 'Quantity'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the accessory quantity';
-                      }
-                      return null;
-                    },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  Text(
-                    "\nAccessory Image",
-                    style: TextStyle(
-                      fontSize: 15.0,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  StreamBuilder<File?>(
-                    stream: _imageStreamController.stream,
-                    builder: (context, snapshot) {
-                      return Column(
-                        children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? (accessoryToEdit['image']?.toString() ?? '')
-                                      .isNotEmpty
-                                  ? CircleAvatar(
-                                      radius: 50,
-                                      backgroundImage: NetworkImage(
-                                          accessoryToEdit['image']
-                                                  ?.toString() ??
-                                              ''),
-                                    )
-                                  : const CircleAvatar(
-                                      radius: 50,
-                                      child: Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 50,
-                                      ),
-                                    )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
-                                ),
-                          TextButton(
-                            onPressed: () async {
-                              await _pickImageForEdit();
-                            },
-                            child: const Text(
-                              "Upload Image",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (_formKey.currentState!.validate()) {
-                  accessoryToEdit['name'] = nameController.text;
-                  accessoryToEdit['description'] = descriptionController.text;
-                  accessoryToEdit['quantity'] = quantityController.text;
-                  accessoryToEdit['customerPrice'] =
-                      customerPriceController.text;
-                  accessoryToEdit['retailerPrice'] =
-                      retailerPriceController.text;
-
-                  if (_image != null) {
-                    var uploadResponse = await uploadImageToServer(_image!);
-                    if (uploadResponse != null) {
-                      print("Image URL: ${uploadResponse["url"]}");
-                      accessoryToEdit["image"] = uploadResponse["url"];
-                    } else {
-                      print("Image upload failed");
-                    }
-                  }
-                  final url = Uri.parse(
-                      'https://lpg-api-06n8.onrender.com/api/v1/items/$id');
-                  final headers = {'Content-Type': 'application/json'};
-
-                  final response = await http.patch(
-                    url,
-                    headers: headers,
-                    body: jsonEncode(accessoryToEdit),
-                  );
-
-                  if (response.statusCode == 200) {
-                    fetchData();
-                    Navigator.pop(context);
-                  } else {
-                    print(
-                        'Failed to update the accessory. Status code: ${response.statusCode}');
-                  }
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
+        final response = await http.post(
+          url,
+          headers: headers,
+          body: jsonEncode(newAccessory),
         );
-      },
-    );
+
+        print("API Response: ${response.statusCode} - ${response.body}");
+
+        if (response.statusCode == 201 || response.statusCode == 200) {
+          fetchData();
+          Navigator.pop(context);
+        } else {
+          print(
+              'Failed to add or update the product. Status code: ${response.statusCode}');
+        }
+      } else {
+        print("Image upload failed");
+      }
+    } catch (e) {
+      print("Exception during API request: $e");
+    }
   }
 
   Future<void> search(String query) async {
@@ -417,18 +215,82 @@ class _AccessoryPageState extends State<AccessoryPage> {
     TextEditingController quantityController = TextEditingController();
     TextEditingController customerPriceController = TextEditingController();
     TextEditingController retailerPriceController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
+
+    bool isImageSelected = false;
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Add New Accessory'),
+          title: const Text(
+            'Add New Accessory',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
           content: SingleChildScrollView(
             child: Form(
               key: formKey,
               child: Column(
                 children: [
+                  const Divider(),
+                  const SizedBox(height: 10.0),
+                  StreamBuilder<File?>(
+                    stream: _imageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : Image.file(
+                                              snapshot.data!,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ImageUploaderValidator(
+                            takeImage: _takeImage,
+                            pickImage: _pickImage,
+                            buttonText: "Upload Accessory Image",
+                            onImageSelected: (isSelected) {
+                              setState(() {
+                                isImageSelected = isSelected;
+                              });
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                   TextFormField(
                     controller: nameController,
                     decoration: const InputDecoration(labelText: 'Name'),
@@ -440,6 +302,8 @@ class _AccessoryPageState extends State<AccessoryPage> {
                     },
                   ),
                   TextFormField(
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null,
                     controller: descriptionController,
                     decoration: const InputDecoration(labelText: 'Description'),
                     validator: (value) {
@@ -489,51 +353,6 @@ class _AccessoryPageState extends State<AccessoryPage> {
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                   ),
-                  Text(
-                    "\nAccessory Image",
-                    style: TextStyle(
-                      fontSize: 15.0,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  StreamBuilder<File?>(
-                    stream: _imageStreamController.stream,
-                    builder: (context, snapshot) {
-                      return Column(
-                        children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? const CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 50,
-                                  ),
-                                )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
-                                ),
-                          TextButton(
-                            onPressed: () async {
-                              await _pickImage();
-                            },
-                            child: const Text(
-                              "Upload Image",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
                 ],
               ),
             ),
@@ -547,21 +366,244 @@ class _AccessoryPageState extends State<AccessoryPage> {
             ),
             TextButton(
               onPressed: () {
+                if (!isImageSelected) {
+                  showCustomOverlay(
+                      context, 'Please Upload the Accessory Image');
+                } else {
+                  Map<String, dynamic> newAccessory = {
+                    "name": nameController.text,
+                    "category": "Accessories",
+                    "description": descriptionController.text,
+                    "weight": 0,
+                    "quantity": quantityController.text,
+                    "type": "Accessory",
+                    "customerPrice": customerPriceController.text,
+                    "retailerPrice": retailerPriceController.text,
+                    "image": "",
+                  };
+                  addAccessoryToAPI(newAccessory);
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void showCustomOverlay(BuildContext context, String message) {
+    final overlay = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).size.height * 0.5,
+        left: 20,
+        right: 20,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context)!.insert(overlay);
+
+    Future.delayed(const Duration(seconds: 2), () {
+      overlay.remove();
+    });
+  }
+
+  void updateData(String id) {
+    Map<String, dynamic> accessoryToEdit =
+        accessoryDataList.firstWhere((data) => data['_id'] == id);
+
+    TextEditingController nameController =
+        TextEditingController(text: accessoryToEdit['name']);
+    TextEditingController descriptionController =
+        TextEditingController(text: accessoryToEdit['description']);
+    TextEditingController quantityController =
+        TextEditingController(text: accessoryToEdit['quantity'].toString());
+    TextEditingController customerPriceController = TextEditingController(
+        text: accessoryToEdit['customerPrice'].toString());
+    TextEditingController retailerPriceController = TextEditingController(
+        text: accessoryToEdit['retailerPrice'].toString());
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Edit Accessory',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const Divider(),
+                  const SizedBox(height: 10.0),
+                  StreamBuilder<File?>(
+                    stream: _imageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null &&
+                                              (accessoryToEdit['image'] ?? '')
+                                                  .isEmpty
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : snapshot.data != null
+                                              ? Image.file(
+                                                  snapshot.data!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                )
+                                              : Image.network(
+                                                  accessoryToEdit['image']!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ImageUploader(
+                            takeImage: _takeImage,
+                            pickImage: _pickImage,
+                            buttonText: "Upload Accessory Image",
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  TextFormField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the accesory name';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: descriptionController,
+                    decoration: const InputDecoration(labelText: 'Description'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the accessory decription';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: quantityController,
+                    decoration: const InputDecoration(labelText: 'Quantity'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the accessory quantity';
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
                 if (formKey.currentState!.validate()) {
-                  if (_image == null) {
-                    showCustomOverlay(context, 'Please Upload an Image');
+                  accessoryToEdit['name'] = nameController.text;
+                  accessoryToEdit['description'] = descriptionController.text;
+                  accessoryToEdit['quantity'] = quantityController.text;
+                  accessoryToEdit['customerPrice'] =
+                      customerPriceController.text;
+                  accessoryToEdit['retailerPrice'] =
+                      retailerPriceController.text;
+
+                  if (_image != null) {
+                    var uploadResponse = await uploadImageToServer(_image!);
+                    if (uploadResponse != null) {
+                      accessoryToEdit["image"] = uploadResponse["url"];
+                    }
+                  }
+                  final url = Uri.parse(
+                      'https://lpg-api-06n8.onrender.com/api/v1/items/$id');
+                  final headers = {'Content-Type': 'application/json'};
+
+                  final response = await http.patch(
+                    url,
+                    headers: headers,
+                    body: jsonEncode(accessoryToEdit),
+                  );
+
+                  if (response.statusCode == 200) {
+                    setState(() {
+                      _image = null;
+                    });
+
+                    fetchData();
+                    Navigator.pop(context);
                   } else {
-                    Map<String, dynamic> newAccessory = {
-                      "name": nameController.text,
-                      "category": "Accessories",
-                      "description": descriptionController.text,
-                      "weight": 0,
-                      "quantity": quantityController.text,
-                      "type": "Accessory",
-                      "customerPrice": customerPriceController.text,
-                      "retailerPrice": retailerPriceController.text,
-                    };
-                    addAccessoryToAPI(newAccessory);
+                    print(
+                        'Failed to update the accessory. Status code: ${response.statusCode}');
                   }
                 }
               },
@@ -616,149 +658,222 @@ class _AccessoryPageState extends State<AccessoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        title: const Text(
-          'Accessory CRUD',
-          style: TextStyle(color: Color(0xFF232937), fontSize: 24),
-        ),
-        iconTheme: const IconThemeData(color: Color(0xFF232937)),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.add),
-            color: const Color(0xFF232937),
-            onPressed: () {
-              openAddAccessoryDialog();
-            },
-          ),
-        ],
+        title: const Text('Accessory List'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: searchController,
-                      decoration: const InputDecoration(
-                        hintText: 'Search',
-                        border: InputBorder.none,
+        padding: const EdgeInsets.all(12),
+        child: RefreshIndicator(
+          onRefresh: () => fetchData(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: IntrinsicWidth(
+                          child: TextField(
+                            controller: searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Search',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              isDense: true,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              suffixIcon: InkWell(
+                                onTap: () {
+                                  search(searchController.text);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  child: const Icon(
+                                    Icons.search,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      search(searchController.text);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                    ElevatedButton(
+                      onPressed: () {
+                        openAddAccessoryDialog();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: const Color(0xFF232937),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                    ),
-                    child: const Icon(Icons.search),
-                  ),
-                ],
-              ),
-            ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: const Color(0xFF232937),
-                    width: 1.0,
-                  ),
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                child: DataTable(
-                  columns: const <DataColumn>[
-                    DataColumn(label: Text('Name')),
-                    DataColumn(label: Text('Type')),
-                    DataColumn(label: Text('Description')),
-                    DataColumn(label: Text('Quantity')),
-                    DataColumn(label: Text('Customer Price')),
-                    DataColumn(label: Text('Retailer Price')),
-                    DataColumn(
-                      label: Text('Actions'),
-                      tooltip: 'Update and archive',
+                      child: const Text(
+                        'Add Accessory',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
-                  rows: accessoryDataList
-                      .where((accessoryData) =>
-                          accessoryData['type'] == 'Accessory')
-                      .map((accessoryData) {
-                    final id = accessoryData['_id'];
-                    return DataRow(
-                      cells: <DataCell>[
-                        DataCell(Text(accessoryData['name'] ?? ''),
-                            placeholder: false),
-                        DataCell(Text(accessoryData['type'] ?? ''),
-                            placeholder: false),
-                        DataCell(Text(accessoryData['description'] ?? ''),
-                            placeholder: false),
-                        DataCell(
-                            Text(accessoryData['quantity'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(
-                            Text(accessoryData['customerPrice'].toString() ??
-                                ''),
-                            placeholder: false),
-                        DataCell(
-                            Text(accessoryData['retailerPrice'].toString() ??
-                                ''),
-                            placeholder: false),
-                        DataCell(
-                          Row(
+                ),
+                const SizedBox(height: 10),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: accessoryDataList
+                      .where(
+                          (productData) => productData['type'] == 'Accessory')
+                      .length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final filteredList = accessoryDataList
+                        .where(
+                            (productData) => productData['type'] == 'Accessory')
+                        .toList();
+                    final userData = filteredList[index];
+                    final id = userData['_id'];
+                    final quantity = userData['quantity'] ?? 0;
+
+                    Color cardColor;
+                    Color dividerColor;
+                    Color iconColor;
+
+                    if (quantity <= 5) {
+                      cardColor = Colors.red.withOpacity(0.7);
+                      dividerColor = Colors.black;
+                      iconColor = Colors.black;
+                    } else if (quantity >= 6 && quantity <= 10) {
+                      cardColor = Colors.orange.withOpacity(0.7);
+                      dividerColor = Colors.black;
+                      iconColor = Colors.black;
+                    } else {
+                      cardColor = Colors.white;
+                      dividerColor = const Color(0xFF232937);
+                      iconColor = const Color(0xFF232937);
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: SizedBox(
+                        child: Card(
+                          color: cardColor,
+                          elevation: 6,
+                          child: Column(
                             children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit),
-                                onPressed: () => updateData(id),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 100, // Change the size
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: Colors.black,
+                                      width: 1,
+                                    ),
+                                    image: DecorationImage(
+                                      image:
+                                          NetworkImage(userData['image'] ?? ''),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.archive),
-                                onPressed: () => archiveData(id),
+                              ListTile(
+                                title: TitleMediumText(
+                                    text: userData['name'] ?? ''),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Divider(
+                                      color: dividerColor,
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Category: ${userData['category'] ?? ''}',
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Description: ${userData['description'] ?? ''}',
+                                    ),
+                                    BodyMediumText(
+                                      text: 'Quantity: $quantity',
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Customer Price: ${userData['customerPrice'] ?? ''}',
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Retailer Price: ${userData['retailerPrice'] ?? ''}',
+                                    ),
+                                  ],
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: 40,
+                                      child: IconButton(
+                                        icon:
+                                            Icon(Icons.edit, color: iconColor),
+                                        onPressed: () => updateData(id),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 20,
+                                      child: IconButton(
+                                        icon: Icon(Icons.archive,
+                                            color: iconColor),
+                                        onPressed: () => archiveData(id),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
-                          placeholder: false,
                         ),
-                      ],
+                      ),
                     );
-                  }).toList(),
-                ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (currentPage > 1)
-                  ElevatedButton(
-                    onPressed: () {
-                      fetchData(page: currentPage - 1);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors.black,
-                    ),
-                    child: const Text('Previous'),
-                  ),
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    fetchData(page: currentPage + 1);
                   },
-                  style: ElevatedButton.styleFrom(
-                    primary: Colors.black,
-                  ),
-                  child: const Text('Next'),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (currentPage > 1)
+                      ElevatedButton(
+                        onPressed: () {
+                          fetchData(page: currentPage - 1);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          primary: const Color(0xFF232937),
+                        ),
+                        child: const Text(
+                          'Previous',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        fetchData(page: currentPage + 1);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: const Color(0xFF232937),
+                      ),
+                      child: const Text(
+                        'Next',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

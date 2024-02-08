@@ -1357,7 +1357,7 @@ class _DriversPageState extends State<DriversPage> {
     );
   }
 
-  void ArchiveData(String id) async {
+  void archiveData(String id) async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1543,7 +1543,7 @@ class _DriversPageState extends State<DriversPage> {
                                       width: 20,
                                       child: IconButton(
                                         icon: const Icon(Icons.archive),
-                                        onPressed: () => ArchiveData(id),
+                                        onPressed: () => archiveData(id),
                                       ),
                                     ),
                                   ],

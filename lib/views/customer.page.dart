@@ -920,7 +920,7 @@ class _CustomerPageState extends State<CustomerPage> {
     );
   }
 
-  void ArchiveData(String id) async {
+  void archiveData(String id) async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1089,7 +1089,7 @@ class _CustomerPageState extends State<CustomerPage> {
                               width: 20,
                               child: IconButton(
                                 icon: const Icon(Icons.archive),
-                                onPressed: () => ArchiveData(id),
+                                onPressed: () => archiveData(id),
                               ),
                             ),
                           ],

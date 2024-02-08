@@ -199,8 +199,7 @@ class _ProductsPageState extends State<ProductsPage> {
           .where((productData) =>
               productData is Map<String, dynamic> &&
               productData.containsKey('type') &&
-              productData['type'] ==
-                  'Product') // Only include products with type 'Products'
+              productData['type'] == 'Product')
           .map((productData) => productData as Map<String, dynamic>)
           .toList();
 
@@ -225,12 +224,21 @@ class _ProductsPageState extends State<ProductsPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Add New Product'),
+          title: const Text(
+            'Add New Product',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
           content: SingleChildScrollView(
             child: Form(
               key: formKey,
               child: Column(
                 children: [
+                  const Divider(),
+                  const SizedBox(height: 10.0),
                   StreamBuilder<File?>(
                     stream: _imageStreamController.stream,
                     builder: (context, snapshot) {
@@ -399,7 +407,7 @@ class _ProductsPageState extends State<ProductsPage> {
             TextButton(
               onPressed: () {
                 if (!isImageSelected) {
-                  showCustomOverlay(context, 'Please Upload a Profile Image');
+                  showCustomOverlay(context, 'Please Upload the Product Image');
                 } else {
                   if (formKey.currentState!.validate()) {
                     Map<String, dynamic> newProduct = {
@@ -486,13 +494,21 @@ class _ProductsPageState extends State<ProductsPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Edit Product'),
+          title: const Text(
+            'Edit Product',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
           content: Form(
             key: formKey,
             child: SingleChildScrollView(
               child: Column(
                 children: [
                   const Divider(),
+                  const SizedBox(height: 10.0),
                   StreamBuilder<File?>(
                     stream: _imageStreamController.stream,
                     builder: (context, snapshot) {
@@ -679,7 +695,7 @@ class _ProductsPageState extends State<ProductsPage> {
     );
   }
 
-  void ArchiveData(String id) async {
+  void archiveData(String id) async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -894,7 +910,7 @@ class _ProductsPageState extends State<ProductsPage> {
                                       child: IconButton(
                                         icon: Icon(Icons.archive,
                                             color: iconColor),
-                                        onPressed: () => ArchiveData(id),
+                                        onPressed: () => archiveData(id),
                                       ),
                                     ),
                                   ],
