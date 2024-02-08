@@ -1,3 +1,5 @@
+import 'package:admin_app/widgets/custom_image_upload.dart';
+import 'package:admin_app/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -16,6 +18,8 @@ class _ProductsPageState extends State<ProductsPage> {
   File? _image;
   final _imageStreamController = StreamController<File?>.broadcast();
 
+  final formKey = GlobalKey<FormState>();
+
   List<Map<String, dynamic>> productDataList = [];
   TextEditingController searchController = TextEditingController();
 
@@ -31,7 +35,20 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   int currentPage = 1;
-  int limit = 10;
+  int limit = 20;
+
+  Future<void> _takeImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.camera);
+
+    if (pickedFile != null) {
+      final imageFile = File(pickedFile.path);
+      _imageStreamController.sink.add(imageFile);
+      setState(() {
+        _image = imageFile;
+      });
+    }
+  }
 
   Future<void> _pickImage() async {
     final pickedFile =
@@ -116,38 +133,6 @@ class _ProductsPageState extends State<ProductsPage> {
     }
   }
 
-  void showCustomOverlay(BuildContext context, String message) {
-    final overlay = OverlayEntry(
-      builder: (context) => Positioned(
-        top: MediaQuery.of(context).size.height * 0.5,
-        left: 0,
-        right: 0,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            alignment: Alignment.center,
-            child: Card(
-              color: Colors.red,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  message,
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    Overlay.of(context)!.insert(overlay);
-
-    Future.delayed(const Duration(seconds: 2), () {
-      overlay.remove();
-    });
-  }
-
   Future<void> fetchData({int page = 1}) async {
     final response = await http.get(Uri.parse(
         'https://lpg-api-06n8.onrender.com/api/v1/items/?page=$page&limit=$limit'));
@@ -203,226 +188,6 @@ class _ProductsPageState extends State<ProductsPage> {
     }
   }
 
-  Future<void> _pickImageForEdit() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      final imageFile = File(pickedFile.path);
-      _imageStreamController.sink.add(imageFile);
-      setState(() {
-        _image = imageFile;
-      });
-    }
-  }
-
-  void updateData(String id) {
-    Map<String, dynamic> productToEdit =
-        productDataList.firstWhere((data) => data['_id'] == id);
-
-    TextEditingController nameController =
-        TextEditingController(text: productToEdit['name']);
-    TextEditingController categoryController =
-        TextEditingController(text: productToEdit['category']);
-    TextEditingController descriptionController =
-        TextEditingController(text: productToEdit['description']);
-    TextEditingController weightController =
-        TextEditingController(text: productToEdit['weight'].toString());
-    TextEditingController quantityController =
-        TextEditingController(text: productToEdit['quantity'].toString());
-    TextEditingController customerPriceController =
-        TextEditingController(text: productToEdit['customerPrice'].toString());
-    TextEditingController retailerPriceController =
-        TextEditingController(text: productToEdit['retailerPrice'].toString());
-    final _formKey = GlobalKey<FormState>();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Edit Data'),
-          content: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Name'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the product name';
-                      }
-                      return null;
-                    },
-                  ),
-                  DropdownButtonFormField<String>(
-                    value: categoryController.text,
-                    onChanged: (newValue) {
-                      setState(() {
-                        categoryController.text = newValue!;
-                      });
-                    },
-                    items: ['Brand New Tanks', 'Refill Tanks']
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    decoration: const InputDecoration(
-                      labelText: 'Category',
-                    ),
-                  ),
-                  TextFormField(
-                    controller: descriptionController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the product description';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: weightController,
-                    decoration:
-                        const InputDecoration(labelText: 'Weight (in kg.)'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the product weight (in kg.)';
-                      }
-                      return null;
-                    },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  TextFormField(
-                    controller: quantityController,
-                    decoration: const InputDecoration(labelText: 'Quantity'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the product quantity';
-                      }
-                      return null;
-                    },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  Text(
-                    "\nProduct Image",
-                    style: TextStyle(
-                      fontSize: 15.0,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  StreamBuilder<File?>(
-                    stream: _imageStreamController.stream,
-                    builder: (context, snapshot) {
-                      return Column(
-                        children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? (productToEdit['image']?.toString() ?? '')
-                                      .isNotEmpty
-                                  ? CircleAvatar(
-                                      radius: 50,
-                                      backgroundImage: NetworkImage(
-                                          productToEdit['image']?.toString() ??
-                                              ''),
-                                    )
-                                  : const CircleAvatar(
-                                      radius: 50,
-                                      child: Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 50,
-                                      ),
-                                    )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
-                                ),
-                          TextButton(
-                            onPressed: () async {
-                              await _pickImageForEdit();
-                            },
-                            child: const Text(
-                              "Upload Image",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (_formKey.currentState!.validate()) {
-                  productToEdit['name'] = nameController.text;
-                  productToEdit['category'] = categoryController.text;
-                  productToEdit['description'] = descriptionController.text;
-                  productToEdit['weight'] = weightController.text;
-                  productToEdit['quantity'] = quantityController.text;
-                  productToEdit['customerPrice'] = customerPriceController.text;
-                  productToEdit['retailerPrice'] = retailerPriceController.text;
-
-                  if (_image != null) {
-                    var uploadResponse = await uploadImageToServer(_image!);
-                    if (uploadResponse != null) {
-                      print("Image URL: ${uploadResponse["url"]}");
-                      productToEdit["image"] = uploadResponse["url"];
-                    } else {
-                      print("Image upload failed");
-                    }
-                  }
-                  final url = Uri.parse(
-                      'https://lpg-api-06n8.onrender.com/api/v1/items/$id');
-                  final headers = {'Content-Type': 'application/json'};
-
-                  final response = await http.patch(
-                    url,
-                    headers: headers,
-                    body: jsonEncode(productToEdit),
-                  );
-
-                  if (response.statusCode == 200) {
-                    fetchData();
-                    Navigator.pop(context);
-                  } else {
-                    print(
-                        'Failed to update the product. Status code: ${response.statusCode}');
-                  }
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Future<void> search(String query) async {
     final response = await http.get(Uri.parse(
         'https://lpg-api-06n8.onrender.com/api/v1/items/?search=$query'));
@@ -454,7 +219,7 @@ class _ProductsPageState extends State<ProductsPage> {
     TextEditingController customerPriceController = TextEditingController();
     TextEditingController retailerPriceController = TextEditingController();
 
-    final formKey = GlobalKey<FormState>();
+    bool isImageSelected = false;
 
     showDialog(
       context: context,
@@ -466,6 +231,60 @@ class _ProductsPageState extends State<ProductsPage> {
               key: formKey,
               child: Column(
                 children: [
+                  StreamBuilder<File?>(
+                    stream: _imageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : Image.file(
+                                              snapshot.data!,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ImageUploaderValidator(
+                            takeImage: _takeImage,
+                            pickImage: _pickImage,
+                            buttonText: "Upload Product Image",
+                            onImageSelected: (isSelected) {
+                              setState(() {
+                                isImageSelected = isSelected;
+                              });
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                   TextFormField(
                     controller: nameController,
                     decoration: const InputDecoration(labelText: 'Name'),
@@ -500,6 +319,8 @@ class _ProductsPageState extends State<ProductsPage> {
                     },
                   ),
                   TextFormField(
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null,
                     controller: descriptionController,
                     decoration: const InputDecoration(labelText: 'Description'),
                     validator: (value) {
@@ -564,51 +385,6 @@ class _ProductsPageState extends State<ProductsPage> {
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                   ),
-                  Text(
-                    "\nProduct Image",
-                    style: TextStyle(
-                      fontSize: 15.0,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  StreamBuilder<File?>(
-                    stream: _imageStreamController.stream,
-                    builder: (context, snapshot) {
-                      return Column(
-                        children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? const CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 50,
-                                  ),
-                                )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
-                                ),
-                          TextButton(
-                            onPressed: () async {
-                              await _pickImage();
-                            },
-                            child: const Text(
-                              "Upload Image",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
                 ],
               ),
             ),
@@ -622,10 +398,10 @@ class _ProductsPageState extends State<ProductsPage> {
             ),
             TextButton(
               onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  if (_image == null) {
-                    showCustomOverlay(context, 'Please Upload an Image');
-                  } else {
+                if (!isImageSelected) {
+                  showCustomOverlay(context, 'Please Upload a Profile Image');
+                } else {
+                  if (formKey.currentState!.validate()) {
                     Map<String, dynamic> newProduct = {
                       "name": nameController.text,
                       "category": categoryController.text,
@@ -635,8 +411,263 @@ class _ProductsPageState extends State<ProductsPage> {
                       "type": "Product",
                       "customerPrice": customerPriceController.text,
                       "retailerPrice": retailerPriceController.text,
+                      "image": "",
                     };
                     addProductToAPI(newProduct);
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void showCustomOverlay(BuildContext context, String message) {
+    final overlay = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).size.height * 0.5,
+        left: 20,
+        right: 20,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context)!.insert(overlay);
+
+    Future.delayed(const Duration(seconds: 2), () {
+      overlay.remove();
+    });
+  }
+
+  void updateData(String id) {
+    Map<String, dynamic> productToEdit =
+        productDataList.firstWhere((data) => data['_id'] == id);
+
+    TextEditingController nameController =
+        TextEditingController(text: productToEdit['name']);
+    TextEditingController categoryController =
+        TextEditingController(text: productToEdit['category']);
+    TextEditingController descriptionController =
+        TextEditingController(text: productToEdit['description']);
+    TextEditingController weightController =
+        TextEditingController(text: productToEdit['weight'].toString());
+    TextEditingController quantityController =
+        TextEditingController(text: productToEdit['quantity'].toString());
+    TextEditingController customerPriceController =
+        TextEditingController(text: productToEdit['customerPrice'].toString());
+    TextEditingController retailerPriceController =
+        TextEditingController(text: productToEdit['retailerPrice'].toString());
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Product'),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const Divider(),
+                  StreamBuilder<File?>(
+                    stream: _imageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null &&
+                                              (productToEdit['image'] ?? '')
+                                                  .isEmpty
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : snapshot.data != null
+                                              ? Image.file(
+                                                  snapshot.data!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                )
+                                              : Image.network(
+                                                  productToEdit['image']!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ImageUploader(
+                            takeImage: _takeImage,
+                            pickImage: _pickImage,
+                            buttonText: "Upload Product Image",
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  TextFormField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product name';
+                      }
+                      return null;
+                    },
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: categoryController.text,
+                    onChanged: (newValue) {
+                      setState(() {
+                        categoryController.text = newValue!;
+                      });
+                    },
+                    items: ['Brand New Tanks', 'Refill Tanks']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: const InputDecoration(
+                      labelText: 'Category',
+                    ),
+                  ),
+                  TextFormField(
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null,
+                    controller: descriptionController,
+                    decoration: const InputDecoration(labelText: 'Description'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product description';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: weightController,
+                    decoration:
+                        const InputDecoration(labelText: 'Weight (in kg.)'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product weight (in kg.)';
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                  TextFormField(
+                    controller: quantityController,
+                    decoration: const InputDecoration(labelText: 'Quantity'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the product quantity';
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  productToEdit['name'] = nameController.text;
+                  productToEdit['category'] = categoryController.text;
+                  productToEdit['description'] = descriptionController.text;
+                  productToEdit['weight'] = weightController.text;
+                  productToEdit['quantity'] = quantityController.text;
+                  productToEdit['customerPrice'] = customerPriceController.text;
+                  productToEdit['retailerPrice'] = retailerPriceController.text;
+
+                  if (_image != null) {
+                    var uploadResponse = await uploadImageToServer(_image!);
+                    if (uploadResponse != null) {
+                      productToEdit["image"] = uploadResponse["url"];
+                    }
+                  }
+                  final url = Uri.parse(
+                      'https://lpg-api-06n8.onrender.com/api/v1/items/$id');
+                  final headers = {'Content-Type': 'application/json'};
+
+                  final response = await http.patch(
+                    url,
+                    headers: headers,
+                    body: jsonEncode(productToEdit),
+                  );
+
+                  if (response.statusCode == 200) {
+                    setState(() {
+                      _image = null;
+                    });
+
+                    fetchData();
+                    Navigator.pop(context);
+                  } else {
+                    print(
+                        'Failed to update the product. Status code: ${response.statusCode}');
                   }
                 }
               },
@@ -689,124 +720,192 @@ class _ProductsPageState extends State<ProductsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
     return Scaffold(
-        key: _scaffoldKey,
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: Colors.white,
-          title: const Text(
-            'Product CRUD',
-            style: TextStyle(color: Color(0xFF232937), fontSize: 24),
-          ),
-          iconTheme: const IconThemeData(color: Color(0xFF232937)),
-          actions: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.add),
-              color: const Color(0xFF232937),
-              onPressed: () {
-                openAddProductDialog();
-              },
-            ),
-          ],
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(15.0),
-          child: Form(
+      appBar: AppBar(
+        title: const Text('Product List'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+        child: RefreshIndicator(
+          onRefresh: () => fetchData(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: searchController,
-                          decoration: const InputDecoration(
-                            hintText: 'Search',
-                            border: InputBorder.none,
-                          ),
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          search(searchController.text);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          primary: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        child: const Icon(Icons.search),
-                      ),
-                    ],
-                  ),
-                ),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: const Color(0xFF232937),
-                        width: 1.0,
-                      ),
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    child: DataTable(
-                      columns: const <DataColumn>[
-                        DataColumn(label: Text('Name')),
-                        DataColumn(label: Text('Category')),
-                        DataColumn(label: Text('Type')),
-                        DataColumn(label: Text('Description')),
-                        DataColumn(label: Text('Weight')),
-                        DataColumn(label: Text('Quantity')),
-                        DataColumn(label: Text('Customer Price')),
-                        DataColumn(label: Text('Retailer Price')),
-                        DataColumn(
-                          label: Text('Actions'),
-                          tooltip: 'Update and Archive',
-                        ),
-                      ],
-                      rows: productDataList
-                          .where(
-                              (productData) => productData['type'] == 'Product')
-                          .map((productData) {
-                        final id = productData['_id'];
-                        return DataRow(
-                          cells: <DataCell>[
-                            DataCell(Text(productData['name'] ?? '')),
-                            DataCell(Text(productData['category'] ?? '')),
-                            DataCell(Text(productData['type'] ?? '')),
-                            DataCell(Text(productData['description'] ?? '')),
-                            DataCell(
-                                Text(productData['weight'].toString() ?? '')),
-                            DataCell(
-                                Text(productData['quantity'].toString() ?? '')),
-                            DataCell(Text(
-                                productData['customerPrice'].toString() ?? '')),
-                            DataCell(Text(
-                                productData['retailerPrice'].toString() ?? '')),
-                            DataCell(
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit),
-                                    onPressed: () => updateData(id),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: IntrinsicWidth(
+                          child: TextField(
+                            controller: searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Search',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              isDense: true,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              suffixIcon: InkWell(
+                                onTap: () {
+                                  search(searchController.text);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  child: const Icon(
+                                    Icons.search,
+                                    color: Colors.black,
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.archive),
-                                    onPressed: () => ArchiveData(id),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
-                          ],
-                        );
-                      }).toList(),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    ElevatedButton(
+                      onPressed: () {
+                        openAddProductDialog();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: const Color(0xFF232937),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'Add Product',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: productDataList
+                      .where((productData) => productData['type'] == 'Product')
+                      .length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final filteredList = productDataList
+                        .where(
+                            (productData) => productData['type'] == 'Product')
+                        .toList();
+                    final userData = filteredList[index];
+                    final id = userData['_id'];
+                    final quantity = userData['quantity'] ?? 0;
+
+                    Color cardColor;
+                    Color dividerColor;
+                    Color iconColor;
+
+                    if (quantity <= 5) {
+                      cardColor = Colors.red.withOpacity(0.7);
+                      dividerColor = Colors.black;
+                      iconColor = Colors.black;
+                    } else if (quantity >= 6 && quantity <= 10) {
+                      cardColor = Colors.orange.withOpacity(0.7);
+                      dividerColor = Colors.black;
+                      iconColor = Colors.black;
+                    } else {
+                      cardColor = Colors.white;
+                      dividerColor = const Color(0xFF232937);
+                      iconColor = const Color(0xFF232937);
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: SizedBox(
+                        child: Card(
+                          color: cardColor,
+                          elevation: 6,
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 100, // Change the size
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: Colors.black,
+                                      width: 1,
+                                    ),
+                                    image: DecorationImage(
+                                      image:
+                                          NetworkImage(userData['image'] ?? ''),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              ListTile(
+                                title: TitleMediumText(
+                                    text: userData['name'] ?? ''),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Divider(
+                                      color: dividerColor,
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Category: ${userData['category'] ?? ''}',
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Description: ${userData['description'] ?? ''}',
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Weight: ${userData['weight'] ?? ''}',
+                                    ),
+                                    BodyMediumText(
+                                      text: 'Quantity: $quantity',
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Customer Price: ${userData['customerPrice'] ?? ''}',
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Retailer Price: ${userData['retailerPrice'] ?? ''}',
+                                    ),
+                                  ],
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: 40,
+                                      child: IconButton(
+                                        icon:
+                                            Icon(Icons.edit, color: iconColor),
+                                        onPressed: () => updateData(id),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 20,
+                                      child: IconButton(
+                                        icon: Icon(Icons.archive,
+                                            color: iconColor),
+                                        onPressed: () => ArchiveData(id),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -817,25 +916,33 @@ class _ProductsPageState extends State<ProductsPage> {
                           fetchData(page: currentPage - 1);
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: Colors.black,
+                          primary: const Color(0xFF232937),
                         ),
-                        child: const Text('Previous'),
+                        child: const Text(
+                          'Previous',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
-                    const SizedBox(width: 20),
+                    const SizedBox(width: 10),
                     ElevatedButton(
                       onPressed: () {
                         fetchData(page: currentPage + 1);
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: Colors.black,
+                        primary: const Color(0xFF232937),
                       ),
-                      child: const Text('Next'),
+                      child: const Text(
+                        'Next',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 ),
               ],
             ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 }
