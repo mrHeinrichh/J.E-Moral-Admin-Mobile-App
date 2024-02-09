@@ -32,6 +32,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
   void initState() {
     super.initState();
     fetchData();
+    fetchAccessory();
   }
 
   int currentPage = 1;
@@ -178,7 +179,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
           Navigator.pop(context);
         } else {
           print(
-              'Failed to add or update the product. Status code: ${response.statusCode}');
+              'Failed to add or update the accessory. Status code: ${response.statusCode}');
         }
       } else {
         print("Image upload failed");
@@ -212,7 +213,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
   void openAddAccessoryDialog() {
     TextEditingController nameController = TextEditingController();
     TextEditingController descriptionController = TextEditingController();
-    TextEditingController quantityController = TextEditingController();
+    TextEditingController stockController = TextEditingController();
     TextEditingController customerPriceController = TextEditingController();
     TextEditingController retailerPriceController = TextEditingController();
 
@@ -314,11 +315,11 @@ class _AccessoryPageState extends State<AccessoryPage> {
                     },
                   ),
                   TextFormField(
-                    controller: quantityController,
-                    decoration: const InputDecoration(labelText: 'Quantity'),
+                    controller: stockController,
+                    decoration: const InputDecoration(labelText: 'Stock'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the accessory quantity';
+                        return 'Please enter the accessory stock';
                       }
                       return null;
                     },
@@ -375,7 +376,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                     "category": "Accessories",
                     "description": descriptionController.text,
                     "weight": 0,
-                    "quantity": quantityController.text,
+                    "stock": stockController.text,
                     "type": "Accessory",
                     "customerPrice": customerPriceController.text,
                     "retailerPrice": retailerPriceController.text,
@@ -438,8 +439,8 @@ class _AccessoryPageState extends State<AccessoryPage> {
         TextEditingController(text: accessoryToEdit['name']);
     TextEditingController descriptionController =
         TextEditingController(text: accessoryToEdit['description']);
-    TextEditingController quantityController =
-        TextEditingController(text: accessoryToEdit['quantity'].toString());
+    TextEditingController stockController =
+        TextEditingController(text: accessoryToEdit['stock'].toString());
     TextEditingController customerPriceController = TextEditingController(
         text: accessoryToEdit['customerPrice'].toString());
     TextEditingController retailerPriceController = TextEditingController(
@@ -543,11 +544,11 @@ class _AccessoryPageState extends State<AccessoryPage> {
                     },
                   ),
                   TextFormField(
-                    controller: quantityController,
-                    decoration: const InputDecoration(labelText: 'Quantity'),
+                    controller: stockController,
+                    decoration: const InputDecoration(labelText: 'Stock'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the accessory quantity';
+                        return 'Please enter the accessory stock';
                       }
                       return null;
                     },
@@ -598,7 +599,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                 if (formKey.currentState!.validate()) {
                   accessoryToEdit['name'] = nameController.text;
                   accessoryToEdit['description'] = descriptionController.text;
-                  accessoryToEdit['quantity'] = quantityController.text;
+                  accessoryToEdit['stock'] = stockController.text;
                   accessoryToEdit['customerPrice'] =
                       customerPriceController.text;
                   accessoryToEdit['retailerPrice'] =
@@ -689,7 +690,10 @@ class _AccessoryPageState extends State<AccessoryPage> {
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: RefreshIndicator(
-          onRefresh: () => fetchData(),
+          onRefresh: () async {
+            await fetchData();
+            await fetchAccessory();
+          },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
@@ -750,27 +754,27 @@ class _AccessoryPageState extends State<AccessoryPage> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: accessoryDataList
-                      .where(
-                          (productData) => productData['type'] == 'Accessory')
+                      .where((accessoryData) =>
+                          accessoryData['type'] == 'Accessory')
                       .length,
                   itemBuilder: (BuildContext context, int index) {
                     final filteredList = accessoryDataList
-                        .where(
-                            (productData) => productData['type'] == 'Accessory')
+                        .where((accessoryData) =>
+                            accessoryData['type'] == 'Accessory')
                         .toList();
                     final userData = filteredList[index];
                     final id = userData['_id'];
-                    final quantity = userData['quantity'] ?? 0;
+                    final stock = userData['stock'] ?? 0;
 
                     Color cardColor;
                     Color dividerColor;
                     Color iconColor;
 
-                    if (quantity <= 5) {
+                    if (stock <= 5) {
                       cardColor = Colors.red.withOpacity(0.7);
                       dividerColor = Colors.black;
                       iconColor = Colors.black;
-                    } else if (quantity >= 6 && quantity <= 10) {
+                    } else if (stock >= 6 && stock <= 10) {
                       cardColor = Colors.orange.withOpacity(0.7);
                       dividerColor = Colors.black;
                       iconColor = Colors.black;
@@ -825,7 +829,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                                           'Description: ${userData['description'] ?? ''}',
                                     ),
                                     BodyMediumText(
-                                      text: 'Quantity: $quantity',
+                                      text: 'Stock: $stock',
                                     ),
                                     BodyMediumText(
                                       text:
@@ -903,5 +907,167 @@ class _AccessoryPageState extends State<AccessoryPage> {
         ),
       ),
     );
+  }
+
+  int moderatelyLowOnStock = 10;
+  int lowOnStock = 5;
+  int outOfStock = 0;
+
+  Future<void> fetchAccessory() async {
+    final response = await http
+        .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items/'));
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final List<Map<String, dynamic>> allAccessoryData = (data['data'] as List)
+          .where((accessoryData) => accessoryData is Map<String, dynamic>)
+          .map((accessoryData) => accessoryData as Map<String, dynamic>)
+          .toList();
+
+      final List<Map<String, dynamic>> accessoryDataOfType = allAccessoryData
+          .where((accessoryData) => accessoryData['type'] == 'Accessory')
+          .toList();
+
+      final List<Map<String, dynamic>> moderateLowOnStockAccessories =
+          accessoryDataOfType
+              .where((accessoryData) =>
+                  (accessoryData['stock'] ?? 0) > lowOnStock &&
+                  (accessoryData['stock'] ?? 0) <= moderatelyLowOnStock)
+              .toList();
+
+      final List<Map<String, dynamic>> lowOnStockAccessories =
+          accessoryDataOfType
+              .where((accessoryData) =>
+                  (accessoryData['stock'] ?? 0) <= lowOnStock &&
+                  (accessoryData['stock'] ?? 0) > outOfStock)
+              .toList();
+
+      final List<Map<String, dynamic>> outOfStockAccessories =
+          accessoryDataOfType
+              .where((accessoryData) =>
+                  (accessoryData['stock'] ?? 0) <= outOfStock)
+              .toList();
+
+      List<Widget> accessoryWidgets = [];
+
+      if (moderateLowOnStockAccessories.isNotEmpty) {
+        accessoryWidgets.add(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 15),
+              const Text(
+                'Moderately Low on Stock',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Divider(),
+              for (var accessory in moderateLowOnStockAccessories)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Accessory: ${accessory['name']}'),
+                    Text('Category: ${accessory['category']}'),
+                    Text('Available Stock: ${accessory['stock']}'),
+                    const Divider(),
+                  ],
+                ),
+            ],
+          ),
+        );
+      }
+
+      if (lowOnStockAccessories.isNotEmpty) {
+        accessoryWidgets.add(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 15),
+              const Text(
+                'Low on Stock',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Divider(),
+              for (var accessory in lowOnStockAccessories)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Accessory: ${accessory['name']}'),
+                    Text('Category: ${accessory['category']}'),
+                    Text('Available Stock: ${accessory['stock']}'),
+                    const Divider(),
+                  ],
+                ),
+            ],
+          ),
+        );
+      }
+
+      if (outOfStockAccessories.isNotEmpty) {
+        accessoryWidgets.add(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 15),
+              const Text(
+                'Out of Stock',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Divider(),
+              for (var accessory in outOfStockAccessories)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Accessory: ${accessory['name']}'),
+                    Text('Category: ${accessory['category']}'),
+                    Text('Available Stock: ${accessory['stock']}'),
+                    const Divider(),
+                  ],
+                ),
+            ],
+          ),
+        );
+      }
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(
+              'Stock Status',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: accessoryWidgets,
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      throw Exception('Failed to load data from the API');
+    }
   }
 }

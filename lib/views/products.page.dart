@@ -32,6 +32,7 @@ class _ProductsPageState extends State<ProductsPage> {
   void initState() {
     super.initState();
     fetchData();
+    fetchProduct();
   }
 
   int currentPage = 1;
@@ -214,7 +215,7 @@ class _ProductsPageState extends State<ProductsPage> {
     TextEditingController categoryController = TextEditingController();
     TextEditingController descriptionController = TextEditingController();
     TextEditingController weightController = TextEditingController();
-    TextEditingController quantityController = TextEditingController();
+    TextEditingController stockController = TextEditingController();
     TextEditingController customerPriceController = TextEditingController();
     TextEditingController retailerPriceController = TextEditingController();
 
@@ -354,11 +355,11 @@ class _ProductsPageState extends State<ProductsPage> {
                     ],
                   ),
                   TextFormField(
-                    controller: quantityController,
-                    decoration: const InputDecoration(labelText: 'Quantity'),
+                    controller: stockController,
+                    decoration: const InputDecoration(labelText: 'Stock'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the product quantity';
+                        return 'Please enter the product stock';
                       }
                       return null;
                     },
@@ -415,7 +416,7 @@ class _ProductsPageState extends State<ProductsPage> {
                       "category": categoryController.text,
                       "description": descriptionController.text,
                       "weight": weightController.text,
-                      "quantity": quantityController.text,
+                      "stock": stockController.text,
                       "type": "Product",
                       "customerPrice": customerPriceController.text,
                       "retailerPrice": retailerPriceController.text,
@@ -483,8 +484,8 @@ class _ProductsPageState extends State<ProductsPage> {
         TextEditingController(text: productToEdit['description']);
     TextEditingController weightController =
         TextEditingController(text: productToEdit['weight'].toString());
-    TextEditingController quantityController =
-        TextEditingController(text: productToEdit['quantity'].toString());
+    TextEditingController stockController =
+        TextEditingController(text: productToEdit['stock'].toString());
     TextEditingController customerPriceController =
         TextEditingController(text: productToEdit['customerPrice'].toString());
     TextEditingController retailerPriceController =
@@ -623,11 +624,11 @@ class _ProductsPageState extends State<ProductsPage> {
                     ],
                   ),
                   TextFormField(
-                    controller: quantityController,
-                    decoration: const InputDecoration(labelText: 'Quantity'),
+                    controller: stockController,
+                    decoration: const InputDecoration(labelText: 'Stock'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the product quantity';
+                        return 'Please enter the product stock';
                       }
                       return null;
                     },
@@ -680,7 +681,7 @@ class _ProductsPageState extends State<ProductsPage> {
                   productToEdit['category'] = categoryController.text;
                   productToEdit['description'] = descriptionController.text;
                   productToEdit['weight'] = weightController.text;
-                  productToEdit['quantity'] = quantityController.text;
+                  productToEdit['stock'] = stockController.text;
                   productToEdit['customerPrice'] = customerPriceController.text;
                   productToEdit['retailerPrice'] = retailerPriceController.text;
 
@@ -769,7 +770,10 @@ class _ProductsPageState extends State<ProductsPage> {
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: RefreshIndicator(
-          onRefresh: () => fetchData(),
+          onRefresh: () async {
+            await fetchData();
+            await fetchProduct();
+          },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
@@ -839,17 +843,17 @@ class _ProductsPageState extends State<ProductsPage> {
                         .toList();
                     final userData = filteredList[index];
                     final id = userData['_id'];
-                    final quantity = userData['quantity'] ?? 0;
+                    final stock = userData['stock'] ?? 0;
 
                     Color cardColor;
                     Color dividerColor;
                     Color iconColor;
 
-                    if (quantity <= 5) {
+                    if (stock <= 5) {
                       cardColor = Colors.red.withOpacity(0.7);
                       dividerColor = Colors.black;
                       iconColor = Colors.black;
-                    } else if (quantity >= 6 && quantity <= 10) {
+                    } else if (stock >= 6 && stock <= 10) {
                       cardColor = Colors.orange.withOpacity(0.7);
                       dividerColor = Colors.black;
                       iconColor = Colors.black;
@@ -908,7 +912,7 @@ class _ProductsPageState extends State<ProductsPage> {
                                           'Weight: ${userData['weight'] ?? ''}',
                                     ),
                                     BodyMediumText(
-                                      text: 'Quantity: $quantity',
+                                      text: 'Stock: $stock',
                                     ),
                                     BodyMediumText(
                                       text:
@@ -986,5 +990,164 @@ class _ProductsPageState extends State<ProductsPage> {
         ),
       ),
     );
+  }
+
+  int moderatelyLowOnStock = 10;
+  int lowOnStock = 5;
+  int outOfStock = 0;
+
+  Future<void> fetchProduct() async {
+    final response = await http
+        .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items/'));
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final List<Map<String, dynamic>> allProductData = (data['data'] as List)
+          .where((productData) => productData is Map<String, dynamic>)
+          .map((productData) => productData as Map<String, dynamic>)
+          .toList();
+
+      final List<Map<String, dynamic>> productDataOfType = allProductData
+          .where((productData) => productData['type'] == 'Product')
+          .toList(); // Filter by type = Product
+
+      final List<Map<String, dynamic>> moderateLowOnStockProducts =
+          productDataOfType
+              .where((productData) =>
+                  (productData['stock'] ?? 0) > lowOnStock &&
+                  (productData['stock'] ?? 0) <= moderatelyLowOnStock)
+              .toList();
+
+      final List<Map<String, dynamic>> lowOnStockProducts = productDataOfType
+          .where((productData) =>
+              (productData['stock'] ?? 0) <= lowOnStock &&
+              (productData['stock'] ?? 0) > outOfStock)
+          .toList();
+
+      final List<Map<String, dynamic>> outOfStockProducts = productDataOfType
+          .where((productData) => (productData['stock'] ?? 0) <= outOfStock)
+          .toList();
+
+      List<Widget> productWidgets = [];
+
+      if (moderateLowOnStockProducts.isNotEmpty) {
+        productWidgets.add(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 15),
+              const Text(
+                'Moderately Low on Stock',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Divider(),
+              for (var product in moderateLowOnStockProducts)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Product: ${product['name']}'),
+                    Text('Category: ${product['category']}'),
+                    Text('Available Stock: ${product['stock']}'),
+                    const Divider(),
+                  ],
+                ),
+            ],
+          ),
+        );
+      }
+
+      if (lowOnStockProducts.isNotEmpty) {
+        productWidgets.add(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 15),
+              const Text(
+                'Low on Stock',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Divider(),
+              for (var product in lowOnStockProducts)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Product: ${product['name']}'),
+                    Text('Category: ${product['category']}'),
+                    Text('Available Stock: ${product['stock']}'),
+                    const Divider(),
+                  ],
+                ),
+            ],
+          ),
+        );
+      }
+
+      if (outOfStockProducts.isNotEmpty) {
+        productWidgets.add(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 15),
+              const Text(
+                'Out of Stock',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Divider(),
+              for (var product in outOfStockProducts)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Product: ${product['name']}'),
+                    Text('Category: ${product['category']}'),
+                    Text('Available Stock: ${product['stock']}'),
+                    const Divider(),
+                  ],
+                ),
+            ],
+          ),
+        );
+      }
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(
+              'Stock Status',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: productWidgets,
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      throw Exception('Failed to load data from the API');
+    }
   }
 }

@@ -23,7 +23,6 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     fetchData();
-    fetchProduct();
   }
 
   Future<void> fetchData() async {
@@ -46,72 +45,6 @@ class _HomePageState extends State<HomePage> {
           data.where((item) => item['__t'] == 'Delivery'),
         );
       });
-    }
-  }
-
-  int lowQuantityThreshold = 5;
-  // int mediumQuantityMinThreshold = 6;
-  // int mediumQuantityMaxThreshold = 10;
-
-  Future<void> fetchProduct() async {
-    final response = await http
-        .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items/'));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<Map<String, dynamic>> allProductData = (data['data'] as List)
-          .where((productData) => productData is Map<String, dynamic>)
-          .map((productData) => productData as Map<String, dynamic>)
-          .toList();
-
-      final List<Map<String, dynamic>> lowQuantityProducts = allProductData
-          .where((productData) =>
-              (productData['quantity'] ?? 0) <= lowQuantityThreshold)
-          .toList();
-
-      if (lowQuantityProducts.isNotEmpty) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text(
-                'Low Quantity Products',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              content: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Divider(),
-                  for (var product in lowQuantityProducts)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Product: ${product['name']}'),
-                        Text('Category: ${product['category']}'),
-                        Text('Quantity: ${product['quantity']}'),
-                        Divider(),
-                      ],
-                    )
-                ],
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text('OK'),
-                ),
-              ],
-            );
-          },
-        );
-      }
-    } else {
-      throw Exception('Failed to load data from the API');
     }
   }
 
@@ -301,7 +234,6 @@ class _HomePageState extends State<HomePage> {
       body: RefreshIndicator(
         onRefresh: () async {
           await fetchData();
-          await fetchProduct();
         },
         child: SingleChildScrollView(
           child: Padding(
