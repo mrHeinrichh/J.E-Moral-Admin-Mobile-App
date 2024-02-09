@@ -81,13 +81,18 @@ class _ActiveOrdersState extends State<ActiveOrders> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         elevation: 0,
         backgroundColor: Colors.white,
         title: const Text(
           'Active Orders',
-          style: TextStyle(color: Color(0xFF232937), fontSize: 24),
+          style: TextStyle(
+            color: Color(0xFF232937),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        automaticallyImplyLeading: false,
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),

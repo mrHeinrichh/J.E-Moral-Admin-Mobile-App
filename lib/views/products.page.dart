@@ -1008,7 +1008,7 @@ class _ProductsPageState extends State<ProductsPage> {
 
       final List<Map<String, dynamic>> productDataOfType = allProductData
           .where((productData) => productData['type'] == 'Product')
-          .toList(); // Filter by type = Product
+          .toList(); 
 
       final List<Map<String, dynamic>> moderateLowOnStockProducts =
           productDataOfType

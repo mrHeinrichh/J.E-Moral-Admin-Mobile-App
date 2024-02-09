@@ -216,8 +216,13 @@ class _ChatPageState extends State<ChatPage> {
         backgroundColor: Colors.white,
         title: const Text(
           'Customer Support',
-          style: TextStyle(color: Color(0xFF232937), fontSize: 24),
+          style: TextStyle(
+            color: Color(0xFF232937),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),

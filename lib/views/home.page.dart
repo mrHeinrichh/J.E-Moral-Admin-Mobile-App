@@ -48,6 +48,67 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  int targetStock = 10;
+  int outOfStock = 0;
+
+  Future<int> fetchProduct() async {
+    final response = await http
+        .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items/'));
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final List<Map<String, dynamic>> allProductData = (data['data'] as List)
+          .where((productData) => productData is Map<String, dynamic>)
+          .map((productData) => productData as Map<String, dynamic>)
+          .toList();
+
+      final List<Map<String, dynamic>> productDataOfType = allProductData
+          .where((productData) => productData['type'] == 'Product')
+          .toList();
+
+      // Calculate the count of stock products
+      final List<Map<String, dynamic>> StockProducts = productDataOfType
+          .where((productData) =>
+              (productData['stock'] ?? 0) >= outOfStock &&
+              (productData['stock'] ?? 0) < targetStock)
+          .toList();
+
+      int lowStockCount = StockProducts.length;
+
+      return lowStockCount;
+    } else {
+      throw Exception('Failed to load data from the API');
+    }
+  }
+
+  Future<int> fetchAccessory() async {
+    final response = await http
+        .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items/'));
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final List<Map<String, dynamic>> allAccessoryData = (data['data'] as List)
+          .where((accessoryData) => accessoryData is Map<String, dynamic>)
+          .map((accessoryData) => accessoryData as Map<String, dynamic>)
+          .toList();
+
+      final List<Map<String, dynamic>> accessoryDataOfType = allAccessoryData
+          .where((accessoryData) => accessoryData['type'] == 'Accessory')
+          .toList();
+
+      // Calculate the count of stock accessorys
+      final List<Map<String, dynamic>> StockAccessories = accessoryDataOfType
+          .where((accessoryData) =>
+              (accessoryData['stock'] ?? 0) >= outOfStock &&
+              (accessoryData['stock'] ?? 0) < targetStock)
+          .toList();
+
+      int lowStockCount = StockAccessories.length;
+
+      return lowStockCount;
+    } else {
+      throw Exception('Failed to load data from the API');
+    }
+  }
+
 //TODAY
   double calculateTotalSumToday() {
     DateTime now = DateTime.now();
@@ -227,7 +288,10 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
         title: const Text(
           "Dashboard",
-          style: TextStyle(color: Colors.black),
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [],
       ),
@@ -277,11 +341,25 @@ class _HomePageState extends State<HomePage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        // WalkInIcon(
-                        //   onTap: () {
-                        //     Navigator.pushNamed(context, walkinRoute);
-                        //   },
-                        // ),
+                        ProductsIcon(
+                          fetchLowStockCount: fetchProduct,
+                        ),
+                        AccessoriesIcon(
+                          fetchLowStockCount: fetchAccessory,
+                        ),
+                        AppointmentIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, appointmentRoute);
+                          },
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Container(
+                            width: 1,
+                            height: 40,
+                            color: const Color(0xFF232937),
+                          ),
+                        ),
                         CustomerIcon(
                           onTap: () {
                             Navigator.pushNamed(context, customerRoute);
@@ -290,16 +368,6 @@ class _HomePageState extends State<HomePage> {
                         RiderIcon(
                           onTap: () {
                             Navigator.pushNamed(context, driversRoute);
-                          },
-                        ),
-                        ProductsIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, productsRoute);
-                          },
-                        ),
-                        AccessoriesIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, accessoriesRoute);
                           },
                         ),
                         FaqIcon(
@@ -312,12 +380,6 @@ class _HomePageState extends State<HomePage> {
                             Navigator.pushNamed(context, transactionRoute);
                           },
                         ),
-                        AppointmentIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, appointmentRoute);
-                          },
-                        ),
-
                         FeedbackIcon(
                           onTap: () {
                             // Action to perform when the card is clicked

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+import 'package:intl/intl.dart';
 
 class RecentOrders extends StatefulWidget {
   @override
@@ -35,36 +36,38 @@ class _RecentOrdersState extends State<RecentOrders> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Decline Confirmation'),
-          content: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(message),
-              SizedBox(height: 10),
-              Text('Cancel Reason:'),
-              TextField(
-                controller: cancelReasonController,
-                decoration: InputDecoration(
-                  hintText: 'Enter cancel reason',
+          title: const Text('Decline Confirmation'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(message),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: cancelReasonController,
+                  decoration: const InputDecoration(
+                    labelText: 'Reason for Cancelling Order',
+                  ),
+                  keyboardType: TextInputType.multiline,
+                  maxLines: null,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
                 onDecline(cancelReasonController.text);
-                Navigator.of(context)
-                    .pop(); // Close the dialog after confirming
+                Navigator.of(context).pop();
               },
-              child: Text('Decline'),
+              child: const Text('Decline'),
             ),
           ],
         );
@@ -81,22 +84,21 @@ class _RecentOrdersState extends State<RecentOrders> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Approve Confirmation'),
+          title: const Text('Approve Confirmation'),
           content: Text(message),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
                 onApprove();
-                Navigator.of(context)
-                    .pop(); // Close the dialog after confirming
+                Navigator.of(context).pop();
               },
-              child: Text('Approve'),
+              child: const Text('Approve'),
             ),
           ],
         );
@@ -115,17 +117,17 @@ class _RecentOrdersState extends State<RecentOrders> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Confirmation'),
+          title: const Text('Confirmation'),
           content: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(message),
-              SizedBox(height: 10),
-              Text('Cancel Reason:'),
+              const SizedBox(height: 10),
+              const Text('State the Reason for Cancelling the Order:'),
               TextField(
                 controller: cancelReasonController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'Enter cancel reason',
                 ),
               ),
@@ -136,15 +138,14 @@ class _RecentOrdersState extends State<RecentOrders> {
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
                 onConfirm(cancelReasonController.text);
-                Navigator.of(context)
-                    .pop(); // Close the dialog after confirming
+                Navigator.of(context).pop();
               },
-              child: Text('Confirm'),
+              child: const Text('Confirm'),
             ),
           ],
         );
@@ -257,7 +258,6 @@ class _RecentOrdersState extends State<RecentOrders> {
           if (data.containsKey("data")) {
             final List<dynamic> transactionData = data["data"];
 
-            // Remove isApproved condition from filtering
             final List<Map<String, dynamic>> filteredTransactions =
                 List<Map<String, dynamic>>.from(transactionData)
                     .where((transaction) => transaction["status"] == "Pending")
@@ -266,15 +266,12 @@ class _RecentOrdersState extends State<RecentOrders> {
             setState(() {
               transactions = filteredTransactions;
             });
-          } else {
-            // Handle data format issues if needed
-          }
+          } else {}
         } else {
           print("Error: ${response.statusCode}");
         }
       }
     } catch (e) {
-      // Handle network request errors
       if (_mounted) {
         print("Error: $e");
       }
@@ -302,10 +299,15 @@ class _RecentOrdersState extends State<RecentOrders> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
-        title: Text(
-          'Pending Delivery Orders',
-          style: TextStyle(color: Color(0xFF232937), fontSize: 24),
+        title: const Text(
+          'Pending Orders',
+          style: TextStyle(
+            color: Color(0xFF232937),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+        centerTitle: true,
         automaticallyImplyLeading: false,
       ),
       body: Padding(
@@ -313,8 +315,7 @@ class _RecentOrdersState extends State<RecentOrders> {
         child: RefreshIndicator(
           onRefresh: refreshData,
           child: ListView.builder(
-            reverse: false, // Display the latest data at the top
-
+            reverse: false,
             itemCount: transactions.length,
             itemBuilder: (context, index) {
               final transaction = transactions[index];
@@ -330,30 +331,29 @@ class _RecentOrdersState extends State<RecentOrders> {
                         children: [
                           Text(
                             "ID: ${transaction['_id']}",
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
-                      Divider(
-                        thickness: 1,
-                        color: Colors.black,
-                      ),
-                      Row(
-                        children: [
-                          Text(
-                            "Name: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
+                      const Divider(),
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            const TextSpan(
+                              text: "Receiver Name: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          Text(
-                            '${transaction['name']}',
-                          ),
-                        ],
+                            TextSpan(
+                              text: "${transaction['name']}",
+                            ),
+                          ],
+                        ),
                       ),
                       Row(
                         children: [
-                          Text(
+                          const Text(
                             "Contact Number: ",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
@@ -364,21 +364,39 @@ class _RecentOrdersState extends State<RecentOrders> {
                           ),
                         ],
                       ),
-                      Text(
-                        "Delivery Location: ${transaction['deliveryLocation']}' ",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            const TextSpan(
+                              text: "Delivery Location: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(
+                              text: "${transaction['deliveryLocation']}",
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        "House#/Lot/Blk: ${transaction['houseLotBlk']}",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            const TextSpan(
+                              text: "House#/Lot/Blk: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(
+                              text: "${transaction['houseLotBlk']}",
+                            ),
+                          ],
                         ),
                       ),
                       Row(
                         children: [
-                          Text(
+                          const Text(
                             "Barangay: ",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
@@ -389,63 +407,76 @@ class _RecentOrdersState extends State<RecentOrders> {
                           ),
                         ],
                       ),
-                      Text(
-                        "Payment Method: ${transaction['paymentMethod']}",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          const Text(
+                            "Payment Method: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            "${transaction['paymentMethod'] == 'COD' ? 'Cash on Delivery' : transaction['paymentMethod']}",
+                          ),
+                        ],
                       ),
                       Row(
                         children: [
-                          Text(
+                          const Text(
                             "Needs to be assembled: ",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
-                            '${transaction['assembly']}',
+                            transaction['assembly'] ? 'Yes' : 'No',
                           ),
                         ],
                       ),
                       Row(
                         children: [
-                          Text(
-                            "Date/Time: ",
+                          const Text(
+                            "Date and Time: ",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
-                            '${transaction['updatedAt']}',
+                          Flexible(
+                            child: Text(
+                              DateFormat('h:mm a | MMM d, y').format(
+                                  DateTime.parse(transaction['updatedAt'])),
+                              overflow: TextOverflow.visible,
+                            ),
                           ),
                         ],
                       ),
                       Row(
                         children: [
-                          Text(
+                          const Text(
                             "Total Price: ",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
-                            '${transaction['total']}',
+                            '₱${NumberFormat.decimalPattern().format(transaction['total'])}',
                           ),
                         ],
                       ),
-                      Divider(),
+                      const Divider(),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            "Discounted: ",
+                          const Text(
+                            "Discount: ",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
-                            '${transaction['discounted']}',
+                            transaction['discounted']
+                                ? 'Applying for Discount'
+                                : 'Not Applying for Discount',
                           ),
                         ],
                       ),
@@ -464,44 +495,15 @@ class _RecentOrdersState extends State<RecentOrders> {
                             ),
                           ),
                         ),
-                      SizedBox(
-                        height: 10,
-                      ),
+                      const SizedBox(height: 10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Container(
-                            height: 45,
-                            width: MediaQuery.of(context).size.width * 0.30,
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                // Show confirmation dialog before updating the status
-                                await showApproveDialog(
-                                  context,
-                                  'Are you sure you want to approve this transaction?',
-                                  () {
-                                    updateTransactionStatus(transaction['_id']);
-                                  },
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                primary: Color(0xFF232937),
-                              ),
-                              child: Text(
-                                "Approve",
-                                style: TextStyle(
-                                  color: Color.fromARGB(255, 255, 255, 255),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Spacer(),
-                          Container(
+                          SizedBox(
                             height: 45,
                             width: MediaQuery.of(context).size.width * 0.35,
                             child: ElevatedButton(
                               onPressed: () async {
-                                // Show confirmation dialog before declining the transaction
                                 await showDeclineDialog(
                                   context,
                                   'Are you sure you want to decline this transaction?',
@@ -512,10 +514,35 @@ class _RecentOrdersState extends State<RecentOrders> {
                                 );
                               },
                               style: ElevatedButton.styleFrom(
-                                primary: Colors.red,
+                                primary: Colors.grey,
                               ),
-                              child: Text(
+                              child: const Text(
                                 "Decline",
+                                style: TextStyle(
+                                  color: Color.fromARGB(255, 255, 255, 255),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          SizedBox(
+                            height: 45,
+                            width: MediaQuery.of(context).size.width * 0.35,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                await showApproveDialog(
+                                  context,
+                                  'Are you sure you want to approve this transaction?',
+                                  () {
+                                    updateTransactionStatus(transaction['_id']);
+                                  },
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                primary: const Color(0xFF232937),
+                              ),
+                              child: const Text(
+                                "Approve",
                                 style: TextStyle(
                                   color: Color.fromARGB(255, 255, 255, 255),
                                 ),
@@ -526,12 +553,11 @@ class _RecentOrdersState extends State<RecentOrders> {
                       ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
-                        child: Container(
+                        child: SizedBox(
                           height: 45,
                           width: MediaQuery.of(context).size.width * 0.90,
                           child: ElevatedButton(
                             onPressed: () async {
-                              // Show confirmation dialog before updating the status
                               await showConfirmationDialog(
                                 context,
                                 'Are you sure you want to Approve this transaction with discount?',
@@ -545,7 +571,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                             style: ElevatedButton.styleFrom(
                               primary: Colors.green,
                             ),
-                            child: Text(
+                            child: const Text(
                               "Approve with Discount",
                               style: TextStyle(
                                 color: Color.fromARGB(255, 255, 255, 255),
@@ -564,4 +590,52 @@ class _RecentOrdersState extends State<RecentOrders> {
       ),
     );
   }
+
+  // void _showCustomerDetailsModal(Map<String, dynamic> customer) {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return SingleChildScrollView(
+  //         child: Container(
+  //           padding: const EdgeInsets.all(16.0),
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.center,
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               const Text(
+  //                 'Customer Details',
+  //                 style: TextStyle(
+  //                   fontSize: 20,
+  //                   fontWeight: FontWeight.bold,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 10),
+  //               Text('Name: ${customer['name']}'),
+  //               Text('Contact Number: ${customer['contactNumber']}'),
+  //               Text('Address: ${customer['address']}'),
+  //               customer['image'] != null
+  //                   ? Image.network(
+  //                       customer['image'],
+  //                       width: 300,
+  //                       height: 300,
+  //                       fit: BoxFit.cover,
+  //                     )
+  //                   : Container(),
+  //               const SizedBox(height: 16),
+  //               Align(
+  //                 alignment: Alignment.center,
+  //                 child: ElevatedButton(
+  //                   onPressed: () {
+  //                     Navigator.pop(context);
+  //                   },
+  //                   child: const Text('Close'),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 }

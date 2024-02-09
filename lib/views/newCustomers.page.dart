@@ -59,7 +59,7 @@ class _NewCustomersState extends State<NewCustomers> {
     await fetchCustomers();
   }
 
-  Future<void> ArchivedCustomer(String customerId) async {
+  Future<void> archivedCustomer(String customerId) async {
     try {
       final response = await http.delete(
         Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/$customerId'),
@@ -174,13 +174,18 @@ class _NewCustomersState extends State<NewCustomers> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         elevation: 0,
         backgroundColor: Colors.white,
         title: const Text(
-          'Unverified Customers',
-          style: TextStyle(color: Color(0xFF232937), fontSize: 24),
+          'Pending Verification',
+          style: TextStyle(
+            color: Color(0xFF232937),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        automaticallyImplyLeading: false,
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -190,39 +195,82 @@ class _NewCustomersState extends State<NewCustomers> {
             itemCount: unverifiedCustomers.length,
             itemBuilder: (context, index) {
               final customer = unverifiedCustomers[index];
-              return GestureDetector(
-                onTap: () {
-                  _showCustomerDetailsModal(customer);
-                },
-                child: Card(
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+              return Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text.rich(
+                                TextSpan(
+                                  children: [
+                                    const TextSpan(
+                                      text: "Name: ",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: "${customer['name']}",
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  const Text(
+                                    "Contact Number: ",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${customer['contactNumber']}',
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundImage: NetworkImage(customer['image']),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      const Divider(),
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text("Name: ${customer['name']}"),
-                                Text(
-                                    "Contact Number: ${customer['contactNumber']}"),
-                              ],
+                            ElevatedButton(
+                              onPressed: () async {
+                                await archivedCustomer(customer['_id']);
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text('Customer Archived successfully'),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                primary: Colors.grey,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 10),
+                              ),
+                              child: const Text('Archive',
+                                  style: TextStyle(color: Colors.white)),
                             ),
-                            const Spacer(),
-                            CircleAvatar(
-                              radius: 30,
-                              backgroundImage: NetworkImage(customer['image']),
-                            ),
-                          ],
-                        ),
-                        const Divider(),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            TextButton(
+                            ElevatedButton(
                               onPressed: () async {
                                 await updateVerificationStatus(
                                     customer['_id'], customer['email']);
@@ -235,26 +283,18 @@ class _NewCustomersState extends State<NewCustomers> {
                                   ),
                                 );
                               },
-                              child: Text('Approve'),
-                            ),
-                            TextButton(
-                              onPressed: () async {
-                                await ArchivedCustomer(customer['_id']);
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content:
-                                        Text('Customer Archived successfully'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              },
-                              child: const Text('Archive'),
+                              style: ElevatedButton.styleFrom(
+                                primary: const Color(0xFF232937),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 10),
+                              ),
+                              child: const Text('Approve',
+                                  style: TextStyle(color: Colors.white)),
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -262,54 +302,6 @@ class _NewCustomersState extends State<NewCustomers> {
           ),
         ),
       ),
-    );
-  }
-
-  void _showCustomerDetailsModal(Map<String, dynamic> customer) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Customer Details',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text('Name: ${customer['name']}'),
-                Text('Contact Number: ${customer['contactNumber']}'),
-                Text('Address: ${customer['address']}'),
-                customer['image'] != null
-                    ? Image.network(
-                        customer['image'],
-                        width: 300,
-                        height: 300,
-                        fit: BoxFit.cover,
-                      )
-                    : Container(),
-                const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.center,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Close'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }

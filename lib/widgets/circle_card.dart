@@ -1,3 +1,4 @@
+import 'package:admin_app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 
 class WalkInIcon extends StatelessWidget {
@@ -15,10 +16,9 @@ class WalkInIcon extends StatelessWidget {
             onTap: onTap,
             child: Card(
               shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(25.0), // Make the card circular
+                borderRadius: BorderRadius.circular(25.0),
               ),
-              elevation: 4, // Add a shadow to the card
+              elevation: 4,
               child: const Padding(
                 padding: EdgeInsets.all(10.0),
                 child: Icon(Icons.directions_walk_outlined, size: 30),
@@ -50,13 +50,13 @@ class CustomerIcon extends StatelessWidget {
             onTap: onTap,
             child: Card(
               shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(25.0), // Make the card circular
+                borderRadius: BorderRadius.circular(25.0),
               ),
-              elevation: 4, // Add a shadow to the card
+              elevation: 4,
               child: const Padding(
                 padding: EdgeInsets.all(10.0),
-                child: Icon(Icons.account_circle, size: 30),
+                child: Icon(Icons.groups_2_rounded,
+                    size: 30), //supervised_user_circle_rounded
               ),
             ),
           ),
@@ -85,13 +85,12 @@ class RiderIcon extends StatelessWidget {
             onTap: onTap,
             child: Card(
               shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(25.0), // Make the card circular
+                borderRadius: BorderRadius.circular(25.0),
               ),
-              elevation: 4, // Add a shadow to the card
+              elevation: 4,
               child: const Padding(
                 padding: EdgeInsets.all(10.0),
-                child: Icon(Icons.motorcycle_outlined, size: 30),
+                child: Icon(Icons.delivery_dining_rounded, size: 30),
               ),
             ),
           ),
@@ -106,70 +105,158 @@ class RiderIcon extends StatelessWidget {
 }
 
 class ProductsIcon extends StatelessWidget {
-  final VoidCallback onTap;
+  final Future<int> Function() fetchLowStockCount;
 
-  ProductsIcon({required this.onTap});
+  ProductsIcon({required this.fetchLowStockCount});
 
   @override
   Widget build(BuildContext context) {
+    return FutureBuilder<int>(
+      future: fetchLowStockCount(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return _buildIconWithCount(context, 0);
+        } else if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        } else {
+          int lowStockCount = snapshot.data ?? 0;
+          return _buildIconWithCount(context, lowStockCount);
+        }
+      },
+    );
+  }
+
+  Widget _buildIconWithCount(BuildContext context, int lowStockCount) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: onTap,
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(25.0), // Make the card circular
-              ),
-              elevation: 4, // Add a shadow to the card
-              child: const Padding(
-                padding: EdgeInsets.all(10.0),
-                child: Icon(Icons.receipt_long_outlined, size: 30),
-              ),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            productsRoute,
+            arguments: lowStockCount,
+          );
+        },
+        child: Column(
+          children: [
+            Stack(
+              children: [
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25.0),
+                  ),
+                  elevation: 4,
+                  child: const Padding(
+                    padding: EdgeInsets.all(10.0),
+                    child: Icon(Icons.propane_tank_rounded, size: 30),
+                  ),
+                ),
+                if (lowStockCount > 0)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        lowStockCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          ),
-          const Text(
-            "Products",
-            style: TextStyle(fontSize: 13),
-          ),
-        ],
+            const Text(
+              "Products",
+              style: TextStyle(fontSize: 13),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 class AccessoriesIcon extends StatelessWidget {
-  final VoidCallback onTap;
+  final Future<int> Function() fetchLowStockCount;
 
-  AccessoriesIcon({required this.onTap});
+  AccessoriesIcon({required this.fetchLowStockCount});
 
   @override
   Widget build(BuildContext context) {
+    return FutureBuilder<int>(
+      future: fetchLowStockCount(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return _buildIconWithCount(context, 0);
+        } else if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        } else {
+          int lowStockCount = snapshot.data ?? 0;
+          return _buildIconWithCount(context, lowStockCount);
+        }
+      },
+    );
+  }
+
+  Widget _buildIconWithCount(BuildContext context, int lowStockCount) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: onTap,
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(25.0), // Make the card circular
-              ),
-              elevation: 4, // Add a shadow to the card
-              child: const Padding(
-                padding: EdgeInsets.all(10.0),
-                child: Icon(Icons.receipt_long_outlined, size: 30),
-              ),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            accessoriesRoute,
+            arguments: lowStockCount,
+          );
+        },
+        child: Column(
+          children: [
+            Stack(
+              children: [
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25.0),
+                  ),
+                  elevation: 4,
+                  child: const Padding(
+                    padding: EdgeInsets.all(10.0),
+                    child: Icon(Icons.trolley, size: 30),
+                  ),
+                ),
+                if (lowStockCount > 0)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        lowStockCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          ),
-          const Text(
-            "Accessories",
-            style: TextStyle(fontSize: 13),
-          ),
-        ],
+            const Text(
+              "Accessories",
+              style: TextStyle(fontSize: 13),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -225,18 +312,17 @@ class AppointmentIcon extends StatelessWidget {
             onTap: onTap,
             child: Card(
               shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(25.0), // Make the card circular
+                borderRadius: BorderRadius.circular(25.0),
               ),
-              elevation: 4, // Add a shadow to the card
+              elevation: 4,
               child: const Padding(
                 padding: EdgeInsets.all(10.0),
-                child: Icon(Icons.calendar_month_outlined, size: 30),
+                child: Icon(Icons.edit_calendar_rounded, size: 30),
               ),
             ),
           ),
           const Text(
-            "Appointment",
+            "Appointments",
             style: TextStyle(fontSize: 13),
           ),
         ],

@@ -22,36 +22,34 @@ class BottomNavBar extends StatelessWidget {
         unselectedLabelStyle: const TextStyle(
           fontSize: 0,
         ),
-        items: [
+        items: const [
           BottomNavigationBarItem(
-            icon: Image.network(
-              'https://raw.githubusercontent.com/mrHeinrichh/J.E-Moral-cdn/main/assets/png/add_customer.png',
-              width: 24,
-              height: 24,
-            ),
-            label: '',
-          ),
-          const BottomNavigationBarItem(
             icon: Icon(
-              Icons.history,
+              Icons.person_add_alt_1_sharp,
             ),
             label: '',
           ),
-          const BottomNavigationBarItem(
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.pending_actions_rounded,
+            ),
+            label: '',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(
               Icons.home,
             ),
             label: '',
           ),
-          const BottomNavigationBarItem(
+          BottomNavigationBarItem(
             icon: Icon(
-              Icons.delivery_dining_outlined,
+              Icons.location_history,
             ),
             label: '',
           ),
-          const BottomNavigationBarItem(
+          BottomNavigationBarItem(
             icon: Icon(
-              Icons.chat,
+              Icons.wechat_rounded,
             ),
             label: '',
           ),
