@@ -11,7 +11,7 @@ class ProductDetailsPage extends StatefulWidget {
   String category;
   String description;
   String weight;
-  String quantity;
+  String stock;
 
   ProductDetailsPage({
     required this.productName,
@@ -20,7 +20,7 @@ class ProductDetailsPage extends StatefulWidget {
     required this.category,
     required this.description, // Added description
     required this.weight, // Added weight
-    required this.quantity, // Added quantity
+    required this.stock, // Added stock
   });
 
   @override
@@ -28,7 +28,7 @@ class ProductDetailsPage extends StatefulWidget {
 }
 
 class _ProductDetailsPageState extends State<ProductDetailsPage> {
-  int quantity = 1; // Initial quantity
+  int stock = 1; // Initial stock
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +131,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       children: [
                         const Text("Stock Available:"),
                         Text(
-                          " ${widget.quantity}",
+                          " ${widget.stock}",
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                           ),
@@ -150,15 +150,15 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                             icon: const Icon(Icons.remove, size: 15),
                             onPressed: () {
                               setState(() {
-                                if (quantity > 1) {
-                                  quantity--;
+                                if (stock > 1) {
+                                  stock--;
                                 }
                               });
                             },
                           ),
                         ),
                         Text(
-                          "$quantity",
+                          "$stock",
                           style: const TextStyle(
                             fontSize: 18,
                             color: Color(0xFF232937),
@@ -180,7 +180,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                             ),
                             onPressed: () {
                               setState(() {
-                                quantity++;
+                                stock++;
                               });
                             },
                           ),
@@ -191,7 +191,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  "Price: ₱${((double.tryParse(widget.productPrice) ?? 0) * quantity).toStringAsFixed(2)}",
+                  "Price: ₱${((double.tryParse(widget.productPrice) ?? 0) * stock).toStringAsFixed(2)}",
                   style: const TextStyle(
                     fontSize: 18,
                     color: Color(0xFF232937),
@@ -205,7 +205,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                         id: widget.productName.hashCode,
                         name: widget.productName,
                         price: double.parse(widget.productPrice),
-                        quantity: quantity,
+                        stock: stock,
                         imageUrl: widget.productImageUrl,
                       ),
                     );

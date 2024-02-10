@@ -44,7 +44,7 @@ class _CartPageState extends State<CartPage> {
             double totalPrice = 0.0;
             for (var cartItem in cartItems) {
               if (cartItem.isSelected) {
-                totalPrice += cartItem.price * cartItem.quantity;
+                totalPrice += cartItem.price * cartItem.stock;
               }
             }
             return totalPrice;
@@ -146,7 +146,7 @@ class CartItemWidget extends StatelessWidget {
                       style: TextStyle(fontSize: 18),
                     ),
                     Text(
-                      '₱${cartItem.price * cartItem.quantity}',
+                      '₱${cartItem.price * cartItem.stock}',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
@@ -158,15 +158,15 @@ class CartItemWidget extends StatelessWidget {
                           icon: const Icon(Icons.remove),
                           onPressed: () {
                             Provider.of<CartProvider>(context, listen: false)
-                                .decrementQuantity(cartItem);
+                                .decrementStock(cartItem);
                           },
                         ),
-                        Text('${cartItem.quantity}'),
+                        Text('${cartItem.stock}'),
                         IconButton(
                           icon: const Icon(Icons.add),
                           onPressed: () {
                             Provider.of<CartProvider>(context, listen: false)
-                                .incrementQuantity(cartItem);
+                                .incrementStock(cartItem);
                           },
                         ),
                         SizedBox(

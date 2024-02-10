@@ -31,7 +31,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
           "productId": cartItem.id,
           "name": cartItem.name,
           "customerPrice": cartItem.price,
-          "quantity": cartItem.quantity,
+          "stock": cartItem.stock,
         });
       }
     }
