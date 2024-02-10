@@ -196,26 +196,13 @@ class _ActiveOrdersState extends State<ActiveOrders> {
                       Row(
                         children: [
                           const Text(
-                            "Delivery Time: ",
+                            "Delivery Date/Time: ",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
-                            '${transaction['deliveryTime']}',
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          const Text(
-                            "Date Ordered: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            '${transaction['updatedAt']}',
+                            '${transaction['deliveryDate']}',
                           ),
                         ],
                       ),
