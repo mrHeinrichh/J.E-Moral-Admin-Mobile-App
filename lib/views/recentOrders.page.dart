@@ -155,17 +155,11 @@ class _RecentOrdersState extends State<RecentOrders> {
 
   Future<void> updateTransactionStatus(String transactionId) async {
     try {
-      Map<String, dynamic> updateData = {
-        "status": "Approved",
-        "__t": "Delivery"
-      };
-
       final String apiUrl =
-          'https://lpg-api-06n8.onrender.com/api/v1/transactions/$transactionId';
+          'https://lpg-api-06n8.onrender.com/api/v1/transactions/$transactionId/approve';
       final http.Response response = await http.patch(
         Uri.parse(apiUrl),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode(updateData),
       );
 
       if (response.statusCode == 200) {
@@ -551,35 +545,35 @@ class _RecentOrdersState extends State<RecentOrders> {
                           ),
                         ],
                       ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
-                        child: SizedBox(
-                          height: 45,
-                          width: MediaQuery.of(context).size.width * 0.90,
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              await showConfirmationDialog(
-                                context,
-                                'Are you sure you want to Approve this transaction with discount?',
-                                (String cancelReason) {
-                                  updateTransactionStatuswithDiscount(
-                                      transaction['_id']);
-                                  Navigator.of(context).pop();
-                                },
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              primary: Colors.green,
-                            ),
-                            child: const Text(
-                              "Approve with Discount",
-                              style: TextStyle(
-                                color: Color.fromARGB(255, 255, 255, 255),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                      // Padding(
+                      //   padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+                      //   child: SizedBox(
+                      //     height: 45,
+                      //     width: MediaQuery.of(context).size.width * 0.90,
+                      //     child: ElevatedButton(
+                      //       onPressed: () async {
+                      //         await showConfirmationDialog(
+                      //           context,
+                      //           'Are you sure you want to Approve this transaction with discount?',
+                      //           (String cancelReason) {
+                      //             updateTransactionStatuswithDiscount(
+                      //                 transaction['_id']);
+                      //             Navigator.of(context).pop();
+                      //           },
+                      //         );
+                      //       },
+                      //       style: ElevatedButton.styleFrom(
+                      //         primary: Colors.green,
+                      //       ),
+                      //       child: const Text(
+                      //         "Approve with Discount",
+                      //         style: TextStyle(
+                      //           color: Color.fromARGB(255, 255, 255, 255),
+                      //         ),
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
