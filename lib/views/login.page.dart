@@ -89,10 +89,6 @@ class _LoginPageState extends State<LoginPage> {
                     hintText: "Enter your Password",
                   ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [Text("Forgot your password?")],
-                ),
                 SizedBox(height: 30.0),
                 Column(
                   children: [
