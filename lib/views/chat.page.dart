@@ -171,7 +171,7 @@ class _ChatPageState extends State<ChatPage> {
     final String? userId =
         Provider.of<UserProvider>(context, listen: false).userId;
     String? customerId = _selectedCustomerId; // Get the selected customer ID
-
+    print('sendMessage called with content: $content');
     if (userId == null || customerId == null) {
       return;
     }
@@ -337,6 +337,7 @@ class _ChatPageState extends State<ChatPage> {
               icon: Icon(Icons.send),
               onPressed: () {
                 String messageContent = _textController.text;
+                print('Message content: $messageContent');
                 if (messageContent.isNotEmpty) {
                   sendMessage(messageContent);
                   _textController.clear();
@@ -349,8 +350,12 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  FocusNode _focusNode = FocusNode();
+
   @override
   void dispose() {
+    _textController.dispose();
+    _focusNode.dispose();
     socket.disconnect();
     super.dispose();
   }
