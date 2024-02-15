@@ -73,14 +73,20 @@ class _ChatPageState extends State<ChatPage> {
     print('initState: Socket.IO initialized');
   }
 
-  Future<void> loadMessagesForSelectedCustomer(String userId) async {
+  Future<void> loadMessagesForSelectedCustomer(String fromUserId) async {
     if (_selectedCustomerId != null) {
-      final messages =
-          await fetchMessagesForCustomer(userId, _selectedCustomerId!);
+      // Print debugging information
+      print('Selected Customer ID: $_selectedCustomerId');
 
-      // Clear messages only for the selected customer
+      // Clear all messages before loading messages for the new customer
       Provider.of<MessageProvider>(context, listen: false)
           .clearMessagesForCustomer(_selectedCustomerId!);
+
+      final messages =
+          await fetchMessagesForCustomer(fromUserId, _selectedCustomerId!);
+
+      // Print debugging information
+      print('Fetched Messages: $messages');
 
       // Add messages for the selected customer
       Provider.of<MessageProvider>(context, listen: false)
@@ -131,8 +137,8 @@ class _ChatPageState extends State<ChatPage> {
       String fromUserId, String toCustomerId) async {
     final filter = {
       "\$or": [
-        {"from": "$fromUserId"},
-        {"to": "$toCustomerId"}
+        {"from": fromUserId, "to": toCustomerId},
+        {"from": toCustomerId, "to": fromUserId}
       ]
     };
 
@@ -147,7 +153,8 @@ class _ChatPageState extends State<ChatPage> {
       if (data['status'] == 'success') {
         List<Map<String, dynamic>> messages =
             List<Map<String, dynamic>>.from(data['data']);
-        messages.sort((a, b) => a['createdAt'].compareTo(b['createdAt']));
+        messages.sort((a, b) => b['createdAt'].compareTo(a[
+            'createdAt'])); // Sort messages by createdAt timestamp in descending order
         return messages;
       } else {
         print('Failed to fetch messages for customer $toCustomerId');
