@@ -10,8 +10,7 @@ class EditRetailerItemsPage extends StatefulWidget {
       __EditRetailerItemsPageStateState();
 }
 
-class __EditRetailerItemsPageStateState
-    extends State<EditRetailerItemsPage> {
+class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
   List<Map<String, dynamic>> productDataList = [];
   TextEditingController searchController = TextEditingController();
   ScrollController _scrollController = ScrollController();
@@ -64,13 +63,14 @@ class __EditRetailerItemsPageStateState
         productDataList.firstWhere((data) => data['_id'] == id);
     TextEditingController retailerPriceController =
         TextEditingController(text: productToEdit['retailerPrice'].toString());
+    TextEditingController reasonController = TextEditingController();
     final _formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Edit Data'),
+          title: const Text('Edit Price for Retailer'),
           content: Form(
             key: _formKey,
             child: SingleChildScrollView(
@@ -83,6 +83,17 @@ class __EditRetailerItemsPageStateState
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the Price for Retailer';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: reasonController,
+                    decoration:
+                        const InputDecoration(labelText: 'Retailer Reason'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the Reason';
                       }
                       return null;
                     },
