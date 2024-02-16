@@ -1,3 +1,4 @@
+import 'package:admin_app/widgets/custom_image_upload.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -7,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/services.dart';
 import 'package:admin_app/widgets/date_time_picker.dart';
+import 'package:intl/intl.dart';
 
 class AnnouncementPage extends StatefulWidget {
   @override
@@ -16,6 +18,8 @@ class AnnouncementPage extends StatefulWidget {
 class _AnnouncementPageState extends State<AnnouncementPage> {
   File? _image;
   final _imageStreamController = StreamController<File?>.broadcast();
+
+  final formKey = GlobalKey<FormState>();
 
   List<Map<String, dynamic>> announcementDataList = [];
   TextEditingController searchController = TextEditingController();
@@ -32,7 +36,20 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
   }
 
   int currentPage = 1;
-  int limit = 10;
+  int limit = 20;
+
+  Future<void> _takeImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.camera);
+
+    if (pickedFile != null) {
+      final imageFile = File(pickedFile.path);
+      _imageStreamController.sink.add(imageFile);
+      setState(() {
+        _image = imageFile;
+      });
+    }
+  }
 
   Future<void> _pickImage() async {
     final pickedFile =
@@ -44,28 +61,6 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
       setState(() {
         _image = imageFile;
       });
-    }
-  }
-
-  Future<void> fetchData({int page = 1}) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/announcements/?page=$page&limit=$limit'));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-
-      final List<Map<String, dynamic>> announcementData = (data['data'] as List)
-          .where((announcementData) => announcementData is Map<String, dynamic>)
-          .map((announcementData) => announcementData as Map<String, dynamic>)
-          .toList();
-
-      setState(() {
-        announcementDataList.clear();
-        announcementDataList.addAll(announcementData);
-        currentPage = page;
-      });
-    } else {
-      throw Exception('Failed to load data from the API');
     }
   }
 
@@ -142,36 +137,26 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     }
   }
 
-  void showCustomOverlay(BuildContext context, String message) {
-    final overlay = OverlayEntry(
-      builder: (context) => Positioned(
-        top: MediaQuery.of(context).size.height * 0.5,
-        left: 0,
-        right: 0,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            alignment: Alignment.center,
-            child: Card(
-              color: Colors.red,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  message,
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+  Future<void> fetchData({int page = 1}) async {
+    final response = await http.get(Uri.parse(
+        'https://lpg-api-06n8.onrender.com/api/v1/announcements/?page=$page&limit=$limit'));
 
-    Overlay.of(context)!.insert(overlay);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
 
-    Future.delayed(Duration(seconds: 2), () {
-      overlay.remove();
-    });
+      final List<Map<String, dynamic>> announcementData = (data['data'] as List)
+          .where((announcementData) => announcementData is Map<String, dynamic>)
+          .map((announcementData) => announcementData as Map<String, dynamic>)
+          .toList();
+
+      setState(() {
+        announcementDataList.clear();
+        announcementDataList.addAll(announcementData);
+        currentPage = page;
+      });
+    } else {
+      throw Exception('Failed to load data from the API');
+    }
   }
 
   Future<void> addAnnouncementToAPI(
@@ -211,7 +196,6 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     }
   }
 
-//NOT YET WORKING
   Future<void> search(String query) async {
     final response = await http.get(Uri.parse(
         'https://lpg-api-06n8.onrender.com/api/v1/announcements/?search=$query'));
@@ -233,95 +217,86 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     } else {}
   }
 
-  // TextEditingController dateStartController = TextEditingController();
-  // DateTime? selectedStartDateTime;
-
-  // Future<void> _selectedStartDateTime(BuildContext context) async {
-  //   final DateTime? picked = await showDatePicker(
-  //     context: context,
-  //     initialDate: selectedStartDateTime ?? DateTime.now(),
-  //     firstDate: DateTime(2000),
-  //     lastDate: DateTime(2101),
-  //   );
-
-  //   if (picked != null) {
-  //     final TimeOfDay? startPickedTime = await showTimePicker(
-  //       context: context,
-  //       initialTime: selectedStartDateTime != null
-  //           ? TimeOfDay.fromDateTime(selectedStartDateTime!)
-  //           : TimeOfDay.now(),
-  //     );
-
-  //     if (startPickedTime != null) {
-  //       setState(() {
-  //         selectedStartDateTime = DateTime(
-  //           picked.year,
-  //           picked.month,
-  //           picked.day,
-  //           startPickedTime.hour,
-  //           startPickedTime.minute,
-  //         );
-  //         dateStartController.text = selectedStartDateTime.toString();
-  //       });
-  //     }
-  //   }
-  // }
-
-  // TextEditingController dateEndController = TextEditingController();
-  // DateTime? selectedEndDateTime;
-
-  // Future<void> _selectedEndDateTime(BuildContext context) async {
-  //   final DateTime? picked = await showDatePicker(
-  //     context: context,
-  //     initialDate: selectedEndDateTime ?? DateTime.now(),
-  //     firstDate: DateTime(2000),
-  //     lastDate: DateTime(2101),
-  //   );
-
-  //   if (picked != null) {
-  //     final TimeOfDay? endPickedTime = await showTimePicker(
-  //       context: context,
-  //       initialTime: selectedEndDateTime != null
-  //           ? TimeOfDay.fromDateTime(selectedEndDateTime!)
-  //           : TimeOfDay.now(),
-  //     );
-
-  //     if (endPickedTime != null) {
-  //       setState(() {
-  //         selectedEndDateTime = DateTime(
-  //           picked.year,
-  //           picked.month,
-  //           picked.day,
-  //           endPickedTime.hour,
-  //           endPickedTime.minute,
-  //         );
-  //         dateEndController.text = selectedEndDateTime.toString();
-  //       });
-  //     }
-  //   }
-  // }
-
   void openAddAnnouncementDialog() {
     TextEditingController textController = TextEditingController();
-    TextEditingController imageController = TextEditingController();
-
     TextEditingController dateStartController = TextEditingController();
     TextEditingController dateEndController = TextEditingController();
 
-    final formKey = GlobalKey<FormState>();
+    bool isImageSelected = false;
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        // dateStartController.clear();
-        // dateEndController.clear();
         return AlertDialog(
-          title: const Text('Add New Announcement'),
+          title: const Text(
+            'Add New Announcement',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
           content: SingleChildScrollView(
             child: Form(
               key: formKey,
               child: Column(
                 children: [
+                  const Divider(),
+                  const SizedBox(height: 10.0),
+                  StreamBuilder<File?>(
+                    stream: _imageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : Image.file(
+                                              snapshot.data!,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ImageUploaderValidator(
+                            takeImage: _takeImage,
+                            pickImage: _pickImage,
+                            buttonText: "Upload Announcement Image",
+                            onImageSelected: (isSelected) {
+                              setState(() {
+                                isImageSelected = isSelected;
+                              });
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                   TextFormField(
                     controller: textController,
                     decoration: const InputDecoration(labelText: 'Title'),
@@ -332,53 +307,15 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 15),
                   DateTimePicker(
                     controller: dateStartController,
                     labelText: 'Starting Date and Time',
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 15),
                   DateTimePicker(
                     controller: dateEndController,
                     labelText: 'Ending Date and Time',
-                  ),
-                  StreamBuilder<File?>(
-                    stream: _imageStreamController.stream,
-                    builder: (context, snapshot) {
-                      return Column(
-                        children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? const CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 50,
-                                  ),
-                                )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
-                                ),
-                          TextButton(
-                            onPressed: () async {
-                              await _pickImage();
-                            },
-                            child: const Text(
-                              "Upload Announcement Image",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
                   ),
                 ],
               ),
@@ -393,15 +330,16 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
             ),
             TextButton(
               onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  if (_image == null) {
-                    showCustomOverlay(context, 'Please Upload an Image');
-                  } else {
+                if (!isImageSelected) {
+                  showCustomOverlay(
+                      context, 'Please Upload an Announcement Image');
+                } else {
+                  if (formKey.currentState!.validate()) {
                     Map<String, dynamic> newAnnouncement = {
                       "text": textController.text,
-                      "image": imageController.text,
                       "start": dateStartController.text,
                       "end": dateEndController.text,
+                      "image": "",
                     };
                     addAnnouncementToAPI(newAnnouncement);
                   }
@@ -415,6 +353,44 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     );
   }
 
+  void showCustomOverlay(BuildContext context, String message) {
+    final overlay = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).size.height * 0.5,
+        left: 20,
+        right: 20,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context)!.insert(overlay);
+
+    Future.delayed(const Duration(seconds: 2), () {
+      overlay.remove();
+    });
+  }
+
   void updateData(String id) {
     Map<String, dynamic> announcementToEdit =
         announcementDataList.firstWhere((data) => data['_id'] == id);
@@ -425,18 +401,85 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
         TextEditingController(text: announcementToEdit['start']);
     TextEditingController dateEndController =
         TextEditingController(text: announcementToEdit['end']);
-    final _formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Edit Data'),
+          title: const Text(
+            'Edit Announcement',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
           content: Form(
-            key: _formKey,
+            key: formKey,
             child: SingleChildScrollView(
               child: Column(
                 children: [
+                  const Divider(),
+                  const SizedBox(height: 10.0),
+                  StreamBuilder<File?>(
+                    stream: _imageStreamController.stream,
+                    builder: (context, snapshot) {
+                      return Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null &&
+                                              (announcementToEdit['image'] ??
+                                                      '')
+                                                  .isEmpty
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : snapshot.data != null
+                                              ? Image.file(
+                                                  snapshot.data!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                )
+                                              : Image.network(
+                                                  announcementToEdit['image']!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ImageUploader(
+                            takeImage: _takeImage,
+                            pickImage: _pickImage,
+                            buttonText: "Upload Discounted ID Image",
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                   TextFormField(
                     controller: textController,
                     decoration: const InputDecoration(labelText: 'Title'),
@@ -447,64 +490,18 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 15),
                   DateTimePicker(
                     controller: dateStartController,
                     labelText: 'Starting Date and Time',
                     initialDateTime:
                         DateTime.parse(announcementToEdit['start']),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 15),
                   DateTimePicker(
                     controller: dateEndController,
                     labelText: 'Ending Date and Time',
                     initialDateTime: DateTime.parse(announcementToEdit['end']),
-                  ),
-                  StreamBuilder<File?>(
-                    stream: _imageStreamController.stream,
-                    builder: (context, snapshot) {
-                      return Column(
-                        children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? (announcementToEdit['image']?.toString() ?? '')
-                                      .isNotEmpty
-                                  ? CircleAvatar(
-                                      radius: 50,
-                                      backgroundImage: NetworkImage(
-                                          announcementToEdit['image']
-                                                  ?.toString() ??
-                                              ''),
-                                    )
-                                  : const CircleAvatar(
-                                      radius: 50,
-                                      child: Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 50,
-                                      ),
-                                    )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
-                                ),
-                          TextButton(
-                            onPressed: () async {
-                              await _pickImageForEdit();
-                            },
-                            child: const Text(
-                              "Upload Announcement Image",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
                   ),
                 ],
               ),
@@ -519,7 +516,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
             ),
             TextButton(
               onPressed: () async {
-                if (_formKey.currentState!.validate()) {
+                if (formKey.currentState!.validate()) {
                   announcementToEdit['text'] = textController.text;
                   announcementToEdit['start'] = dateStartController.text;
                   announcementToEdit['end'] = dateEndController.text;
@@ -547,6 +544,10 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                   print('Response Body: ${response.body}');
 
                   if (response.statusCode == 200) {
+                    setState(() {
+                      _image = null;
+                    });
+
                     fetchData();
                     Navigator.pop(context);
                   } else {
@@ -561,19 +562,6 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
         );
       },
     );
-  }
-
-  Future<void> _pickImageForEdit() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      final imageFile = File(pickedFile.path);
-      _imageStreamController.sink.add(imageFile);
-      setState(() {
-        _image = imageFile;
-      });
-    }
   }
 
   void archiveData(String id) async {
@@ -620,129 +608,193 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        title: const Text(
-          'Announcements CRUD',
-          style: TextStyle(color: Color(0xFF232937), fontSize: 24),
-        ),
-        iconTheme: const IconThemeData(color: Color(0xFF232937)),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.add),
-            color: const Color(0xFF232937),
-            onPressed: () {
-              openAddAnnouncementDialog();
-            },
-          ),
-        ],
+        title: const Text('Announcement List'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: searchController,
-                      decoration: const InputDecoration(
-                        hintText: 'Search',
-                        border: InputBorder.none,
+        padding: const EdgeInsets.all(12),
+        child: RefreshIndicator(
+          onRefresh: () => fetchData(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: IntrinsicWidth(
+                          child: TextField(
+                            controller: searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Search',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              isDense: true,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              suffixIcon: InkWell(
+                                onTap: () {
+                                  search(searchController.text);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  child: const Icon(
+                                    Icons.search,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      search(searchController.text);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                    ElevatedButton(
+                      onPressed: () {
+                        openAddAnnouncementDialog();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: const Color(0xFF232937),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                    ),
-                    child: const Icon(Icons.search),
-                  ),
-                ],
-              ),
-            ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: const Color(0xFF232937),
-                    width: 1.0,
-                  ),
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                child: DataTable(
-                  columns: const <DataColumn>[
-                    DataColumn(label: Text('Title')),
-                    DataColumn(label: Text('Image')),
-                    DataColumn(
-                      label: Text('Actions'),
-                      tooltip: 'Update and archive',
+                      child: const Text(
+                        'Add Announcement',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
-                  rows: announcementDataList.map((announcementData) {
-                    final id = announcementData['_id'];
-                    return DataRow(
-                      cells: <DataCell>[
-                        DataCell(Text(announcementData['text'] ?? ''),
-                            placeholder: false),
-                        DataCell(Text(announcementData['image'] ?? ''),
-                            placeholder: false),
-                        DataCell(
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit),
-                                onPressed: () => updateData(id),
+                ),
+                const SizedBox(height: 10),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: announcementDataList.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final userData = announcementDataList[index];
+                    final id = userData['_id'];
+
+                    return Card(
+                      elevation: 4,
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Container(
+                              width: double.infinity,
+                              height: 100, // Change the size
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: Colors.black,
+                                  width: 1,
+                                ),
+                                image: DecorationImage(
+                                  image: NetworkImage(userData['image'] ?? ''),
+                                  fit: BoxFit.cover,
+                                ),
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.archive),
-                                onPressed: () => archiveData(id),
-                              ),
-                            ],
+                            ),
                           ),
-                          placeholder: false,
-                        ),
-                      ],
+                          ListTile(
+                            title: Text(
+                              userData['text'] ?? '',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium!
+                                  .copyWith(fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Divider(),
+                                Text(
+                                  'Start: ${DateFormat('MMM d, y - h:mm a').format(DateTime.parse(userData['start'] ?? ''))}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium!
+                                      .copyWith(fontWeight: FontWeight.bold),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                                Text(
+                                  'End: ${DateFormat('MMM d, y - h:mm a').format(DateTime.parse(userData['end'] ?? ''))}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium!
+                                      .copyWith(fontWeight: FontWeight.bold),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ],
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: 40,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.edit),
+                                    onPressed: () => updateData(id),
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 20,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.archive),
+                                    onPressed: () => archiveData(id),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     );
-                  }).toList(),
-                ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (currentPage > 1)
-                  ElevatedButton(
-                    onPressed: () {
-                      fetchData(page: currentPage - 1);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors.black,
-                    ),
-                    child: const Text('Previous'),
-                  ),
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    fetchData(page: currentPage + 1);
                   },
-                  style: ElevatedButton.styleFrom(
-                    primary: Colors.black,
-                  ),
-                  child: const Text('Next'),
                 ),
+                const SizedBox(height: 5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (currentPage > 1)
+                      ElevatedButton(
+                        onPressed: () {
+                          fetchData(page: currentPage - 1);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          primary: const Color(0xFF232937),
+                        ),
+                        child: const Text(
+                          'Previous',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        fetchData(page: currentPage + 1);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: const Color(0xFF232937),
+                      ),
+                      child: const Text(
+                        'Next',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

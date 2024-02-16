@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+import 'package:intl/intl.dart';
 
 class ActiveOrders extends StatefulWidget {
   @override
@@ -94,10 +95,10 @@ class _ActiveOrdersState extends State<ActiveOrders> {
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: RefreshIndicator(
-          onRefresh: refreshData,
+      body: RefreshIndicator(
+        onRefresh: refreshData,
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
           child: ListView.builder(
             reverse: false,
             itemCount: transactions.length,
@@ -110,31 +111,26 @@ class _ActiveOrdersState extends State<ActiveOrders> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Transaction ID: ${transaction['_id']}",
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
+                      Text(
+                        "ID: ${transaction['_id']}",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const Divider(
-                        thickness: 1,
-                        color: Colors.black,
-                      ),
-                      Row(
-                        children: [
-                          const Text(
-                            "Name: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
+                      const Divider(),
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            const TextSpan(
+                              text: "Receiver Name: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          Text(
-                            '${transaction['name']}',
-                          ),
-                        ],
+                            TextSpan(
+                              text: "${transaction['name']}",
+                            ),
+                          ],
+                        ),
                       ),
                       Row(
                         children: [
@@ -149,16 +145,34 @@ class _ActiveOrdersState extends State<ActiveOrders> {
                           ),
                         ],
                       ),
-                      Text(
-                        "Delivery Location: ${transaction['deliveryLocation']}' ",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            const TextSpan(
+                              text: "Delivery Location: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(
+                              text: "${transaction['deliveryLocation']}",
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        "House#/Lot/Blk: ${transaction['houseLotBlk']}",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            const TextSpan(
+                              text: "House#/Lot/Blk: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(
+                              text: "${transaction['houseLotBlk']}",
+                            ),
+                          ],
                         ),
                       ),
                       Row(
@@ -174,11 +188,18 @@ class _ActiveOrdersState extends State<ActiveOrders> {
                           ),
                         ],
                       ),
-                      Text(
-                        "Payment Method: ${transaction['paymentMethod']}",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          const Text(
+                            "Payment Method: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            "${transaction['paymentMethod'] == 'COD' ? 'Cash on Delivery' : transaction['paymentMethod']}",
+                          ),
+                        ],
                       ),
                       Row(
                         children: [
@@ -189,40 +210,32 @@ class _ActiveOrdersState extends State<ActiveOrders> {
                             ),
                           ),
                           Text(
-                            '${transaction['assembly']}',
+                            transaction['assembly'] ? 'Yes' : 'No',
                           ),
                         ],
                       ),
                       Row(
                         children: [
                           const Text(
-                            "Delivery Date/Time: ",
+                            "Date and Time: ",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
-                            '${transaction['deliveryDate']}',
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          const Text(
-                            "Total Price: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
+                          Flexible(
+                            child: Text(
+                              DateFormat('MMM d, y - h:mm a ').format(
+                                  DateTime.parse(transaction['updatedAt'])),
+                              overflow: TextOverflow.visible,
                             ),
                           ),
-                          Text(
-                            '${transaction['total']}',
-                          ),
                         ],
                       ),
-                      SizedBox(
-                          width: 200,
-                          height: 50,
-                          child: TextButton(
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
                             onPressed: () {
                               Navigator.push(
                                 context,
@@ -235,13 +248,20 @@ class _ActiveOrdersState extends State<ActiveOrders> {
                                 ),
                               );
                             },
-                            style: TextButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              padding: const EdgeInsets.all(16.0),
-                              textStyle: const TextStyle(fontSize: 20),
+                            style: ElevatedButton.styleFrom(
+                              primary: const Color(0xFF232937),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              textStyle: const TextStyle(fontSize: 18),
                             ),
-                            child: const Text('Track Order'),
-                          ))
+                            child: const Text(
+                              'Track Order',
+                              style: TextStyle(
+                                color: Color.fromARGB(255, 255, 255, 255),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),

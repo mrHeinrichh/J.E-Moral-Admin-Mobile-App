@@ -1,3 +1,4 @@
+import 'package:admin_app/widgets/custom_image_upload.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -16,6 +17,8 @@ class _FaqPageState extends State<FaqPage> {
   File? _image;
   final _imageStreamController = StreamController<File?>.broadcast();
 
+  final formKey = GlobalKey<FormState>();
+
   List<Map<String, dynamic>> faqDataList = [];
   TextEditingController searchController = TextEditingController();
 
@@ -31,7 +34,20 @@ class _FaqPageState extends State<FaqPage> {
   }
 
   int currentPage = 1;
-  int limit = 10;
+  int limit = 20;
+
+  Future<void> _takeImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.camera);
+
+    if (pickedFile != null) {
+      final imageFile = File(pickedFile.path);
+      _imageStreamController.sink.add(imageFile);
+      setState(() {
+        _image = imageFile;
+      });
+    }
+  }
 
   Future<void> _pickImage() async {
     final pickedFile =
@@ -43,28 +59,6 @@ class _FaqPageState extends State<FaqPage> {
       setState(() {
         _image = imageFile;
       });
-    }
-  }
-
-  Future<void> fetchData({int page = 1}) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/faqs/?page=$page&limit=$limit'));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-
-      final List<Map<String, dynamic>> faqData = (data['data'] as List)
-          .where((faqData) => faqData is Map<String, dynamic>)
-          .map((faqData) => faqData as Map<String, dynamic>)
-          .toList();
-
-      setState(() {
-        faqDataList.clear();
-        faqDataList.addAll(faqData);
-        currentPage = page;
-      });
-    } else {
-      throw Exception('Failed to load data from the API');
     }
   }
 
@@ -137,6 +131,28 @@ class _FaqPageState extends State<FaqPage> {
     }
   }
 
+  Future<void> fetchData({int page = 1}) async {
+    final response = await http.get(Uri.parse(
+        'https://lpg-api-06n8.onrender.com/api/v1/faqs/?page=$page&limit=$limit'));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+
+      final List<Map<String, dynamic>> faqData = (data['data'] as List)
+          .where((faqData) => faqData is Map<String, dynamic>)
+          .map((faqData) => faqData as Map<String, dynamic>)
+          .toList();
+
+      setState(() {
+        faqDataList.clear();
+        faqDataList.addAll(faqData);
+        currentPage = page;
+      });
+    } else {
+      throw Exception('Failed to load data from the API');
+    }
+  }
+
   Future<void> addFaqToAPI(Map<String, dynamic> newFaq) async {
     final url = Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/faqs');
     final headers = {'Content-Type': 'application/json'};
@@ -193,7 +209,6 @@ class _FaqPageState extends State<FaqPage> {
   void openAddFaqDialog() {
     TextEditingController questionController = TextEditingController();
     TextEditingController answerController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
@@ -205,6 +220,7 @@ class _FaqPageState extends State<FaqPage> {
               key: formKey,
               child: Column(
                 children: [
+                  const Divider(),
                   TextFormField(
                     controller: questionController,
                     decoration: const InputDecoration(labelText: 'Question'),
@@ -225,46 +241,51 @@ class _FaqPageState extends State<FaqPage> {
                       return null;
                     },
                   ),
-                  Text(
-                    "\nFAQ Image",
-                    style: TextStyle(
-                      fontSize: 15.0,
-                      color: Colors.grey[700],
-                    ),
-                  ),
+                  const SizedBox(height: 10.0),
                   StreamBuilder<File?>(
                     stream: _imageStreamController.stream,
                     builder: (context, snapshot) {
                       return Column(
                         children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? const CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 50,
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
                                   ),
-                                )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                          TextButton(
-                            onPressed: () async {
-                              await _pickImage();
-                            },
-                            child: const Text(
-                              "Upload Image",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : Image.file(
+                                              snapshot.data!,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                            ),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
+                          ),
+                          ImageUploader(
+                            takeImage: _takeImage,
+                            pickImage: _pickImage,
+                            buttonText: "Upload FAQ Image",
                           ),
                         ],
                       );
@@ -341,52 +362,51 @@ class _FaqPageState extends State<FaqPage> {
                       return null;
                     },
                   ),
-                  Text(
-                    "\nFAQ Image",
-                    style: TextStyle(
-                      fontSize: 15.0,
-                      color: Colors.grey[700],
-                    ),
-                  ),
+                  const SizedBox(height: 10.0),
                   StreamBuilder<File?>(
                     stream: _imageStreamController.stream,
                     builder: (context, snapshot) {
                       return Column(
                         children: [
-                          const SizedBox(height: 10.0),
-                          const Divider(),
-                          const SizedBox(height: 10.0),
-                          snapshot.data == null
-                              ? (faqToEdit['image']?.toString() ?? '')
-                                      .isNotEmpty
-                                  ? CircleAvatar(
-                                      radius: 50,
-                                      backgroundImage: NetworkImage(
-                                          faqToEdit['image']?.toString() ?? ''),
-                                    )
-                                  : const CircleAvatar(
-                                      radius: 50,
-                                      child: Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 50,
-                                      ),
-                                    )
-                              : CircleAvatar(
-                                  radius: 50,
-                                  backgroundImage: FileImage(snapshot.data!),
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.0,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                          TextButton(
-                            onPressed: () async {
-                              await _pickImageForEdit();
-                            },
-                            child: const Text(
-                              "Upload Image",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 15.0,
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: 100,
+                                  child: Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: snapshot.data == null
+                                          ? const Icon(
+                                              Icons.image,
+                                              color: Colors.white,
+                                              size: 50,
+                                            )
+                                          : Image.file(
+                                              snapshot.data!,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                            ),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
+                          ),
+                          ImageUploader(
+                            takeImage: _takeImage,
+                            pickImage: _pickImage,
+                            buttonText: "Upload FAQ Image",
                           ),
                         ],
                       );
@@ -408,7 +428,6 @@ class _FaqPageState extends State<FaqPage> {
                 if (_formKey.currentState!.validate()) {
                   faqToEdit['question'] = questionController.text;
                   faqToEdit['answer'] = answerController.text;
-                  faqToEdit['image'] = "";
 
                   if (_image != null) {
                     var uploadResponse = await uploadImageToServer(_image!);
@@ -430,6 +449,10 @@ class _FaqPageState extends State<FaqPage> {
                   );
 
                   if (response.statusCode == 200) {
+                    setState(() {
+                      _image = null;
+                    });
+
                     fetchData();
                     Navigator.pop(context);
                   } else {
@@ -444,19 +467,6 @@ class _FaqPageState extends State<FaqPage> {
         );
       },
     );
-  }
-
-  Future<void> _pickImageForEdit() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      final imageFile = File(pickedFile.path);
-      _imageStreamController.sink.add(imageFile);
-      setState(() {
-        _image = imageFile;
-      });
-    }
   }
 
   void archiveData(String id) async {
@@ -502,138 +512,161 @@ class _FaqPageState extends State<FaqPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        title: const Text(
-          'FAQ CRUD',
-          style: TextStyle(color: Color(0xFF232937), fontSize: 24),
-        ),
-        iconTheme: const IconThemeData(color: Color(0xFF232937)),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.add),
-            color: const Color(0xFF232937),
-            onPressed: () {
-              openAddFaqDialog();
-            },
-          ),
-        ],
+        title: const Text('FAQ List'),
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.all(15.0),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Row(
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+        child: RefreshIndicator(
+          onRefresh: () => fetchData(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: TextField(
-                        controller: searchController,
-                        decoration: const InputDecoration(
-                          hintText: 'Search',
-                          border: InputBorder.none,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: IntrinsicWidth(
+                          child: TextField(
+                            controller: searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Search',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              isDense: true,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              suffixIcon: InkWell(
+                                onTap: () {
+                                  search(searchController.text);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  child: const Icon(
+                                    Icons.search,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        search(searchController.text);
+                        openAddFaqDialog();
                       },
-                      style: TextButton.styleFrom(
-                        primary: Colors.black,
+                      style: ElevatedButton.styleFrom(
+                        primary: const Color(0xFF232937),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Icon(Icons.search),
+                      child: const Text(
+                        'Add FAQ',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 ),
-              ),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: const Color(0xFF232937),
-                      width: 1.0,
-                    ),
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  child: DataTable(
-                    columns: const <DataColumn>[
-                      DataColumn(label: Text('Question')),
-                      DataColumn(label: Text('Answer')),
-                      DataColumn(label: Text('Image')),
-                      DataColumn(
-                        label: Text('Actions'),
-                        tooltip: 'Update and archive',
-                      ),
-                    ],
-                    rows: faqDataList.map((faqData) {
-                      final id = faqData['_id'];
-                      return DataRow(
-                        cells: <DataCell>[
-                          DataCell(Text(faqData['question'] ?? ''),
-                              placeholder: false),
-                          DataCell(Text(faqData['answer'] ?? ''),
-                              placeholder: false),
-                          DataCell(Text(faqData['image'] ?? ''),
-                              placeholder: false),
-                          DataCell(
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () => updateData(id),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.archive),
-                                  onPressed: () => archiveData(id),
-                                ),
-                              ],
+                const SizedBox(height: 10),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: faqDataList.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final userData = faqDataList[index];
+                    final id = userData['_id'];
+
+                    return Card(
+                      elevation: 4,
+                      child: ListTile(
+                        title: Text(
+                          userData['question'] ?? '',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium!
+                              .copyWith(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Divider(),
+                            Text(
+                              'Answer: ${userData['answer'] ?? ''}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium!
+                                  .copyWith(fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
-                            placeholder: false,
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
+                          ],
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 40,
+                              child: IconButton(
+                                icon: const Icon(Icons.edit),
+                                onPressed: () => updateData(id),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 20,
+                              child: IconButton(
+                                icon: const Icon(Icons.archive),
+                                onPressed: () => archiveData(id),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (currentPage > 1)
+                const SizedBox(height: 5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (currentPage > 1)
+                      ElevatedButton(
+                        onPressed: () {
+                          fetchData(page: currentPage - 1);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          primary: const Color(0xFF232937),
+                        ),
+                        child: const Text(
+                          'Previous',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    const SizedBox(width: 10),
                     ElevatedButton(
                       onPressed: () {
-                        fetchData(page: currentPage - 1);
+                        fetchData(page: currentPage + 1);
                       },
-                      style: TextButton.styleFrom(
-                        primary: Colors.black,
+                      style: ElevatedButton.styleFrom(
+                        primary: const Color(0xFF232937),
                       ),
-                      child: const Text('Previous'),
+                      child: const Text(
+                        'Next',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
-                  const SizedBox(width: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      fetchData(page: currentPage + 1);
-                    },
-                    style: TextButton.styleFrom(
-                      primary: Colors.black,
-                    ),
-                    child: const Text(
-                      'Next',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
           ),
         ),
       ),

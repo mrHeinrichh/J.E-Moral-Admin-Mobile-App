@@ -76,34 +76,6 @@ class _NewCustomersState extends State<NewCustomers> {
     }
   }
 
-  // Future<void> updateVerificationStatus(String customerId) async {
-  //   try {
-  //     final response = await http.patch(
-  //       Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/$customerId'),
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: jsonEncode({
-  //         'verified': true,
-  //         'type': 'Customer',
-  //       }),
-  //     );
-
-  //     print('Update Verification Status Response: ${response.body}');
-
-  //     if (response.statusCode == 200) {
-  //       Map<String, dynamic> responseData = json.decode(response.body);
-  //       print('Updated User Data: ${responseData['data']}');
-  //       print(response.body);
-  //       print('Verification status updated successfully');
-  //       refreshData();
-  //     } else {
-  //       print('Error updating verification status: ${response.statusCode}');
-  //     }
-  //   } catch (e) {
-  //     print('Error: $e');
-  //   }
-  // }
   Future<void> updateVerificationStatus(
       String customerId, String userEmail) async {
     try {
@@ -113,12 +85,10 @@ class _NewCustomersState extends State<NewCustomers> {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'verified': true,
-          'type': 'Customer',
+          'verified': 'true',
+          '__t': 'Customer',
         }),
       );
-
-      print('Update Verification Status Response: ${response.body}');
 
       if (response.statusCode == 200) {
         Map<String, dynamic> responseData = json.decode(response.body);
@@ -246,53 +216,25 @@ class _NewCustomersState extends State<NewCustomers> {
                       ),
                       const SizedBox(height: 5),
                       const Divider(),
-                      Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            ElevatedButton(
-                              onPressed: () async {
-                                await archivedCustomer(customer['_id']);
+                      ElevatedButton(
+                        onPressed: () async {
+                          await updateVerificationStatus(
+                              customer['_id'], customer['email']);
 
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content:
-                                        Text('Customer Archived successfully'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                primary: Colors.grey,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 10),
-                              ),
-                              child: const Text('Archive',
-                                  style: TextStyle(color: Colors.white)),
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Customer approved successfully'),
+                              duration: Duration(seconds: 2),
                             ),
-                            ElevatedButton(
-                              onPressed: () async {
-                                await updateVerificationStatus(
-                                    customer['_id'], customer['email']);
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content:
-                                        Text('Customer approved successfully'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                primary: const Color(0xFF232937),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 10),
-                              ),
-                              child: const Text('Approve',
-                                  style: TextStyle(color: Colors.white)),
-                            ),
-                          ],
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          primary: const Color(0xFF232937),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 10),
                         ),
+                        child: const Text('Approve',
+                            style: TextStyle(color: Colors.white)),
                       ),
                     ],
                   ),

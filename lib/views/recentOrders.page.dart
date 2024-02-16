@@ -320,14 +320,10 @@ class _RecentOrdersState extends State<RecentOrders> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "ID: ${transaction['_id']}",
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
+                      Text(
+                        "ID: ${transaction['_id']}",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const Divider(),
                       Text.rich(
@@ -437,23 +433,10 @@ class _RecentOrdersState extends State<RecentOrders> {
                           ),
                           Flexible(
                             child: Text(
-                              DateFormat('h:mm a | MMM d, y').format(
+                              DateFormat('MMM d, y - h:mm a ').format(
                                   DateTime.parse(transaction['updatedAt'])),
                               overflow: TextOverflow.visible,
                             ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          const Text(
-                            "Total Price: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            '₱${NumberFormat.decimalPattern().format(transaction['total'])}',
                           ),
                         ],
                       ),
@@ -584,52 +567,4 @@ class _RecentOrdersState extends State<RecentOrders> {
       ),
     );
   }
-
-  // void _showCustomerDetailsModal(Map<String, dynamic> customer) {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return SingleChildScrollView(
-  //         child: Container(
-  //           padding: const EdgeInsets.all(16.0),
-  //           child: Column(
-  //             crossAxisAlignment: CrossAxisAlignment.center,
-  //             mainAxisSize: MainAxisSize.min,
-  //             children: [
-  //               const Text(
-  //                 'Customer Details',
-  //                 style: TextStyle(
-  //                   fontSize: 20,
-  //                   fontWeight: FontWeight.bold,
-  //                 ),
-  //               ),
-  //               const SizedBox(height: 10),
-  //               Text('Name: ${customer['name']}'),
-  //               Text('Contact Number: ${customer['contactNumber']}'),
-  //               Text('Address: ${customer['address']}'),
-  //               customer['image'] != null
-  //                   ? Image.network(
-  //                       customer['image'],
-  //                       width: 300,
-  //                       height: 300,
-  //                       fit: BoxFit.cover,
-  //                     )
-  //                   : Container(),
-  //               const SizedBox(height: 16),
-  //               Align(
-  //                 alignment: Alignment.center,
-  //                 child: ElevatedButton(
-  //                   onPressed: () {
-  //                     Navigator.pop(context);
-  //                   },
-  //                   child: const Text('Close'),
-  //                 ),
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
 }

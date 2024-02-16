@@ -1289,7 +1289,7 @@ class _DriversPageState extends State<DriversPage> {
                   riderToEdit['contactNumber'] = contactNumberController.text;
                   riderToEdit['address'] = addressController.text;
                   riderToEdit['gcash'] = gcashController.text;
-                  riderToEdit['type'] = "Rider";
+                  // riderToEdit['type'] = "Rider";
                   riderToEdit['email'] = emailController.text;
 
                   if (_profileImage != null) {
