@@ -214,27 +214,30 @@ class _NewCustomersState extends State<NewCustomers> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 5),
-                      const Divider(),
-                      ElevatedButton(
-                        onPressed: () async {
-                          await updateVerificationStatus(
-                              customer['_id'], customer['email']);
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            await updateVerificationStatus(
+                                customer['_id'], customer['email']);
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Customer approved successfully'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          primary: const Color(0xFF232937),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 10),
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Customer approved successfully'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            primary: const Color(0xFF232937),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
+                          ),
+                          child: const Text('Approve',
+                              style: TextStyle(color: Colors.white)),
                         ),
-                        child: const Text('Approve',
-                            style: TextStyle(color: Colors.white)),
                       ),
                     ],
                   ),
