@@ -15,9 +15,8 @@ class CustomerPage extends StatefulWidget {
 
 class _CustomerPageState extends State<CustomerPage> {
   File? _profileImage;
-  File? _discountedImage;
+
   final _profileImageStreamController = StreamController<File?>.broadcast();
-  final _discountedImageStreamController = StreamController<File?>.broadcast();
 
   final formKey = GlobalKey<FormState>();
 
@@ -27,7 +26,6 @@ class _CustomerPageState extends State<CustomerPage> {
   @override
   void dispose() {
     _profileImageStreamController.close();
-    _discountedImageStreamController.close();
     super.dispose();
   }
 
@@ -141,107 +139,6 @@ class _CustomerPageState extends State<CustomerPage> {
     }
   }
 
-  Future<void> _discountedTakeImage() async {
-    final discountedpickedFile =
-        await ImagePicker().pickImage(source: ImageSource.camera);
-
-    if (discountedpickedFile != null) {
-      final discountedImageFile = File(discountedpickedFile.path);
-      _discountedImageStreamController.sink.add(discountedImageFile);
-
-      setState(() {
-        _discountedImage = discountedImageFile;
-      });
-    }
-  }
-
-  Future<void> _discountedPickImage() async {
-    final discountedpickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-
-    if (discountedpickedFile != null) {
-      final discountedImageFile = File(discountedpickedFile.path);
-      _discountedImageStreamController.sink.add(discountedImageFile);
-
-      setState(() {
-        _discountedImage = discountedImageFile;
-      });
-    }
-  }
-
-  Future<Map<String, dynamic>?> uploadDiscountedImageToServer(
-      File discountedImageFile) async {
-    try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/upload/image'),
-      );
-
-      var fileStream =
-          http.ByteStream(Stream.castFrom(discountedImageFile.openRead()));
-      var length = await discountedImageFile.length();
-
-      String fileExtension =
-          discountedImageFile.path.split('.').last.toLowerCase();
-      var contentType = MediaType('image', 'png');
-
-      Map<String, String> imageExtensions = {
-        'png': 'png',
-        'jpg': 'jpeg',
-        'jpeg': 'jpeg',
-        'gif': 'gif',
-      };
-
-      if (imageExtensions.containsKey(fileExtension)) {
-        contentType = MediaType('image', imageExtensions[fileExtension]!);
-      }
-
-      var multipartFile = http.MultipartFile(
-        'image',
-        fileStream,
-        length,
-        filename: 'image.$fileExtension',
-        contentType: contentType,
-      );
-
-      request.files.add(multipartFile);
-
-      var response = await request.send();
-
-      if (response.statusCode == 200) {
-        final responseBody = await response.stream.bytesToString();
-        print("Discounted Image uploaded successfully: $responseBody");
-
-        final parsedResponse = json.decode(responseBody);
-
-        if (parsedResponse.containsKey('data')) {
-          final List<dynamic> data = parsedResponse['data'];
-
-          if (data.isNotEmpty && data[0].containsKey('path')) {
-            final discountedImageUrl = data[0]['path'];
-            print("Image URL: $discountedImageUrl");
-            return {'url': discountedImageUrl};
-          } else {
-            print("Invalid response format: $parsedResponse");
-            return null;
-          }
-        } else {
-          print("Invalid response format: $parsedResponse");
-          return null;
-        }
-      } else {
-        print(
-            "Discounted Image upload failed with status code: ${response.statusCode}");
-        final responseBody = await response.stream.bytesToString();
-        print("Response body: $responseBody");
-        return null;
-      }
-    } catch (e) {
-      print("Discounted Image upload failed with error: $e");
-      return null;
-    }
-  }
-
   Future<void> fetchData({int page = 1}) async {
     final response = await http.get(Uri.parse(
         'https://lpg-api-06n8.onrender.com/api/v1/users/?page=$page&limit=$limit'));
@@ -279,20 +176,6 @@ class _CustomerPageState extends State<CustomerPage> {
         newCustomer["image"] = profileUploadResponse["url"];
       } else {
         print("Profile Image upload failed");
-        return;
-      }
-    }
-
-    if (_discountedImage != null) {
-      var discountedUploadResponse =
-          await uploadDiscountedImageToServer(_discountedImage!);
-      print("Upload Response for Discounted Image: $discountedUploadResponse");
-
-      if (discountedUploadResponse != null) {
-        print("Discounted Image URL: ${discountedUploadResponse["url"]}");
-        newCustomer["discountIdImage"] = discountedUploadResponse["url"];
-      } else {
-        print("Discounted Image upload failed");
         return;
       }
     }
@@ -342,7 +225,6 @@ class _CustomerPageState extends State<CustomerPage> {
     TextEditingController nameController = TextEditingController();
     TextEditingController contactNumberController = TextEditingController();
     TextEditingController addressController = TextEditingController();
-    TextEditingController discountedController = TextEditingController();
     TextEditingController emailController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
 
@@ -446,77 +328,6 @@ class _CustomerPageState extends State<CustomerPage> {
                       }
                     },
                   ),
-                  DropdownButtonFormField(
-                    value: discountedController.text.isNotEmpty
-                        ? discountedController.text
-                        : null,
-                    decoration:
-                        const InputDecoration(labelText: 'Discount Status'),
-                    items: const [
-                      DropdownMenuItem(value: 'true', child: Text('Approved')),
-                      DropdownMenuItem(
-                          value: 'false', child: Text('Not Approved')),
-                    ],
-                    onChanged: (newValue) {
-                      discountedController.text = newValue.toString();
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please Select a Discount Status';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  StreamBuilder<File?>(
-                    stream: _discountedImageStreamController.stream,
-                    builder: (context, snapshot) {
-                      return Column(
-                        children: [
-                          Stack(
-                            alignment: Alignment.topRight,
-                            children: [
-                              DecoratedBox(
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Colors.black,
-                                    width: 1.0,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  height: 100,
-                                  child: Center(
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: snapshot.data == null
-                                          ? const Icon(
-                                              Icons.image,
-                                              color: Colors.white,
-                                              size: 50,
-                                            )
-                                          : Image.file(
-                                              snapshot.data!,
-                                              fit: BoxFit.cover,
-                                              width: double.infinity,
-                                              height: double.infinity,
-                                            ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          ImageUploader(
-                            takeImage: _discountedTakeImage,
-                            pickImage: _discountedPickImage,
-                            buttonText: "Upload Discounted ID Image",
-                          ),
-                        ],
-                      );
-                    },
-                  ),
                   TextFormField(
                       controller: emailController,
                       decoration: const InputDecoration(labelText: 'Email'),
@@ -563,12 +374,10 @@ class _CustomerPageState extends State<CustomerPage> {
                       "contactNumber": contactNumberController.text,
                       "address": addressController.text,
                       "verified": "true",
-                      "discounted": discountedController.text,
                       "__t": "Customer",
                       "email": emailController.text,
                       "password": passwordController.text,
                       "image": "",
-                      'discountIdImage': "",
                     };
                     addCustomerToAPI(newCustomer);
                   }
@@ -630,10 +439,8 @@ class _CustomerPageState extends State<CustomerPage> {
         TextEditingController(text: customerToEdit['contactNumber'].toString());
     TextEditingController addressController =
         TextEditingController(text: customerToEdit['address'].toString());
-    TextEditingController verifiedController =
-        TextEditingController(text: customerToEdit['verified'].toString());
-    TextEditingController discountedController =
-        TextEditingController(text: customerToEdit['discounted'].toString());
+    // TextEditingController verifiedController =
+    //     TextEditingController(text: customerToEdit['verified'].toString());
     TextEditingController emailController =
         TextEditingController(text: customerToEdit['email']);
 
@@ -739,98 +546,6 @@ class _CustomerPageState extends State<CustomerPage> {
                       }
                     },
                   ),
-                  DropdownButtonFormField(
-                    value: verifiedController.text.isNotEmpty
-                        ? verifiedController.text
-                        : null,
-                    decoration:
-                        const InputDecoration(labelText: 'Verification Status'),
-                    items: const [
-                      DropdownMenuItem(value: 'true', child: Text('Verified')),
-                      DropdownMenuItem(
-                          value: 'false', child: Text('Not Verified')),
-                    ],
-                    onChanged: (newValue) {
-                      verifiedController.text = newValue.toString();
-                    },
-                  ),
-                  DropdownButtonFormField(
-                    value: discountedController.text.isNotEmpty
-                        ? discountedController.text
-                        : null,
-                    decoration:
-                        const InputDecoration(labelText: 'Discount Status'),
-                    items: const [
-                      DropdownMenuItem(value: 'true', child: Text('Approved')),
-                      DropdownMenuItem(
-                          value: 'false', child: Text('Not Approved')),
-                    ],
-                    onChanged: (newValue) {
-                      discountedController.text = newValue.toString();
-                    },
-                  ),
-                  const SizedBox(height: 10.0),
-                  StreamBuilder<File?>(
-                    stream: _discountedImageStreamController.stream,
-                    builder: (context, snapshot) {
-                      return Column(
-                        children: [
-                          Stack(
-                            alignment: Alignment.topRight,
-                            children: [
-                              DecoratedBox(
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Colors.black,
-                                    width: 1.0,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  height: 100,
-                                  child: Center(
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: snapshot.data == null &&
-                                              (customerToEdit[
-                                                          'discountIdImage'] ??
-                                                      '')
-                                                  .isEmpty
-                                          ? const Icon(
-                                              Icons.image,
-                                              color: Colors.white,
-                                              size: 50,
-                                            )
-                                          : snapshot.data != null
-                                              ? Image.file(
-                                                  snapshot.data!,
-                                                  fit: BoxFit.cover,
-                                                  width: double.infinity,
-                                                  height: double.infinity,
-                                                )
-                                              : Image.network(
-                                                  customerToEdit[
-                                                      'discountIdImage']!,
-                                                  fit: BoxFit.cover,
-                                                  width: double.infinity,
-                                                  height: double.infinity,
-                                                ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          ImageUploader(
-                            takeImage: _discountedTakeImage,
-                            pickImage: _discountedPickImage,
-                            buttonText: "Upload Discounted ID Image",
-                          ),
-                        ],
-                      );
-                    },
-                  ),
                   TextFormField(
                     controller: emailController,
                     decoration: const InputDecoration(labelText: 'Email'),
@@ -863,11 +578,6 @@ class _CustomerPageState extends State<CustomerPage> {
                   customerToEdit['contactNumber'] =
                       contactNumberController.text;
                   customerToEdit['address'] = addressController.text;
-                  customerToEdit['verified'] =
-                      (verifiedController.text).toString();
-                  customerToEdit['discounted'] =
-                      (discountedController.text).toString();
-                  customerToEdit['type'] = "Customer";
                   customerToEdit['email'] = emailController.text;
 
                   if (_profileImage != null) {
@@ -876,15 +586,6 @@ class _CustomerPageState extends State<CustomerPage> {
                     if (editprofileUploadResponse != null) {
                       customerToEdit["image"] =
                           editprofileUploadResponse["url"];
-                    }
-                  }
-
-                  if (_discountedImage != null) {
-                    var editDiscountedUploadResponse =
-                        await uploadDiscountedImageToServer(_discountedImage!);
-                    if (editDiscountedUploadResponse != null) {
-                      customerToEdit["discountIdImage"] =
-                          editDiscountedUploadResponse["url"];
                     }
                   }
 
@@ -901,7 +602,6 @@ class _CustomerPageState extends State<CustomerPage> {
                   if (response.statusCode == 200) {
                     setState(() {
                       _profileImage = null;
-                      _discountedImage = null;
                     });
 
                     fetchData();
