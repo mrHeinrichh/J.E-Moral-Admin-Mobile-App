@@ -62,13 +62,14 @@ class _EditItemsPageState extends State<EditItemsPage> {
         productDataList.firstWhere((data) => data['_id'] == id);
     TextEditingController customerPriceController =
         TextEditingController(text: productToEdit['customerPrice'].toString());
+    TextEditingController reasonController = TextEditingController();
     final _formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Edit Data'),
+          title: const Text('Edit Prices for Customer'),
           content: Form(
             key: _formKey,
             child: SingleChildScrollView(
@@ -85,6 +86,16 @@ class _EditItemsPageState extends State<EditItemsPage> {
                       return null;
                     },
                   ),
+                  TextFormField(
+                    controller: reasonController,
+                    decoration: const InputDecoration(labelText: 'Reason'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the Reason';
+                      }
+                      return "Please enter the Reason";
+                    },
+                  ),
                 ],
               ),
             ),
@@ -99,9 +110,9 @@ class _EditItemsPageState extends State<EditItemsPage> {
             TextButton(
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
-                  // Update the customerPrice field for "price" and "type": "Customer"
                   Map<String, dynamic> updateData = {
                     "price": customerPriceController.text,
+                    "reason": reasonController.text,
                     "type": "Customer"
                   };
 
