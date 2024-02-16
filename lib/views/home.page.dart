@@ -360,6 +360,24 @@ class _HomePageState extends State<HomePage> {
                             color: const Color(0xFF232937),
                           ),
                         ),
+                        EditProductIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, editItemsPage);
+                          },
+                        ),
+                        EditRetailerProductIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, editRetailerItemsPage);
+                          },
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Container(
+                            width: 1,
+                            height: 40,
+                            color: const Color(0xFF232937),
+                          ),
+                        ),
                         CustomerIcon(
                           onTap: () {
                             Navigator.pushNamed(context, customerRoute);
@@ -370,14 +388,14 @@ class _HomePageState extends State<HomePage> {
                             Navigator.pushNamed(context, driversRoute);
                           },
                         ),
+                        AnnouncementIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, announcementRoute);
+                          },
+                        ),
                         FaqIcon(
                           onTap: () {
                             Navigator.pushNamed(context, faqRoute);
-                          },
-                        ),
-                        TransactionsIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, transactionRoute);
                           },
                         ),
                         FeedbackIcon(
@@ -385,19 +403,9 @@ class _HomePageState extends State<HomePage> {
                             // Action to perform when the card is clicked
                           },
                         ),
-                        AnnouncementIcon(
+                        TransactionsIcon(
                           onTap: () {
-                            Navigator.pushNamed(context, announcementRoute);
-                          },
-                        ),
-                        EditProductIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, editItemsPage);
-                          },
-                        ),
-                        EditRetailerProductIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, editRetailerItemsPage);
+                            Navigator.pushNamed(context, transactionRoute);
                           },
                         ),
                       ],

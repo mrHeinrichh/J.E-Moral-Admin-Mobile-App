@@ -64,7 +64,7 @@ class BottomNavBar extends StatelessWidget {
 
 Future<int> fetchCustomers() async {
   final response = await http
-      .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/'));
+      .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users'));
   if (response.statusCode == 200) {
     final Map<String, dynamic> data = json.decode(response.body);
     final List<dynamic> allUserData = data['data'];
