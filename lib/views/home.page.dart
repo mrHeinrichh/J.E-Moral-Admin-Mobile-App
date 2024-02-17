@@ -51,57 +51,20 @@ class _HomePageState extends State<HomePage> {
   int targetStock = 10;
   int outOfStock = 0;
 
-  Future<int> fetchProduct() async {
+  Future<int> fetchStock() async {
     final response = await http
         .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items/'));
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
-      final List<Map<String, dynamic>> allProductData = (data['data'] as List)
-          .where((productData) => productData is Map<String, dynamic>)
-          .map((productData) => productData as Map<String, dynamic>)
-          .toList();
+      final List<dynamic> allProductData = data['data'] as List<dynamic>;
 
-      final List<Map<String, dynamic>> productDataOfType = allProductData
-          .where((productData) => productData['type'] == 'Product')
-          .toList();
-
-      // Calculate the count of stock products
-      final List<Map<String, dynamic>> StockProducts = productDataOfType
-          .where((productData) =>
-              (productData['stock'] ?? 0) >= outOfStock &&
-              (productData['stock'] ?? 0) < targetStock)
-          .toList();
-
-      int lowStockCount = StockProducts.length;
-
-      return lowStockCount;
-    } else {
-      throw Exception('Failed to load data from the API');
-    }
-  }
-
-  Future<int> fetchAccessory() async {
-    final response = await http
-        .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items/'));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<Map<String, dynamic>> allAccessoryData = (data['data'] as List)
-          .where((accessoryData) => accessoryData is Map<String, dynamic>)
-          .map((accessoryData) => accessoryData as Map<String, dynamic>)
-          .toList();
-
-      final List<Map<String, dynamic>> accessoryDataOfType = allAccessoryData
-          .where((accessoryData) => accessoryData['type'] == 'Accessory')
-          .toList();
-
-      // Calculate the count of stock accessorys
-      final List<Map<String, dynamic>> StockAccessories = accessoryDataOfType
-          .where((accessoryData) =>
-              (accessoryData['stock'] ?? 0) >= outOfStock &&
-              (accessoryData['stock'] ?? 0) < targetStock)
-          .toList();
-
-      int lowStockCount = StockAccessories.length;
+      final int lowStockCount = allProductData.where((productData) {
+        if (productData is Map<String, dynamic>) {
+          final int stock = productData['stock'] ?? 0;
+          return stock >= outOfStock && stock <= targetStock;
+        }
+        return false;
+      }).length;
 
       return lowStockCount;
     } else {
@@ -341,11 +304,8 @@ class _HomePageState extends State<HomePage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        ProductsIcon(
-                          fetchLowStockCount: fetchProduct,
-                        ),
-                        AccessoriesIcon(
-                          fetchLowStockCount: fetchAccessory,
+                        StocksIcon(
+                          fetchLowStockCount: fetchStock,
                         ),
                         AppointmentIcon(
                           onTap: () {
@@ -386,6 +346,16 @@ class _HomePageState extends State<HomePage> {
                         RiderIcon(
                           onTap: () {
                             Navigator.pushNamed(context, driversRoute);
+                          },
+                        ),
+                        ProductsIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, productsRoute);
+                          },
+                        ),
+                        AccessoriesIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, accessoriesRoute);
                           },
                         ),
                         AnnouncementIcon(

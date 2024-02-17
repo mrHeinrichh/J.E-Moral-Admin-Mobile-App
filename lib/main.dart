@@ -13,6 +13,7 @@ import 'package:admin_app/views/product_details.page.dart';
 import 'package:admin_app/views/products.page.dart';
 import 'package:admin_app/views/login.page.dart';
 import 'package:admin_app/views/set_delivery.page.dart';
+import 'package:admin_app/views/stock.page.dart';
 import 'package:admin_app/views/transaction.page.dart';
 import 'package:admin_app/views/user_provider.dart';
 import 'package:admin_app/views/walkin.page.dart';
@@ -51,12 +52,12 @@ class MyApp extends StatelessWidget {
         driversRoute: (context) => DriversPage(),
         productsRoute: (context) => ProductsPage(),
         accessoriesRoute: (context) => AccessoryPage(),
+        stocksRoute: (context) => StocksPage(),
         walkinRoute: (context) => WalkinPage(),
         cartRoute: (context) => CartView.CartPage(),
         setDeliveryPage: (context) => SetDeliveryPage(),
         editItemsPage: (context) => EditItemsPage(),
         editRetailerItemsPage: (context) => EditRetailerItemsPage(),
-
         transactionRoute: (context) => transactionPage(),
         appointmentRoute: (context) => AppointmentPage(),
         newCustomerRoute: (context) => NewCustomers(),

@@ -32,7 +32,6 @@ class _ProductsPageState extends State<ProductsPage> {
   void initState() {
     super.initState();
     fetchData();
-    fetchProduct();
   }
 
   int currentPage = 1;
@@ -484,12 +483,6 @@ class _ProductsPageState extends State<ProductsPage> {
         TextEditingController(text: productToEdit['description']);
     TextEditingController weightController =
         TextEditingController(text: productToEdit['weight'].toString());
-    TextEditingController stockController =
-        TextEditingController(text: productToEdit['stock'].toString());
-    TextEditingController customerPriceController =
-        TextEditingController(text: productToEdit['customerPrice'].toString());
-    TextEditingController retailerPriceController =
-        TextEditingController(text: productToEdit['retailerPrice'].toString());
 
     showDialog(
       context: context,
@@ -623,46 +616,6 @@ class _ProductsPageState extends State<ProductsPage> {
                       FilteringTextInputFormatter.digitsOnly,
                     ],
                   ),
-                  TextFormField(
-                    controller: stockController,
-                    decoration: const InputDecoration(labelText: 'Stock'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the product stock';
-                      }
-                      return null;
-                    },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  TextFormField(
-                    controller: customerPriceController,
-                    decoration:
-                        const InputDecoration(labelText: 'Customer Price'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the product customer price';
-                      }
-                      return null;
-                    },
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  TextFormField(
-                    controller: retailerPriceController,
-                    decoration:
-                        const InputDecoration(labelText: 'Retailer Price'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the product retailer price';
-                      }
-                      return null;
-                    },
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                  ),
                 ],
               ),
             ),
@@ -681,9 +634,6 @@ class _ProductsPageState extends State<ProductsPage> {
                   productToEdit['category'] = categoryController.text;
                   productToEdit['description'] = descriptionController.text;
                   productToEdit['weight'] = weightController.text;
-                  productToEdit['stock'] = stockController.text;
-                  productToEdit['customerPrice'] = customerPriceController.text;
-                  productToEdit['retailerPrice'] = retailerPriceController.text;
 
                   if (_image != null) {
                     var uploadResponse = await uploadImageToServer(_image!);
@@ -772,7 +722,6 @@ class _ProductsPageState extends State<ProductsPage> {
         child: RefreshIndicator(
           onRefresh: () async {
             await fetchData();
-            await fetchProduct();
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -843,31 +792,11 @@ class _ProductsPageState extends State<ProductsPage> {
                         .toList();
                     final userData = filteredList[index];
                     final id = userData['_id'];
-                    final stock = userData['stock'] ?? 0;
-
-                    Color cardColor;
-                    Color dividerColor;
-                    Color iconColor;
-
-                    if (stock <= 5) {
-                      cardColor = Colors.red.withOpacity(0.7);
-                      dividerColor = Colors.black;
-                      iconColor = Colors.black;
-                    } else if (stock >= 6 && stock <= 10) {
-                      cardColor = Colors.orange.withOpacity(0.7);
-                      dividerColor = Colors.black;
-                      iconColor = Colors.black;
-                    } else {
-                      cardColor = Colors.white;
-                      dividerColor = const Color(0xFF232937);
-                      iconColor = const Color(0xFF232937);
-                    }
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: SizedBox(
                         child: Card(
-                          color: cardColor,
                           elevation: 6,
                           child: Column(
                             children: [
@@ -896,9 +825,7 @@ class _ProductsPageState extends State<ProductsPage> {
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Divider(
-                                      color: dividerColor,
-                                    ),
+                                    const Divider(),
                                     BodyMediumText(
                                       text:
                                           'Category: ${userData['category'] ?? ''}',
@@ -909,18 +836,8 @@ class _ProductsPageState extends State<ProductsPage> {
                                     ),
                                     BodyMediumText(
                                       text:
-                                          'Weight: ${userData['weight'] ?? ''}',
-                                    ),
-                                    BodyMediumText(
-                                      text: 'Stock: $stock',
-                                    ),
-                                    BodyMediumText(
-                                      text:
-                                          'Customer Price: ${userData['customerPrice'] ?? ''}',
-                                    ),
-                                    BodyMediumText(
-                                      text:
-                                          'Retailer Price: ${userData['retailerPrice'] ?? ''}',
+                                          'Weight: ${userData['weight'] ?? ''}' +
+                                              ' kg.',
                                     ),
                                   ],
                                 ),
@@ -930,16 +847,14 @@ class _ProductsPageState extends State<ProductsPage> {
                                     SizedBox(
                                       width: 40,
                                       child: IconButton(
-                                        icon:
-                                            Icon(Icons.edit, color: iconColor),
+                                        icon: const Icon(Icons.edit),
                                         onPressed: () => updateData(id),
                                       ),
                                     ),
                                     SizedBox(
                                       width: 20,
                                       child: IconButton(
-                                        icon: Icon(Icons.archive,
-                                            color: iconColor),
+                                        icon: const Icon(Icons.archive),
                                         onPressed: () => archiveData(id),
                                       ),
                                     ),
@@ -990,164 +905,5 @@ class _ProductsPageState extends State<ProductsPage> {
         ),
       ),
     );
-  }
-
-  int moderatelyLowOnStock = 10;
-  int lowOnStock = 5;
-  int outOfStock = 0;
-
-  Future<void> fetchProduct() async {
-    final response = await http
-        .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items/'));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<Map<String, dynamic>> allProductData = (data['data'] as List)
-          .where((productData) => productData is Map<String, dynamic>)
-          .map((productData) => productData as Map<String, dynamic>)
-          .toList();
-
-      final List<Map<String, dynamic>> productDataOfType = allProductData
-          .where((productData) => productData['type'] == 'Product')
-          .toList(); 
-
-      final List<Map<String, dynamic>> moderateLowOnStockProducts =
-          productDataOfType
-              .where((productData) =>
-                  (productData['stock'] ?? 0) > lowOnStock &&
-                  (productData['stock'] ?? 0) <= moderatelyLowOnStock)
-              .toList();
-
-      final List<Map<String, dynamic>> lowOnStockProducts = productDataOfType
-          .where((productData) =>
-              (productData['stock'] ?? 0) <= lowOnStock &&
-              (productData['stock'] ?? 0) > outOfStock)
-          .toList();
-
-      final List<Map<String, dynamic>> outOfStockProducts = productDataOfType
-          .where((productData) => (productData['stock'] ?? 0) <= outOfStock)
-          .toList();
-
-      List<Widget> productWidgets = [];
-
-      if (moderateLowOnStockProducts.isNotEmpty) {
-        productWidgets.add(
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 15),
-              const Text(
-                'Moderately Low on Stock',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Divider(),
-              for (var product in moderateLowOnStockProducts)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Product: ${product['name']}'),
-                    Text('Category: ${product['category']}'),
-                    Text('Available Stock: ${product['stock']}'),
-                    const Divider(),
-                  ],
-                ),
-            ],
-          ),
-        );
-      }
-
-      if (lowOnStockProducts.isNotEmpty) {
-        productWidgets.add(
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 15),
-              const Text(
-                'Low on Stock',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Divider(),
-              for (var product in lowOnStockProducts)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Product: ${product['name']}'),
-                    Text('Category: ${product['category']}'),
-                    Text('Available Stock: ${product['stock']}'),
-                    const Divider(),
-                  ],
-                ),
-            ],
-          ),
-        );
-      }
-
-      if (outOfStockProducts.isNotEmpty) {
-        productWidgets.add(
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 15),
-              const Text(
-                'Out of Stock',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Divider(),
-              for (var product in outOfStockProducts)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Product: ${product['name']}'),
-                    Text('Category: ${product['category']}'),
-                    Text('Available Stock: ${product['stock']}'),
-                    const Divider(),
-                  ],
-                ),
-            ],
-          ),
-        );
-      }
-
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text(
-              'Stock Status',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: productWidgets,
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-    } else {
-      throw Exception('Failed to load data from the API');
-    }
   }
 }

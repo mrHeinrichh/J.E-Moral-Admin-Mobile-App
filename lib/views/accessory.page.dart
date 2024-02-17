@@ -32,7 +32,6 @@ class _AccessoryPageState extends State<AccessoryPage> {
   void initState() {
     super.initState();
     fetchData();
-    fetchAccessory();
   }
 
   int currentPage = 1;
@@ -294,7 +293,8 @@ class _AccessoryPageState extends State<AccessoryPage> {
                   ),
                   TextFormField(
                     controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Name'),
+                    decoration:
+                        const InputDecoration(labelText: 'Accessory Name'),
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please enter the accessory name';
@@ -439,12 +439,6 @@ class _AccessoryPageState extends State<AccessoryPage> {
         TextEditingController(text: accessoryToEdit['name']);
     TextEditingController descriptionController =
         TextEditingController(text: accessoryToEdit['description']);
-    TextEditingController stockController =
-        TextEditingController(text: accessoryToEdit['stock'].toString());
-    TextEditingController customerPriceController = TextEditingController(
-        text: accessoryToEdit['customerPrice'].toString());
-    TextEditingController retailerPriceController = TextEditingController(
-        text: accessoryToEdit['retailerPrice'].toString());
 
     showDialog(
       context: context,
@@ -525,15 +519,18 @@ class _AccessoryPageState extends State<AccessoryPage> {
                   ),
                   TextFormField(
                     controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Name'),
+                    decoration:
+                        const InputDecoration(labelText: 'Accessory Name'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the accesory name';
+                        return 'Please enter the accessory name';
                       }
                       return null;
                     },
                   ),
                   TextFormField(
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null,
                     controller: descriptionController,
                     decoration: const InputDecoration(labelText: 'Description'),
                     validator: (value) {
@@ -542,46 +539,6 @@ class _AccessoryPageState extends State<AccessoryPage> {
                       }
                       return null;
                     },
-                  ),
-                  TextFormField(
-                    controller: stockController,
-                    decoration: const InputDecoration(labelText: 'Stock'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the accessory stock';
-                      }
-                      return null;
-                    },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                  TextFormField(
-                    controller: customerPriceController,
-                    decoration:
-                        const InputDecoration(labelText: 'Customer Price'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the accessory customer price';
-                      }
-                      return null;
-                    },
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  TextFormField(
-                    controller: retailerPriceController,
-                    decoration:
-                        const InputDecoration(labelText: 'Retailer Price'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the accessory retailer price';
-                      }
-                      return null;
-                    },
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
                   ),
                 ],
               ),
@@ -599,11 +556,6 @@ class _AccessoryPageState extends State<AccessoryPage> {
                 if (formKey.currentState!.validate()) {
                   accessoryToEdit['name'] = nameController.text;
                   accessoryToEdit['description'] = descriptionController.text;
-                  accessoryToEdit['stock'] = stockController.text;
-                  accessoryToEdit['customerPrice'] =
-                      customerPriceController.text;
-                  accessoryToEdit['retailerPrice'] =
-                      retailerPriceController.text;
 
                   if (_image != null) {
                     var uploadResponse = await uploadImageToServer(_image!);
@@ -692,7 +644,6 @@ class _AccessoryPageState extends State<AccessoryPage> {
         child: RefreshIndicator(
           onRefresh: () async {
             await fetchData();
-            await fetchAccessory();
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -764,31 +715,11 @@ class _AccessoryPageState extends State<AccessoryPage> {
                         .toList();
                     final userData = filteredList[index];
                     final id = userData['_id'];
-                    final stock = userData['stock'] ?? 0;
-
-                    Color cardColor;
-                    Color dividerColor;
-                    Color iconColor;
-
-                    if (stock <= 5) {
-                      cardColor = Colors.red.withOpacity(0.7);
-                      dividerColor = Colors.black;
-                      iconColor = Colors.black;
-                    } else if (stock >= 6 && stock <= 10) {
-                      cardColor = Colors.orange.withOpacity(0.7);
-                      dividerColor = Colors.black;
-                      iconColor = Colors.black;
-                    } else {
-                      cardColor = Colors.white;
-                      dividerColor = const Color(0xFF232937);
-                      iconColor = const Color(0xFF232937);
-                    }
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: SizedBox(
                         child: Card(
-                          color: cardColor,
                           elevation: 6,
                           child: Column(
                             children: [
@@ -817,9 +748,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Divider(
-                                      color: dividerColor,
-                                    ),
+                                    const Divider(),
                                     BodyMediumText(
                                       text:
                                           'Category: ${userData['category'] ?? ''}',
@@ -827,17 +756,6 @@ class _AccessoryPageState extends State<AccessoryPage> {
                                     BodyMediumText(
                                       text:
                                           'Description: ${userData['description'] ?? ''}',
-                                    ),
-                                    BodyMediumText(
-                                      text: 'Stock: $stock',
-                                    ),
-                                    BodyMediumText(
-                                      text:
-                                          'Customer Price: ${userData['customerPrice'] ?? ''}',
-                                    ),
-                                    BodyMediumText(
-                                      text:
-                                          'Retailer Price: ${userData['retailerPrice'] ?? ''}',
                                     ),
                                   ],
                                 ),
@@ -847,16 +765,14 @@ class _AccessoryPageState extends State<AccessoryPage> {
                                     SizedBox(
                                       width: 40,
                                       child: IconButton(
-                                        icon:
-                                            Icon(Icons.edit, color: iconColor),
+                                        icon: const Icon(Icons.edit),
                                         onPressed: () => updateData(id),
                                       ),
                                     ),
                                     SizedBox(
                                       width: 20,
                                       child: IconButton(
-                                        icon: Icon(Icons.archive,
-                                            color: iconColor),
+                                        icon: const Icon(Icons.archive),
                                         onPressed: () => archiveData(id),
                                       ),
                                     ),
@@ -907,167 +823,5 @@ class _AccessoryPageState extends State<AccessoryPage> {
         ),
       ),
     );
-  }
-
-  int moderatelyLowOnStock = 10;
-  int lowOnStock = 5;
-  int outOfStock = 0;
-
-  Future<void> fetchAccessory() async {
-    final response = await http
-        .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items/'));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<Map<String, dynamic>> allAccessoryData = (data['data'] as List)
-          .where((accessoryData) => accessoryData is Map<String, dynamic>)
-          .map((accessoryData) => accessoryData as Map<String, dynamic>)
-          .toList();
-
-      final List<Map<String, dynamic>> accessoryDataOfType = allAccessoryData
-          .where((accessoryData) => accessoryData['type'] == 'Accessory')
-          .toList();
-
-      final List<Map<String, dynamic>> moderateLowOnStockAccessories =
-          accessoryDataOfType
-              .where((accessoryData) =>
-                  (accessoryData['stock'] ?? 0) > lowOnStock &&
-                  (accessoryData['stock'] ?? 0) <= moderatelyLowOnStock)
-              .toList();
-
-      final List<Map<String, dynamic>> lowOnStockAccessories =
-          accessoryDataOfType
-              .where((accessoryData) =>
-                  (accessoryData['stock'] ?? 0) <= lowOnStock &&
-                  (accessoryData['stock'] ?? 0) > outOfStock)
-              .toList();
-
-      final List<Map<String, dynamic>> outOfStockAccessories =
-          accessoryDataOfType
-              .where((accessoryData) =>
-                  (accessoryData['stock'] ?? 0) <= outOfStock)
-              .toList();
-
-      List<Widget> accessoryWidgets = [];
-
-      if (moderateLowOnStockAccessories.isNotEmpty) {
-        accessoryWidgets.add(
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 15),
-              const Text(
-                'Moderately Low on Stock',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Divider(),
-              for (var accessory in moderateLowOnStockAccessories)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Accessory: ${accessory['name']}'),
-                    Text('Category: ${accessory['category']}'),
-                    Text('Available Stock: ${accessory['stock']}'),
-                    const Divider(),
-                  ],
-                ),
-            ],
-          ),
-        );
-      }
-
-      if (lowOnStockAccessories.isNotEmpty) {
-        accessoryWidgets.add(
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 15),
-              const Text(
-                'Low on Stock',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Divider(),
-              for (var accessory in lowOnStockAccessories)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Accessory: ${accessory['name']}'),
-                    Text('Category: ${accessory['category']}'),
-                    Text('Available Stock: ${accessory['stock']}'),
-                    const Divider(),
-                  ],
-                ),
-            ],
-          ),
-        );
-      }
-
-      if (outOfStockAccessories.isNotEmpty) {
-        accessoryWidgets.add(
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 15),
-              const Text(
-                'Out of Stock',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Divider(),
-              for (var accessory in outOfStockAccessories)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Accessory: ${accessory['name']}'),
-                    Text('Category: ${accessory['category']}'),
-                    Text('Available Stock: ${accessory['stock']}'),
-                    const Divider(),
-                  ],
-                ),
-            ],
-          ),
-        );
-      }
-
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text(
-              'Stock Status',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: accessoryWidgets,
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-    } else {
-      throw Exception('Failed to load data from the API');
-    }
   }
 }

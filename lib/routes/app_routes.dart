@@ -4,6 +4,7 @@ const String customerRoute = '/customer';
 const String driversRoute = '/drivers';
 const String productsRoute = '/items';
 const String accessoriesRoute = '/accessories';
+const String stocksRoute = '/stocks';
 const String walkinRoute = '/walkin';
 const String transactionRoute = '/transactions';
 const String appointmentRoute = '/appointments';

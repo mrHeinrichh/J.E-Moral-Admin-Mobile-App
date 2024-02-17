@@ -105,88 +105,77 @@ class RiderIcon extends StatelessWidget {
 }
 
 class ProductsIcon extends StatelessWidget {
-  final Future<int> Function() fetchLowStockCount;
+  final VoidCallback onTap;
 
-  ProductsIcon({required this.fetchLowStockCount});
+  ProductsIcon({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<int>(
-      future: fetchLowStockCount(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return _buildIconWithCount(context, 0);
-        } else if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
-        } else {
-          int lowStockCount = snapshot.data ?? 0;
-          return _buildIconWithCount(context, lowStockCount);
-        }
-      },
-    );
-  }
-
-  Widget _buildIconWithCount(BuildContext context, int lowStockCount) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
-      child: GestureDetector(
-        onTap: () {
-          Navigator.pushNamed(
-            context,
-            productsRoute,
-            arguments: lowStockCount,
-          );
-        },
-        child: Column(
-          children: [
-            Stack(
-              children: [
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25.0),
-                  ),
-                  elevation: 4,
-                  child: const Padding(
-                    padding: EdgeInsets.all(10.0),
-                    child: Icon(Icons.propane_tank_rounded, size: 30),
-                  ),
-                ),
-                if (lowStockCount > 0)
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        lowStockCount.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: onTap,
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25.0),
+              ),
+              elevation: 4,
+              child: const Padding(
+                padding: EdgeInsets.all(10.0),
+                child: Icon(Icons.propane_tank_rounded, size: 30),
+              ),
             ),
-            const Text(
-              "Products",
-              style: TextStyle(fontSize: 13),
-            ),
-          ],
-        ),
+          ),
+          const Text(
+            "Products",
+            style: TextStyle(fontSize: 13),
+          ),
+        ],
       ),
     );
   }
 }
 
 class AccessoriesIcon extends StatelessWidget {
+  final VoidCallback onTap;
+
+  AccessoriesIcon({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: onTap,
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25.0),
+              ),
+              elevation: 4,
+              child: const Padding(
+                padding: EdgeInsets.all(10.0),
+                child: Icon(Icons.trolley, size: 30),
+              ),
+            ),
+          ),
+          const Text(
+            "Accessories",
+            style: TextStyle(fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class StocksIcon extends StatelessWidget {
   final Future<int> Function() fetchLowStockCount;
 
-  AccessoriesIcon({required this.fetchLowStockCount});
+  StocksIcon({required this.fetchLowStockCount});
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +201,7 @@ class AccessoriesIcon extends StatelessWidget {
         onTap: () {
           Navigator.pushNamed(
             context,
-            accessoriesRoute,
+            stocksRoute,
             arguments: lowStockCount,
           );
         },
@@ -227,7 +216,7 @@ class AccessoriesIcon extends StatelessWidget {
                   elevation: 4,
                   child: const Padding(
                     padding: EdgeInsets.all(10.0),
-                    child: Icon(Icons.trolley, size: 30),
+                    child: Icon(Icons.inventory_rounded, size: 30),
                   ),
                 ),
                 if (lowStockCount > 0)
@@ -252,7 +241,7 @@ class AccessoriesIcon extends StatelessWidget {
               ],
             ),
             const Text(
-              "Accessories",
+              "Stocks",
               style: TextStyle(fontSize: 13),
             ),
           ],
@@ -277,10 +266,9 @@ class TransactionsIcon extends StatelessWidget {
             onTap: onTap,
             child: Card(
               shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(25.0), // Make the card circular
+                borderRadius: BorderRadius.circular(25.0),
               ),
-              elevation: 4, // Add a shadow to the card
+              elevation: 4,
               child: const Padding(
                 padding: EdgeInsets.all(10.0),
                 child: Icon(Icons.payment_outlined, size: 30),
@@ -392,7 +380,7 @@ class AnnouncementIcon extends StatelessWidget {
             ),
           ),
           const Text(
-            "Announcement",
+            "Announcements",
             style: TextStyle(fontSize: 13),
           ),
         ],

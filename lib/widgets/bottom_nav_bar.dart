@@ -69,13 +69,13 @@ Future<int> fetchCustomers() async {
     final Map<String, dynamic> data = json.decode(response.body);
     final List<dynamic> allUserData = data['data'];
 
-    final List<Map<String, dynamic>> verifiedFalseCustomers =
+    final List<Map<String, dynamic>> unverifiedCustomers =
         List<Map<String, dynamic>>.from(allUserData.where((userData) =>
             userData is Map<String, dynamic> &&
             userData['__t'] == 'Customer' &&
             userData['verified'] == false));
 
-    return verifiedFalseCustomers.length;
+    return unverifiedCustomers.length;
   } else {
     throw Exception('Failed to load data from the API');
   }
