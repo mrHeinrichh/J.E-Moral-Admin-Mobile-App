@@ -1,4 +1,5 @@
 import 'package:admin_app/widgets/custom_image_upload.dart';
+import 'package:admin_app/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -222,6 +223,8 @@ class _FaqPageState extends State<FaqPage> {
                 children: [
                   const Divider(),
                   TextFormField(
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null,
                     controller: questionController,
                     decoration: const InputDecoration(labelText: 'Question'),
                     validator: (value) {
@@ -232,6 +235,8 @@ class _FaqPageState extends State<FaqPage> {
                     },
                   ),
                   TextFormField(
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null,
                     controller: answerController,
                     decoration: const InputDecoration(labelText: 'Answer'),
                     validator: (value) {
@@ -343,6 +348,8 @@ class _FaqPageState extends State<FaqPage> {
               child: Column(
                 children: [
                   TextFormField(
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null,
                     controller: questionController,
                     decoration: const InputDecoration(labelText: 'Question'),
                     validator: (value) {
@@ -353,6 +360,8 @@ class _FaqPageState extends State<FaqPage> {
                     },
                   ),
                   TextFormField(
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null,
                     controller: answerController,
                     decoration: const InputDecoration(labelText: 'Answer'),
                     validator: (value) {
@@ -585,27 +594,13 @@ class _FaqPageState extends State<FaqPage> {
                     return Card(
                       elevation: 4,
                       child: ListTile(
-                        title: Text(
-                          userData['question'] ?? '',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium!
-                              .copyWith(fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
+                        title: TitleMedium(text: userData['question']),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Divider(),
-                            Text(
-                              'Answer: ${userData['answer'] ?? ''}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium!
-                                  .copyWith(fontWeight: FontWeight.bold),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+                            BodyMediumText(
+                              text: 'Answer: ${userData['answer']}',
                             ),
                           ],
                         ),

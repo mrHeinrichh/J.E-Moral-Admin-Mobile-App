@@ -255,6 +255,7 @@ class _transactionPageState extends State<transactionPage> {
                           return const Text('Error fetching customer data');
                         } else {
                           final customerData = snapshot.data!;
+
                           return GestureDetector(
                             onTap: () {
                               _showCustomerDetailsModal(userData);
@@ -263,8 +264,7 @@ class _transactionPageState extends State<transactionPage> {
                               elevation: 4,
                               child: ListTile(
                                 title: TitleMediumText(
-                                  text:
-                                      'Ordered by: ${customerData['name'] ?? ''}',
+                                  text: 'Status: ${userData['status']}',
                                 ),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,16 +272,28 @@ class _transactionPageState extends State<transactionPage> {
                                     const Divider(),
                                     BodyMediumText(
                                       text:
-                                          'Status: ${userData['status'] ?? ''}',
-                                    ),
-                                    const SizedBox(height: 5),
-                                    BodyMediumText(
-                                      text:
-                                          'Contact #: ${userData['contactNumber'] ?? ''}',
+                                          'Ordered by: ${customerData['name']}',
                                     ),
                                     BodyMediumText(
                                       text:
-                                          'Barangay: ${userData['barangay'] ?? ''}',
+                                          'Contact #: ${customerData['contactNumber'] ?? ''}',
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Date Ordered: ${DateFormat('MMM d, y - h:mm a ').format(DateTime.parse(userData['createdAt']))}',
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Applying for Discount: ${userData['discountIdImage'] != null ? 'Yes' : 'No'}',
+                                    ),
+                                    const Divider(),
+                                    BodyMediumText(
+                                      text:
+                                          'Receiver Name: ${userData['name']}',
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Receiver Contact #: ${userData['contactNumber'] ?? ''}',
                                     ),
                                     BodyMediumText(
                                       text:
@@ -389,6 +401,12 @@ class _transactionPageState extends State<transactionPage> {
                     text: 'Contact Number: ${userData['contactNumber']}',
                   ),
                   BodyMediumOver(
+                    text: 'Pin Location: ${userData['deliveryLocation']}',
+                  ),
+                  BodyMediumOver(
+                    text: 'House #: ${userData['houseLotBlk']}',
+                  ),
+                  BodyMediumOver(
                     text: 'Barangay: ${userData['barangay']}',
                   ),
                   const Divider(),
@@ -398,13 +416,18 @@ class _transactionPageState extends State<transactionPage> {
                   BodyMediumOver(
                     text: 'Contact Number: ${customerData['contactNumber']}',
                   ),
+                  const SizedBox(height: 5),
+                  BodyMediumText(
+                    text:
+                        'Date Ordered: ${DateFormat('MMM d, y - h:mm a ').format(DateTime.parse(userData['createdAt']))}',
+                  ),
                   const Divider(),
                   if (riderData != null) ...[
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         BodyMediumOver(
-                          text: 'Rider: ${riderData['name']}',
+                          text: 'Delivery Driver: ${riderData['name']}',
                         ),
                         BodyMediumOver(
                           text: 'Contact Number: ${riderData['contactNumber']}',
@@ -420,10 +443,16 @@ class _transactionPageState extends State<transactionPage> {
                     text:
                         'Delivery Date: ${DateFormat('MMM d, y - h:mm a ').format(DateTime.parse(userData['deliveryDate']))}',
                   ),
+                  const SizedBox(height: 5),
+                  BodyMediumText(
+                    text:
+                        'Need to be Assembled: ${userData['assembly'] != null ? 'Yes' : 'No'}',
+                  ),
                   BodyMediumText(
                     text:
                         'Applying for Discount: ${userData['discountIdImage'] != null ? 'Yes' : 'No'}',
                   ),
+                  const SizedBox(height: 5),
                   if (userData['discountIdImage'] != null)
                     GestureDetector(
                       onTap: () {

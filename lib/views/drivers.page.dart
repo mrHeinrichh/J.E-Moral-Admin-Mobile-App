@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:admin_app/widgets/custom_image_upload.dart';
+import 'package:admin_app/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -1289,7 +1290,6 @@ class _DriversPageState extends State<DriversPage> {
                   riderToEdit['contactNumber'] = contactNumberController.text;
                   riderToEdit['address'] = addressController.text;
                   riderToEdit['gcash'] = gcashController.text;
-                  // riderToEdit['type'] = "Rider";
                   riderToEdit['email'] = emailController.text;
 
                   if (_profileImage != null) {
@@ -1484,49 +1484,17 @@ class _DriversPageState extends State<DriversPage> {
                                     userData['image'] ?? '',
                                   ),
                                 ),
-                                title: Text(
-                                  userData['name'] ?? '',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium!
-                                      .copyWith(fontWeight: FontWeight.bold),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
+                                title: TitleMedium(text: userData['name']),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Divider(),
-                                    Text(
-                                      'Contact #: ${userData['contactNumber'] ?? ''}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .copyWith(
-                                              fontWeight: FontWeight.bold),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    ),
-                                    Text(
-                                      'GCash #: ${userData['gcash'] ?? ''}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .copyWith(
-                                              fontWeight: FontWeight.bold),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    ),
-                                    Text(
-                                      'Address: ${userData['address'] ?? ''}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .copyWith(
-                                              fontWeight: FontWeight.bold),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    ),
+                                    BodyMediumText(
+                                        text:
+                                            'Contact #: ${userData['contactNumber']}'),
+                                    BodyMediumText(
+                                        text:
+                                            'Address: ${userData['address']}'),
                                   ],
                                 ),
                                 trailing: Row(

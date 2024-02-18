@@ -1,4 +1,5 @@
 import 'package:admin_app/widgets/custom_image_upload.dart';
+import 'package:admin_app/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -298,6 +299,8 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                     },
                   ),
                   TextFormField(
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null,
                     controller: textController,
                     decoration: const InputDecoration(labelText: 'Title'),
                     validator: (value) {
@@ -481,6 +484,8 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                     },
                   ),
                   TextFormField(
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null,
                     controller: textController,
                     decoration: const InputDecoration(labelText: 'Title'),
                     validator: (value) {
@@ -701,36 +706,18 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                             ),
                           ),
                           ListTile(
-                            title: Text(
-                              userData['text'] ?? '',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium!
-                                  .copyWith(fontWeight: FontWeight.bold),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
+                            title: TitleMedium(text: userData['text']),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Divider(),
-                                Text(
-                                  'Start: ${DateFormat('MMM d, y - h:mm a').format(DateTime.parse(userData['start'] ?? ''))}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium!
-                                      .copyWith(fontWeight: FontWeight.bold),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
+                                BodyMediumText(
+                                  text:
+                                      'Start: ${DateFormat('MMM d, y - h:mm a').format(DateTime.parse(userData['start'] ?? ''))}',
                                 ),
-                                Text(
-                                  'End: ${DateFormat('MMM d, y - h:mm a').format(DateTime.parse(userData['end'] ?? ''))}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium!
-                                      .copyWith(fontWeight: FontWeight.bold),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
+                                BodyMediumText(
+                                  text:
+                                      'End: ${DateFormat('MMM d, y - h:mm a').format(DateTime.parse(userData['end'] ?? ''))}',
                                 ),
                               ],
                             ),

@@ -743,19 +743,17 @@ class _AccessoryPageState extends State<AccessoryPage> {
                                 ),
                               ),
                               ListTile(
-                                title: TitleMediumText(
-                                    text: userData['name'] ?? ''),
+                                title: TitleMedium(text: userData['name']),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Divider(),
                                     BodyMediumText(
-                                      text:
-                                          'Category: ${userData['category'] ?? ''}',
+                                      text: 'Category: ${userData['category']}',
                                     ),
                                     BodyMediumText(
                                       text:
-                                          'Description: ${userData['description'] ?? ''}',
+                                          'Description: ${userData['description']}',
                                     ),
                                   ],
                                 ),
