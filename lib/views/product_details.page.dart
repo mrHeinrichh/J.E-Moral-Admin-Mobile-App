@@ -90,27 +90,28 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       ),
                     ],
                   ),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          "Weight:",
-                          style: Theme.of(context).textTheme.labelMedium,
+                  if (widget.category != "Accessories")
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            "Weight:",
+                            style: Theme.of(context).textTheme.labelMedium,
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        flex: 4,
-                        child: Text(
-                          "${widget.weight}",
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium!
-                              .copyWith(fontWeight: FontWeight.bold),
+                        Expanded(
+                          flex: 4,
+                          child: Text(
+                            "${widget.weight} kg.",
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium!
+                                .copyWith(fontWeight: FontWeight.bold),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                 ],
               ),
             ),
@@ -200,16 +201,35 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 ),
                 CustomizedButton(
                   onPressed: () {
-                    cartProvider.addToCart(
-                      CartItem(
-                        id: widget.productName.hashCode,
-                        name: widget.productName,
-                        price: double.parse(widget.productPrice),
-                        stock: stock,
-                        imageUrl: widget.productImageUrl,
-                      ),
-                    );
-                    Navigator.pushNamed(context, cartRoute);
+                    int availableStock = int.tryParse(widget.stock) ?? 0;
+                    if (stock > availableStock) {
+                      // Show an error message if the chosen quantity exceeds available stock
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text('Invalid Quantity'),
+                          content: Text(
+                              'The chosen quantity exceeds the available stock for this product.'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text('OK'),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else {
+                      cartProvider.addToCart(
+                        CartItem(
+                          id: widget.productName.hashCode,
+                          name: widget.productName,
+                          price: double.parse(widget.productPrice),
+                          stock: stock,
+                          imageUrl: widget.productImageUrl,
+                        ),
+                      );
+                      Navigator.pushNamed(context, cartRoute);
+                    }
                   },
                   text: 'Add to Cart',
                   height: 50,
