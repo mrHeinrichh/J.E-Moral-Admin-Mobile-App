@@ -1,9 +1,11 @@
 import 'package:admin_app/widgets/custom_text.dart';
+import 'package:admin_app/widgets/fullscreen_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:intl/intl.dart';
+import 'package:photo_view/photo_view.dart';
 
 class transactionPage extends StatefulWidget {
   @override
@@ -82,26 +84,6 @@ class _transactionPageState extends State<transactionPage> {
       }
     } else {
       throw Exception('Failed to load data from the API');
-    }
-  }
-
-  Future<void> addTransactionToAPI(Map<String, dynamic> newTransaction) async {
-    final url =
-        Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions');
-    final headers = {'Content-Type': 'application/json'};
-
-    final response = await http.post(
-      url,
-      headers: headers,
-      body: jsonEncode(newTransaction),
-    );
-
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      fetchData();
-      Navigator.pop(context);
-    } else {
-      print(
-          'Failed to add or update the transaction. Status code: ${response.statusCode}');
     }
   }
 
@@ -263,46 +245,62 @@ class _transactionPageState extends State<transactionPage> {
                     final userData = filteredData[index];
                     final id = userData['_id'];
 
-                    return GestureDetector(
-                      onTap: () {
-                        _showCustomerDetailsModal(userData);
-                      },
-                      child: Card(
-                        elevation: 4,
-                        child: ListTile(
-                          title: TitleMediumText(
-                            text: 'Receiver Name: ${userData['name'] ?? ''}',
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Divider(),
-                              BodyMediumText(
-                                text: 'Status: ${userData['status'] ?? ''}',
+                    return FutureBuilder<Map<String, dynamic>>(
+                      future: fetchCustomer(userData['to']),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Container();
+                        } else if (snapshot.hasError) {
+                          return const Text('Error fetching customer data');
+                        } else {
+                          final customerData = snapshot.data!;
+                          return GestureDetector(
+                            onTap: () {
+                              _showCustomerDetailsModal(userData);
+                            },
+                            child: Card(
+                              elevation: 4,
+                              child: ListTile(
+                                title: TitleMediumText(
+                                  text:
+                                      'Ordered by: ${customerData['name'] ?? ''}',
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Divider(),
+                                    BodyMediumText(
+                                      text:
+                                          'Status: ${userData['status'] ?? ''}',
+                                    ),
+                                    const SizedBox(height: 5),
+                                    BodyMediumText(
+                                      text:
+                                          'Contact #: ${userData['contactNumber'] ?? ''}',
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Barangay: ${userData['barangay'] ?? ''}',
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Payment: ${userData['paymentMethod'] == 'COD' ? 'Cash on Delivery' : (userData['paymentMethod'] == 'GCASH' ? 'GCash' : '')}',
+                                    ),
+                                  ],
+                                ),
+                                trailing: SizedBox(
+                                  width: 20,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.archive),
+                                    onPressed: () => archiveData(id),
+                                  ),
+                                ),
                               ),
-                              const SizedBox(height: 5),
-                              BodyMediumText(
-                                text:
-                                    'Contact #: ${userData['contactNumber'] ?? ''}',
-                              ),
-                              BodyMediumText(
-                                text: 'Barangay: ${userData['barangay'] ?? ''}',
-                              ),
-                              BodyMediumText(
-                                text:
-                                    'Payment: ${userData['paymentMethod'] ?? ''}',
-                              ),
-                            ],
-                          ),
-                          trailing: SizedBox(
-                            width: 20,
-                            child: IconButton(
-                              icon: const Icon(Icons.archive),
-                              onPressed: () => archiveData(id),
                             ),
-                          ),
-                        ),
-                      ),
+                          );
+                        }
+                      },
                     );
                   },
                 ),
@@ -348,7 +346,16 @@ class _transactionPageState extends State<transactionPage> {
   }
 
   void _showCustomerDetailsModal(Map<String, dynamic> userData) {
-    fetchCustomer(userData['to']).then((customerData) {
+    fetchCustomer(userData['to']).then((customerData) async {
+      dynamic riderData;
+      if (userData['rider'] != null) {
+        try {
+          riderData = await fetchRider(userData['rider']);
+        } catch (error) {
+          print('Error fetching rider data: $error');
+        }
+      }
+
       showModalBottomSheet(
         isScrollControlled: true,
         context: context,
@@ -392,6 +399,20 @@ class _transactionPageState extends State<transactionPage> {
                     text: 'Contact Number: ${customerData['contactNumber']}',
                   ),
                   const Divider(),
+                  if (riderData != null) ...[
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        BodyMediumOver(
+                          text: 'Rider: ${riderData['name']}',
+                        ),
+                        BodyMediumOver(
+                          text: 'Contact Number: ${riderData['contactNumber']}',
+                        ),
+                        const Divider(),
+                      ],
+                    ),
+                  ],
                   BodyMediumText(
                     text: 'Payment Method: ${userData['paymentMethod']}',
                   ),
@@ -404,21 +425,30 @@ class _transactionPageState extends State<transactionPage> {
                         'Applying for Discount: ${userData['discountIdImage'] != null ? 'Yes' : 'No'}',
                   ),
                   if (userData['discountIdImage'] != null)
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Container(
-                        width: double.infinity,
-                        height: 100, // Change the size
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: Colors.black,
-                            width: 1,
-                          ),
-                          image: DecorationImage(
-                            image:
-                                NetworkImage(userData['discountIdImage'] ?? ''),
-                            fit: BoxFit.cover,
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => FullScreenImageView(
+                              imageUrl: userData['discountIdImage'],
+                              onClose: () => Navigator.of(context).pop()),
+                        ));
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          width: double.infinity,
+                          height: 100, // Change the size
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.black,
+                              width: 1,
+                            ),
+                            image: DecorationImage(
+                              image: NetworkImage(
+                                  userData['discountIdImage'] ?? ''),
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                       ),
@@ -433,17 +463,27 @@ class _transactionPageState extends State<transactionPage> {
                     }).join(', ')}',
                   ),
                   BodyMediumText(
-                      text:
-                          'Total: ₱${NumberFormat.decimalPattern().format(userData['total'])}'),
+                    text:
+                        'Total: ₱${NumberFormat.decimalPattern().format(userData['total'])}',
+                  ),
                   const Divider(),
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           if (userData['pickupImages'] != "" &&
                               userData['cancellationImages'] == "")
-                            Expanded(
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) => FullScreenImageView(
+                                      imageUrl: userData['pickupImages'],
+                                      onClose: () =>
+                                          Navigator.of(context).pop()),
+                                ));
+                              },
                               child: Column(
                                 children: [
                                   const BodyMediumText(
@@ -457,10 +497,17 @@ class _transactionPageState extends State<transactionPage> {
                                 ],
                               ),
                             ),
-                          const SizedBox(width: 8),
                           if (userData['completionImages'] != "" &&
                               userData['cancellationImages'] == "")
-                            Expanded(
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) => FullScreenImageView(
+                                      imageUrl: userData['completionImages'],
+                                      onClose: () =>
+                                          Navigator.of(context).pop()),
+                                ));
+                              },
                               child: Column(
                                 children: [
                                   const BodyMediumText(
@@ -474,9 +521,16 @@ class _transactionPageState extends State<transactionPage> {
                                 ],
                               ),
                             ),
-                          const SizedBox(width: 8),
                           if (userData['cancellationImages'] != "")
-                            Expanded(
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) => FullScreenImageView(
+                                      imageUrl: userData['cancellationImages'],
+                                      onClose: () =>
+                                          Navigator.of(context).pop()),
+                                ));
+                              },
                               child: Column(
                                 children: [
                                   const BodyMediumText(
@@ -505,6 +559,8 @@ class _transactionPageState extends State<transactionPage> {
           );
         },
       );
-    }).catchError((error) {});
+    }).catchError((error) {
+      print('Error fetching customer data: $error');
+    });
   }
 }
