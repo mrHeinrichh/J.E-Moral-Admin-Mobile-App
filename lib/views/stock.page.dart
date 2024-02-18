@@ -1,11 +1,8 @@
-import 'package:admin_app/widgets/custom_image_upload.dart';
 import 'package:admin_app/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
-import 'dart:io';
-import 'package:http_parser/http_parser.dart';
 import 'package:flutter/services.dart';
 
 class StocksPage extends StatefulWidget {
@@ -14,10 +11,8 @@ class StocksPage extends StatefulWidget {
 }
 
 class _StocksPageState extends State<StocksPage> {
-  final formKey = GlobalKey<FormState>();
-
   List<Map<String, dynamic>> stockDataList = [];
-  // TextEditingController searchController = TextEditingController();
+  TextEditingController searchController = TextEditingController();
 
   @override
   void dispose() {
@@ -53,105 +48,161 @@ class _StocksPageState extends State<StocksPage> {
     }
   }
 
-  // Future<void> search(String query) async {
-  //   final response = await http.get(Uri.parse(
-  //       'https://lpg-api-06n8.onrender.com/api/v1/items/?search=$query'));
+  Future<void> search(String query) async {
+    final response = await http.get(
+      Uri.parse(
+          'https://lpg-api-06n8.onrender.com/api/v1/items/?search=$query'),
+    );
 
-  //   if (response.statusCode == 200) {
-  //     final Map<String, dynamic> data = json.decode(response.body);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
 
-  //     final List<Map<String, dynamic>> stockData = (data['data'] as List)
-  //         .where((stockData) =>
-  //             stockData is Map<String, dynamic> &&
-  //             stockData.containsKey('type') &&
-  //             stockData['type'] == 'stock')
-  //         .map((stockData) => stockData as Map<String, dynamic>)
-  //         .toList();
+      final List<Map<String, dynamic>> filteredData = (data['data'] as List)
+          .where((itemData) =>
+              itemData is Map<String, dynamic> &&
+              (itemData['name']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  itemData['type']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  itemData['category']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase())))
+          .map((itemData) => itemData as Map<String, dynamic>)
+          .toList();
 
-  //     setState(() {
-  //       stockDataList = stockData;
-  //     });
-  //   } else {}
-  // }
+      setState(() {
+        stockDataList = filteredData;
+      });
+    } else {}
+  }
 
   void updateData(String id) {
     Map<String, dynamic> stockToEdit =
         stockDataList.firstWhere((data) => data['_id'] == id);
 
-    TextEditingController stockController =
-        TextEditingController(text: stockToEdit['stock'].toString());
+    int stock = int.parse(stockToEdit['stock'].toString());
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text(
-            'Edit Stock',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          content: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  const Divider(),
-                  const SizedBox(height: 10.0),
-                  TextFormField(
-                    controller: stockController,
-                    decoration: const InputDecoration(labelText: 'Stock'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the stock';
-                      }
-                      return null;
-                    },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                  ),
-                ],
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: const Text(
+                'Update Stock',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (formKey.currentState!.validate()) {
-                  stockToEdit['stock'] = stockController.text;
-
-                  final url = Uri.parse(
-                      'https://lpg-api-06n8.onrender.com/api/v1/items/$id');
-                  final headers = {'Content-Type': 'application/json'};
-
-                  final response = await http.patch(
-                    url,
-                    headers: headers,
-                    body: jsonEncode(stockToEdit),
-                  );
-
-                  if (response.statusCode == 200) {
-                    fetchData();
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Divider(),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Container(
+                        width: double.infinity,
+                        height: 100, // Change the size
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.black,
+                            width: 1,
+                          ),
+                          image: DecorationImage(
+                            image: NetworkImage(stockToEdit['image'] ?? ''),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                    BodyMediumOver(
+                      text:
+                          '${stockToEdit['type'] == 'Product' ? 'Product Name' : 'Accessory Name'}: ${stockToEdit['name']}',
+                    ),
+                    BodyMediumText(
+                      text: 'Type: ${stockToEdit['type']}',
+                    ),
+                    BodyMediumText(
+                      text: 'Category: ${stockToEdit['category']}',
+                    ),
+                    BodyMediumText(
+                      text: 'Available Stock: ${stockToEdit['stock']}',
+                    ),
+                    const Divider(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove),
+                          onPressed: () {
+                            setState(() {
+                              if (stock > 0) stock--;
+                            });
+                          },
+                        ),
+                        Text(
+                          stock.toString(),
+                          style: const TextStyle(
+                            fontSize: 20,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.add),
+                          onPressed: () {
+                            setState(() {
+                              stock++;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
                     Navigator.pop(context);
-                  } else {
-                    print(
-                        'Failed to update the stock. Status code: ${response.statusCode}');
-                  }
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
+                  },
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    stockDataList.firstWhere(
+                        (data) => data['_id'] == id)['stock'] = stock;
+
+                    final url = Uri.parse(
+                        'https://lpg-api-06n8.onrender.com/api/v1/items/$id');
+                    final headers = {'Content-Type': 'application/json'};
+
+                    final response = await http.patch(
+                      url,
+                      headers: headers,
+                      body: jsonEncode({'stock': stock}),
+                    );
+
+                    if (response.statusCode == 200) {
+                      fetchData();
+                      Navigator.pop(context);
+                    } else {
+                      print(
+                          'Failed to update the stock. Status code: ${response.statusCode}');
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -174,42 +225,42 @@ class _StocksPageState extends State<StocksPage> {
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               children: [
-                // Row(
-                //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                //   children: [
-                //     Expanded(
-                //       child: Padding(
-                //         padding: const EdgeInsets.symmetric(horizontal: 8),
-                //         child: IntrinsicWidth(
-                //           child: TextField(
-                //             controller: searchController,
-                //             decoration: InputDecoration(
-                //               hintText: 'Search',
-                //               border: OutlineInputBorder(
-                //                 borderRadius: BorderRadius.circular(10),
-                //               ),
-                //               isDense: true,
-                //               contentPadding:
-                //                   const EdgeInsets.symmetric(horizontal: 10),
-                //               suffixIcon: InkWell(
-                //                 onTap: () {
-                //                   search(searchController.text);
-                //                 },
-                //                 child: Container(
-                //                   padding: const EdgeInsets.all(10),
-                //                   child: const Icon(
-                //                     Icons.search,
-                //                     color: Colors.black,
-                //                   ),
-                //                 ),
-                //               ),
-                //             ),
-                //           ),
-                //         ),
-                //       ),
-                //     ),
-                //   ],
-                // ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: IntrinsicWidth(
+                          child: TextField(
+                            controller: searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Search',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              isDense: true,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              suffixIcon: InkWell(
+                                onTap: () {
+                                  search(searchController.text);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  child: const Icon(
+                                    Icons.search,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 10),
                 ListView.builder(
                   shrinkWrap: true,
@@ -266,8 +317,7 @@ class _StocksPageState extends State<StocksPage> {
                                 ),
                               ),
                               ListTile(
-                                title: TitleMediumText(
-                                    text: userData['name'] ?? ''),
+                                title: TitleMedium(text: '${userData['name']}'),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -292,8 +342,8 @@ class _StocksPageState extends State<StocksPage> {
                                     SizedBox(
                                       width: 40,
                                       child: IconButton(
-                                        icon:
-                                            Icon(Icons.edit, color: iconColor),
+                                        icon: Icon(Icons.assignment_add,
+                                            color: iconColor),
                                         onPressed: () => updateData(id),
                                       ),
                                     ),
@@ -384,11 +434,13 @@ class _StocksPageState extends State<StocksPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 15),
-              const Text(
-                'Moderately Low on Stock',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              const Center(
+                child: Text(
+                  'Moderately Low on Stock',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const Divider(),
@@ -396,10 +448,12 @@ class _StocksPageState extends State<StocksPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Product Name: ${stock['name']}'),
-                    Text('Available Stock: ${stock['stock']}'),
-                    Text('Category: ${stock['category']}'),
-                    Text('Type: ${stock['type']}'),
+                    BodyMediumOver(
+                        text:
+                            '${stock['type'] == 'Product' ? 'Product Name' : 'Accessory Name'}: ${stock['name']}'),
+                    BodyMediumText(text: 'Available Stock: ${stock['stock']}'),
+                    BodyMediumText(text: 'Category: ${stock['category']}'),
+                    BodyMediumText(text: 'Type: ${stock['type']}'),
                     const Divider(),
                   ],
                 ),
@@ -414,11 +468,13 @@ class _StocksPageState extends State<StocksPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 15),
-              const Text(
-                'Low on Stock',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              const Center(
+                child: Text(
+                  'Low on Stock',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const Divider(),
@@ -426,10 +482,12 @@ class _StocksPageState extends State<StocksPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Product Name: ${stock['name']}'),
-                    Text('Available Stock: ${stock['stock']}'),
-                    Text('Category: ${stock['category']}'),
-                    Text('Type: ${stock['type']}'),
+                    BodyMediumOver(
+                        text:
+                            '${stock['type'] == 'Product' ? 'Product Name' : 'Accessory Name'}: ${stock['name']}'),
+                    BodyMediumText(text: 'Available Stock: ${stock['stock']}'),
+                    BodyMediumText(text: 'Category: ${stock['category']}'),
+                    BodyMediumText(text: 'Type: ${stock['type']}'),
                     const Divider(),
                   ],
                 ),
@@ -444,11 +502,13 @@ class _StocksPageState extends State<StocksPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 15),
-              const Text(
-                'Out of Stock',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              const Center(
+                child: Text(
+                  'Out of Stock',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const Divider(),
@@ -456,10 +516,12 @@ class _StocksPageState extends State<StocksPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Product Name: ${stock['name']}'),
-                    Text('Available Stock: ${stock['stock']}'),
-                    Text('Category: ${stock['category']}'),
-                    Text('Type: ${stock['type']}'),
+                    BodyMediumOver(
+                        text:
+                            '${stock['type'] == 'Product' ? 'Product Name' : 'Accessory Name'}: ${stock['name']}'),
+                    BodyMediumText(text: 'Available Stock: ${stock['stock']}'),
+                    BodyMediumText(text: 'Category: ${stock['category']}'),
+                    BodyMediumText(text: 'Type: ${stock['type']}'),
                     const Divider(),
                   ],
                 ),
