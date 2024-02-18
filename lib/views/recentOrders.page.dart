@@ -341,30 +341,18 @@ class _RecentOrdersState extends State<RecentOrders> {
                           ],
                         ),
                       ),
-                      Row(
-                        children: [
-                          const Text(
-                            "Contact Number: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            '${transaction['contactNumber']}',
-                          ),
-                        ],
-                      ),
+
                       Text.rich(
                         TextSpan(
                           children: [
                             const TextSpan(
-                              text: "Delivery Location: ",
+                              text: "Receiver Contact Number: ",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             TextSpan(
-                              text: "${transaction['deliveryLocation']}",
+                              text: "${transaction['contactNumber']}",
                             ),
                           ],
                         ),
@@ -373,7 +361,23 @@ class _RecentOrdersState extends State<RecentOrders> {
                         TextSpan(
                           children: [
                             const TextSpan(
-                              text: "House#/Lot/Blk: ",
+                              text: "Pin Location: ",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(
+                              text: '${transaction['deliveryLocation']}',
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            const TextSpan(
+                              text: "Receiver House Number: ",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -410,36 +414,82 @@ class _RecentOrdersState extends State<RecentOrders> {
                           ),
                         ],
                       ),
-                      Row(
-                        children: [
-                          const Text(
-                            "Needs to be assembled: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Assemble Option: ',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          Text(
-                            transaction['assembly'] ? 'Yes' : 'No',
-                          ),
-                        ],
+                            TextSpan(
+                              text: transaction['assembly'] ? 'Yes' : 'No',
+                            ),
+                          ],
+                        ),
                       ),
-                      Row(
-                        children: [
-                          const Text(
-                            "Date and Time: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Delivery Date/Time: ',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          Flexible(
-                            child: Text(
-                              DateFormat('MMM d, y - h:mm a ').format(
-                                  DateTime.parse(transaction['updatedAt'])),
-                              overflow: TextOverflow.visible,
+                            TextSpan(
+                              text: transaction['updatedAt'] != null
+                                  ? DateFormat('MMM d, y - h:mm a').format(
+                                      DateTime.parse(transaction['updatedAt']),
+                                    )
+                                  : 'null',
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: "Items: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (transaction['items'] != null)
+                              TextSpan(
+                                text:
+                                    (transaction['items'] as List).map((item) {
+                                  if (item is Map<String, dynamic> &&
+                                      item.containsKey('name') &&
+                                      item.containsKey('quantity')) {
+                                    return '${item['name']} (${item['quantity']})';
+                                  }
+                                  return '';
+                                }).join(', '),
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            const TextSpan(
+                              text: "Total Price: ",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(
+                              text: '₱${transaction['total']}',
+                            ),
+                          ],
+                        ),
+                      ),
+
                       const Divider(),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -491,7 +541,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                                 );
                               },
                               style: ElevatedButton.styleFrom(
-                                primary: Colors.grey,
+                                backgroundColor: Colors.grey,
                               ),
                               child: const Text(
                                 "Decline",
@@ -516,7 +566,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                                 );
                               },
                               style: ElevatedButton.styleFrom(
-                                primary: const Color(0xFF232937),
+                                backgroundColor: const Color(0xFF232937),
                               ),
                               child: const Text(
                                 "Approve",
@@ -546,7 +596,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                       //         );
                       //       },
                       //       style: ElevatedButton.styleFrom(
-                      //         primary: Colors.green,
+                      //         backgroundColor: Colors.green,
                       //       ),
                       //       child: const Text(
                       //         "Approve with Discount",
