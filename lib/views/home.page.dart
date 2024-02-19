@@ -4,6 +4,8 @@ import 'package:admin_app/widgets/custom_card.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+
 import 'dart:convert';
 
 class HomePage extends StatefulWidget {
@@ -87,6 +89,7 @@ class _HomePageState extends State<HomePage> {
           transactionDate.day == today.day &&
           transaction['status'] == "Completed" &&
           transaction['__t'] == "Delivery" &&
+          // transaction['__t'] == "Walkin" &&
           transaction['completed'] == true) {
         sum += (transaction['total'] ?? 0.0);
       }
@@ -153,7 +156,10 @@ class _HomePageState extends State<HomePage> {
         transactions.where((transaction) {
       DateTime transactionDate = DateTime.parse(transaction['createdAt']);
       return transactionDate.isAfter(cutoffDate) &&
-          transactionDate.year == now.year;
+              transactionDate.year == now.year &&
+              transaction['__t'] == 'Delivery' ||
+          transaction['__t'] == 'Walkin' &&
+              transaction['status'] == 'Completed';
     }).toList();
 
     // Sort the filtered transactions in descending order based on createdAt
@@ -234,6 +240,10 @@ class _HomePageState extends State<HomePage> {
 
         // Check if the transaction is on the current day and is approved
         if (transaction['__t'] == "Delivery" &&
+            transaction['status'] != "Declined" &&
+            transaction['status'] != "Cancelled" &&
+            transaction['status'] != "On Going" &&
+            transaction['status'] != "Pending" &&
             transaction['completed'] == true) {
           totalRevenue += (transaction['total'] ?? 0.0);
         }
@@ -272,7 +282,7 @@ class _HomePageState extends State<HomePage> {
                     Navigator.pushNamed(context, walkinRoute);
                   },
                   style: ElevatedButton.styleFrom(
-                    primary: const Color(0xFF232937),
+                    backgroundColor: const Color(0xFF232937),
                     elevation: 4,
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     shape: RoundedRectangleBorder(
@@ -435,10 +445,11 @@ class _HomePageState extends State<HomePage> {
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: SizedBox(
-                    height: 400,
+                    // height: 400,
                     child: DataTable(
                       columns: const [
                         DataColumn(label: Text('Name')),
+                        DataColumn(label: Text('Status')),
                         DataColumn(label: Text('Barangay')),
                         DataColumn(label: Text('Total')),
                         DataColumn(label: Text('Type')),
@@ -452,13 +463,38 @@ class _HomePageState extends State<HomePage> {
                             .map((transaction) {
                           return DataRow(
                             cells: [
-                              DataCell(Text(transaction['name'])),
-                              DataCell(Text(transaction['barangay'])),
+                              DataCell(
+                                Text(
+                                  transaction['name'].length > 10
+                                      ? '${transaction['name'].substring(0, 10)}...'
+                                      : transaction['name'],
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  transaction['status'].length > 10
+                                      ? '${transaction['status'].substring(0, 10)}...'
+                                      : transaction['status'],
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  transaction['barangay'].length > 10
+                                      ? '${transaction['barangay'].substring(0, 10)}...'
+                                      : transaction['barangay'],
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                               DataCell(Text(
                                   '\₱${(transaction['total'] ?? 0.0).toStringAsFixed(2)}')),
                               DataCell(Text(transaction['__t'])),
                               DataCell(
-                                Text(transaction['createdAt']),
+                                Text(
+                                  DateFormat('MMM d, y - h:mm a').format(
+                                      DateTime.parse(transaction['updatedAt'])),
+                                ),
                               ),
                             ],
                           );
@@ -473,6 +509,7 @@ class _HomePageState extends State<HomePage> {
                               '\₱${calculateTotalRevenueForToday().toStringAsFixed(2)}',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             )),
+                            DataCell(Text('')),
                             DataCell(Text('')),
                             DataCell(Text('')),
                             DataCell(Text('')),
