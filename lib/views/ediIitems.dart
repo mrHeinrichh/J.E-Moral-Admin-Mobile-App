@@ -14,6 +14,8 @@ class _EditItemsPageState extends State<EditItemsPage> {
   TextEditingController searchController = TextEditingController();
   ScrollController _scrollController = ScrollController();
 
+  final formKey = GlobalKey<FormState>();
+
   @override
   void initState() {
     super.initState();
@@ -63,7 +65,6 @@ class _EditItemsPageState extends State<EditItemsPage> {
     TextEditingController customerPriceController =
         TextEditingController(text: productToEdit['customerPrice'].toString());
     TextEditingController reasonController = TextEditingController();
-    final _formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
@@ -71,7 +72,7 @@ class _EditItemsPageState extends State<EditItemsPage> {
         return AlertDialog(
           title: const Text('Edit Prices for Customer'),
           content: Form(
-            key: _formKey,
+            key: formKey,
             child: SingleChildScrollView(
               child: Column(
                 children: [
@@ -89,12 +90,6 @@ class _EditItemsPageState extends State<EditItemsPage> {
                   TextFormField(
                     controller: reasonController,
                     decoration: const InputDecoration(labelText: 'Reason'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the Reason';
-                      }
-                      return "Please enter the Reason";
-                    },
                   ),
                 ],
               ),
@@ -109,7 +104,7 @@ class _EditItemsPageState extends State<EditItemsPage> {
             ),
             TextButton(
               onPressed: () async {
-                if (_formKey.currentState!.validate()) {
+                if (formKey.currentState!.validate()) {
                   Map<String, dynamic> updateData = {
                     "price": customerPriceController.text,
                     "reason": reasonController.text,
@@ -218,7 +213,6 @@ class _EditItemsPageState extends State<EditItemsPage> {
                     onNotification: (ScrollNotification scrollInfo) {
                       if (scrollInfo.metrics.pixels ==
                           scrollInfo.metrics.maxScrollExtent) {
-                        // Reached the end of the list, load more data
                         fetchData(page: currentPage + 1);
                       }
                       return false;

@@ -15,6 +15,8 @@ class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
   TextEditingController searchController = TextEditingController();
   ScrollController _scrollController = ScrollController();
 
+  final formKey = GlobalKey<FormState>();
+
   @override
   void initState() {
     super.initState();
@@ -64,7 +66,6 @@ class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
     TextEditingController retailerPriceController =
         TextEditingController(text: productToEdit['retailerPrice'].toString());
     TextEditingController reasonController = TextEditingController();
-    final _formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
@@ -72,7 +73,7 @@ class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
         return AlertDialog(
           title: const Text('Edit Price for Retailer'),
           content: Form(
-            key: _formKey,
+            key: formKey,
             child: SingleChildScrollView(
               child: Column(
                 children: [
@@ -91,12 +92,12 @@ class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
                     controller: reasonController,
                     decoration:
                         const InputDecoration(labelText: 'Retailer Reason'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter the Reason';
-                      }
-                      return null;
-                    },
+                    // validator: (value) {
+                    //   if (value!.isEmpty) {
+                    //     return 'Please enter the Reason';
+                    //   }
+                    //   return null;
+                    // },
                   ),
                 ],
               ),
@@ -111,8 +112,7 @@ class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
             ),
             TextButton(
               onPressed: () async {
-                if (_formKey.currentState!.validate()) {
-                  // Update the retailerPrice field for "price" and "type": "Retailer"
+                if (formKey.currentState!.validate()) {
                   Map<String, dynamic> updateData = {
                     "price": retailerPriceController.text,
                     "type": "Retailer"

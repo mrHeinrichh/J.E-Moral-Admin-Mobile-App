@@ -378,11 +378,11 @@ class _HomePageState extends State<HomePage> {
                             Navigator.pushNamed(context, faqRoute);
                           },
                         ),
-                        FeedbackIcon(
-                          onTap: () {
-                            // Action to perform when the card is clicked
-                          },
-                        ),
+                        // FeedbackIcon(
+                        //   onTap: () {
+                        //     // Action to perform when the card is clicked
+                        //   },
+                        // ),
                         TransactionsIcon(
                           onTap: () {
                             Navigator.pushNamed(context, transactionRoute);
