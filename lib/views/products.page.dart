@@ -766,7 +766,7 @@ class _ProductsPageState extends State<ProductsPage> {
                         openAddProductDialog();
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: const Color(0xFF232937),
+                        backgroundColor: const Color(0xFF232937),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -836,6 +836,9 @@ class _ProductsPageState extends State<ProductsPage> {
                                       text: 'Weight: ${userData['weight']}' +
                                           ' kg.',
                                     ),
+                                    BodyMediumText(
+                                      text: 'Stocks: ${userData['stock']}',
+                                    ),
                                   ],
                                 ),
                                 trailing: Row(
@@ -874,7 +877,7 @@ class _ProductsPageState extends State<ProductsPage> {
                           fetchData(page: currentPage - 1);
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: const Color(0xFF232937),
+                          backgroundColor: const Color(0xFF232937),
                         ),
                         child: const Text(
                           'Previous',
@@ -887,7 +890,7 @@ class _ProductsPageState extends State<ProductsPage> {
                         fetchData(page: currentPage + 1);
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: const Color(0xFF232937),
+                        backgroundColor: const Color(0xFF232937),
                       ),
                       child: const Text(
                         'Next',

@@ -688,7 +688,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                         openAddAccessoryDialog();
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: const Color(0xFF232937),
+                        backgroundColor: const Color(0xFF232937),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -755,6 +755,9 @@ class _AccessoryPageState extends State<AccessoryPage> {
                                       text:
                                           'Description: ${userData['description']}',
                                     ),
+                                    BodyMediumText(
+                                      text: 'Stocks: ${userData['stock']}',
+                                    ),
                                   ],
                                 ),
                                 trailing: Row(
@@ -793,7 +796,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                           fetchData(page: currentPage - 1);
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: const Color(0xFF232937),
+                          backgroundColor: const Color(0xFF232937),
                         ),
                         child: const Text(
                           'Previous',
@@ -806,7 +809,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                         fetchData(page: currentPage + 1);
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: const Color(0xFF232937),
+                        backgroundColor: const Color(0xFF232937),
                       ),
                       child: const Text(
                         'Next',
