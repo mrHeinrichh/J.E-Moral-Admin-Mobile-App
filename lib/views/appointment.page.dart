@@ -1,6 +1,8 @@
+import 'package:admin_app/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:intl/intl.dart';
 
 class AppointmentPage extends StatefulWidget {
   @override
@@ -10,6 +12,7 @@ class AppointmentPage extends StatefulWidget {
 class _AppointmentPageState extends State<AppointmentPage> {
   List<Map<String, dynamic>> customerDataList = [];
   TextEditingController searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -21,443 +24,271 @@ class _AppointmentPageState extends State<AppointmentPage> {
 
   Future<void> fetchData({int page = 1}) async {
     final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/users/?page=$page&limit=$limit'));
-
+        'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t": "Customer","appointmentStatus": "Pending"}&page=$page&limit=$limit'));
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
-
       final List<Map<String, dynamic>> customerData = (data['data'] as List)
-          .where((userData) =>
-              userData is Map<String, dynamic> &&
-              userData['__t'] == 'Customer' &&
-              userData['hasAppointment'] ==
-                  true) // Filter for 'Customer' and "hasAppointment" is true
-          .map((userData) => userData as Map<String, dynamic>)
+          .where((customerData) => customerData is Map<String, dynamic>)
+          .map((customerData) => customerData as Map<String, dynamic>)
           .toList();
 
       setState(() {
-        // Clear the existing data before adding new data
         customerDataList.clear();
         customerDataList.addAll(customerData);
-        currentPage = page; // Update the current page number
+        currentPage = page;
       });
     } else {
       throw Exception('Failed to load data from the API');
     }
   }
 
-  Future<void> addCustomerToAPI(Map<String, dynamic> newCustomer) async {
-    final url = Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users');
-    final headers = {'Content-Type': 'application/json'};
-
-    final response = await http.post(
-      url,
-      headers: headers,
-      body: jsonEncode(newCustomer),
-    );
-
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      // The new customer has been successfully added or updated
-      // You can also handle the response data if needed
-
-      // Update the UI to display the newly added or updated customer (if required)
-      fetchData(); // Refresh the data list
-
-      Navigator.pop(context); // Close the add customer dialog
-    } else {
-      // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
-      print(
-          'Failed to add or update the customer. Status code: ${response.statusCode}');
-      // You can also display an error message to the user
-    }
-  }
-
-  void updateData(String id) {
-    // Find the customer data to edit
-    Map<String, dynamic> customerToEdit =
-        customerDataList.firstWhere((data) => data['_id'] == id);
-
-    // Create controllers for each field
-    TextEditingController nameController =
-        TextEditingController(text: customerToEdit['name']);
-    TextEditingController contactNumberController =
-        TextEditingController(text: customerToEdit['contactNumber']);
-    TextEditingController dateInterviewController =
-        TextEditingController(text: customerToEdit['dateInterview']);
-    TextEditingController timeInterviewController =
-        TextEditingController(text: customerToEdit['timeInterview'].toString());
-    TextEditingController hasAppointmentController = TextEditingController(
-        text: customerToEdit['hasAppointment'].toString());
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Edit Data'),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: nameController,
-                  decoration: InputDecoration(labelText: 'Name'),
-                ),
-                TextFormField(
-                  controller: contactNumberController,
-                  decoration: InputDecoration(labelText: 'Contact Number'),
-                ),
-                TextFormField(
-                  controller: dateInterviewController,
-                  decoration: InputDecoration(labelText: 'DateInterview'),
-                ),
-                TextFormField(
-                  controller: timeInterviewController,
-                  decoration: InputDecoration(labelText: 'TimeInterview'),
-                ),
-                TextFormField(
-                  controller: hasAppointmentController,
-                  decoration: InputDecoration(labelText: 'HasAppointment'),
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                // Update the customer data based on the controllers
-                customerToEdit['name'] = nameController.text;
-                customerToEdit['contactNumber'] = contactNumberController.text;
-                customerToEdit['dateInterview'] = dateInterviewController.text;
-                customerToEdit['timeInterview'] = timeInterviewController.text;
-                customerToEdit['hasAppointment'] =
-                    hasAppointmentController.text;
-
-                // Send a request to your API to update the data with the new values
-                final url = Uri.parse(
-                    'https://lpg-api-06n8.onrender.com/api/v1/users/$id');
-                final headers = {'Content-Type': 'application/json'};
-
-                final response = await http.patch(
-                  url,
-                  headers: headers,
-                  body: jsonEncode(customerToEdit),
-                );
-
-                if (response.statusCode == 200) {
-                  // The data has been successfully updated
-                  // You can also handle the response data if needed
-
-                  // Update the UI to display the newly updated customer (if required)
-                  fetchData(); // Refresh the data list
-
-                  Navigator.pop(context); // Close the edit customer dialog
-                } else {
-                  // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
-                  print(
-                      'Failed to update the customer. Status code: ${response.statusCode}');
-                  // You can also display an error message to the user
-                }
-              },
-              child: Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Future<void> search(String query) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/users/?search=$query'));
+    final response = await http.get(
+      Uri.parse(
+        'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t": "Customer","appointmentStatus": "Pending"}&search=$query',
+      ),
+    );
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
 
-      final List<Map<String, dynamic>> customerData = (data['data'] as List)
+      final List<Map<String, dynamic>> filteredData = (data['data'] as List)
           .where((userData) =>
               userData is Map<String, dynamic> &&
-              userData.containsKey('hasAppointment') &&
-              userData['appointmentStatus'] == 'Pending' &&
-              userData['appointmentStatus'] == 'Approved' &&
-              userData['appointmentStatus'] == 'Declined')
+              (userData['name']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  userData['contactNumber']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase())))
           .map((userData) => userData as Map<String, dynamic>)
           .toList();
 
       setState(() {
-        customerDataList = customerData;
+        customerDataList = filteredData;
       });
-    } else {}
+    } else {
+      print('Failed to fetch data: ${response.statusCode}');
+    }
   }
 
-  void openAddCustomerDialog() {
-    // Create controllers for each field
-    TextEditingController nameController = TextEditingController();
-    TextEditingController contactNumberController = TextEditingController();
-    TextEditingController dateInterviewController = TextEditingController();
-    TextEditingController timeInterviewController = TextEditingController();
-    TextEditingController hasAppointmentController = TextEditingController();
+  Future<void> updateAppointmentStatus(String id) async {
+    final url = Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/$id');
+    final headers = {'Content-Type': 'application/json'};
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Add New Customer'),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                // Add text form fields for customer data input
-                TextFormField(
-                  controller: nameController,
-                  decoration: InputDecoration(labelText: 'Name'),
-                ),
-                TextFormField(
-                  controller: contactNumberController,
-                  decoration: InputDecoration(labelText: 'Contact Number'),
-                ),
-                TextFormField(
-                  controller: dateInterviewController,
-                  decoration: InputDecoration(labelText: 'DateInterview'),
-                ),
-                TextFormField(
-                  controller: timeInterviewController,
-                  decoration: InputDecoration(labelText: 'TimeInterview'),
-                ),
-                TextFormField(
-                  controller: hasAppointmentController,
-                  decoration: InputDecoration(labelText: 'HasAppointment'),
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                // Create a new customer object from the input data
-                Map<String, dynamic> newCustomer = {
-                  "name": nameController.text,
-                  "contactNumber": contactNumberController.text,
-                  "dateInterview": dateInterviewController.text,
-                  "timeInterview": timeInterviewController.text,
-                  "hasAppointment": hasAppointmentController.text,
-                };
-
-                // Call the function to add the new customer to the API
-                addCustomerToAPI(newCustomer);
-              },
-              child: Text('Save'),
-            ),
-          ],
-        );
-      },
+    final response = await http.patch(
+      url,
+      headers: headers,
+      body: jsonEncode({
+        'appointmentStatus': 'Approved',
+        '__t': 'Customer',
+      }),
     );
-  }
 
-// Function to handle data archive
-  void archiveData(String id) async {
-    // Show a confirmation dialog to confirm the deletion
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('archive Data'),
-          content: Text('Are you sure you want to archive this data?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                // Send a request to your API to archive the data
-                final url = Uri.parse(
-                    'https://lpg-api-06n8.onrender.com/api/v1/users/$id');
-                final response = await http.delete(url);
-
-                if (response.statusCode == 200) {
-                  // Data has been successfully archived
-                  // Update the UI to remove the archived data
-                  setState(() {
-                    customerDataList.removeWhere((data) => data['_id'] == id);
-                  });
-
-                  Navigator.pop(context); // Close the dialog
-                } else {
-                  // Handle any other status codes (e.g., 400 for validation errors, 500 for server errors, etc.)
-                  print(
-                      'Failed to archive the data. Status code: ${response.statusCode}');
-                  // You can also display an error message to the user
-                }
-              },
-              child: Text('archive'),
-            ),
-          ],
-        );
-      },
-    );
+    if (response.statusCode == 200) {
+      fetchData();
+    } else {
+      print(
+          'Failed to update the customer. Status code: ${response.statusCode}');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        title: const Text(
-          'Appointment CRUD',
-          style: TextStyle(color: Color(0xFF232937), fontSize: 24),
-        ),
-        iconTheme: IconThemeData(color: Color(0xFF232937)),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.add),
-            color: Color(0xFF232937),
-            onPressed: () {
-              // Open the dialog to add a new customer
-              openAddCustomerDialog();
-            },
-          ),
-        ],
+        title: const Text('Appointment List'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search',
-                        border: InputBorder.none,
-                        // Remove input field border
+        padding: const EdgeInsets.all(12),
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await fetchData();
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: IntrinsicWidth(
+                          child: TextField(
+                            controller: searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Search',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              isDense: true,
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              suffixIcon: InkWell(
+                                onTap: () {
+                                  search(searchController.text);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  child: const Icon(
+                                    Icons.search,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Handle the search button click
-                      search(searchController.text);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors
-                          .black, // Change the button background color to black
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(20), // Apply border radius
-                      ),
-                    ),
-                    child: Icon(Icons.search),
-                  ),
-                ],
-              ),
-            ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Color(0xFF232937), // You can change the border color
-                    width: 1.0,
-                    // You can change the border width
-                  ),
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                child: DataTable(
-                  columns: <DataColumn>[
-                    DataColumn(label: Text('Name')),
-                    DataColumn(label: Text('Contact Number')),
-                    DataColumn(label: Text('DateInterview')),
-                    DataColumn(label: Text('TimeInterview')),
-                    DataColumn(label: Text('HasAppointment')),
-                    DataColumn(
-                      label: Text('Actions'),
-                      tooltip: 'Update and archive',
                     ),
                   ],
-                  rows: customerDataList.map((userData) {
+                ),
+                const SizedBox(height: 10),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: customerDataList.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final userData = customerDataList[index];
                     final id = userData['_id'];
 
-                    return DataRow(
-                      cells: <DataCell>[
-                        DataCell(Text(userData['name'] ?? ''),
-                            placeholder: false),
-                        DataCell(Text(userData['contactNumber'] ?? ''),
-                            placeholder: false),
-                        DataCell(Text(userData['dateInterview'] ?? ''),
-                            placeholder: false),
-                        DataCell(
-                            Text(userData['timeInterview'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(
-                            Text(userData['hasAppointment'].toString() ?? ''),
-                            placeholder: false),
-                        DataCell(
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.edit),
-                                onPressed: () => updateData(id),
+                    return Card(
+                      elevation: 4,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CircleAvatar(
+                                  radius: 30,
+                                  backgroundImage: NetworkImage(
+                                    userData['image'] ?? '',
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      TitleMedium(text: userData['name']),
+                                      const Divider(),
+                                      BodyMediumText(
+                                        text:
+                                            'Contact #: ${userData['contactNumber']}',
+                                      ),
+                                      BodyMediumText(
+                                        text:
+                                            'Appointment: ${userData['appointmentStatus']}',
+                                      ),
+                                      BodyMediumText(
+                                        text:
+                                            'Date: ${DateFormat('MMM d, y').format(DateTime.parse(userData['appointmentDate']))}',
+                                      ),
+                                      BodyMediumText(
+                                        text:
+                                            'Time: ${DateFormat('h:mm a ').format(DateTime.parse(userData['appointmentDate']))}',
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Center(
+                              child: SizedBox(
+                                width: 250,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF232937),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 14),
+                                  ),
+                                  onPressed: () async {
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: const Text('Confirmation'),
+                                          content: const Text(
+                                            'Are you sure you want to approve this appointment?',
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                              child: const Text('Cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                                updateAppointmentStatus(id);
+                                              },
+                                              child: const Text('Approve'),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                  child: const Text(
+                                    'Approve',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
                               ),
-                              IconButton(
-                                icon: Icon(Icons.archive),
-                                onPressed: () => archiveData(id),
-                              ),
-                            ],
-                          ),
-                          placeholder: false,
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     );
-                  }).toList(),
-                ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (currentPage > 1)
-                  ElevatedButton(
-                    onPressed: () {
-                      // Load the previous page of data
-                      fetchData(page: currentPage - 1);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors
-                          .black, // Change the button background color to black
-                    ),
-                    child: Text('Previous'),
-                  ),
-                SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    // Load the next page of data
-                    fetchData(page: currentPage + 1);
                   },
-                  style: ElevatedButton.styleFrom(
-                    primary: Colors
-                        .black, // Change the button background color to black
-                  ),
-                  child: Text('Next'),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (currentPage > 1)
+                      ElevatedButton(
+                        onPressed: () {
+                          fetchData(page: currentPage - 1);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF232937),
+                        ),
+                        child: const Text(
+                          'Previous',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        fetchData(page: currentPage + 1);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF232937),
+                      ),
+                      child: const Text(
+                        'Next',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
