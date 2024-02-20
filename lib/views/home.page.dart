@@ -89,7 +89,7 @@ class _HomePageState extends State<HomePage> {
           transactionDate.day == today.day &&
           transaction['status'] == "Completed" &&
           transaction['__t'] == "Delivery" &&
-          // transaction['__t'] == "Walkin" &&
+          transaction['__t'] == "Transactions" &&
           transaction['completed'] == true) {
         sum += (transaction['total'] ?? 0.0);
       }
@@ -135,6 +135,7 @@ class _HomePageState extends State<HomePage> {
 
       // Check if the transaction has type "Online"
       if (transaction['__t'] == "Delivery" &&
+          transaction['__t'] == "Transactions" &&
           transaction['status'] == "Completed" &&
           transaction['completed'] == true &&
           transactionDate.year == today.year &&
@@ -158,7 +159,7 @@ class _HomePageState extends State<HomePage> {
       return transactionDate.isAfter(cutoffDate) &&
               transactionDate.year == now.year &&
               transaction['__t'] == 'Delivery' ||
-          transaction['__t'] == 'Walkin' &&
+          transaction['__t'] == 'Transactions' &&
               transaction['status'] == 'Completed';
     }).toList();
 
@@ -538,7 +539,10 @@ class _HomePageState extends State<HomePage> {
       final status = transaction['status'];
       final walk = transaction['__v'];
 
-      if (type == 'Delivery' && completed == true && status == 'Completed') {
+      if (type == 'Delivery' &&
+          type == 'Delivery' &&
+          completed == true &&
+          status == 'Completed') {
         deliveryTransactions.add(transaction);
       } else if (walk == 0) {
         walkinTransactions.add(transaction);

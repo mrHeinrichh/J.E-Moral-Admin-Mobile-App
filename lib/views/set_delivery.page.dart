@@ -31,7 +31,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
           "productId": cartItem.id,
           "name": cartItem.name,
           "customerPrice": cartItem.price,
-          "stock": cartItem.stock,
+          "quantity": cartItem.quantity,
         });
       }
     }
@@ -47,7 +47,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
     final Map<String, dynamic> requestData = {
       "name": nameController.text,
       "contactNumber": contactNumberController.text,
-      "completed": "false",
+      "completed": "true",
       "type": "Transactions",
       "items": itemsList,
       "discounted": isDiscounted,

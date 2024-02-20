@@ -72,6 +72,7 @@ class _WalkinPageState extends State<WalkinPage> {
             'description': item['description'] ?? 'Description Not Available',
             'weight': (item['weight'] ?? 0).toString(),
             'stock': (item['stock'] ?? 0).toString(),
+            'quantity': (item['quantity'] ?? 0).toString(),
           };
 
           if (groupedData.containsKey(category)) {
@@ -115,6 +116,7 @@ class _WalkinPageState extends State<WalkinPage> {
             'description': item['description'] ?? 'Description Not Available',
             'weight': (item['weight'] ?? 0).toString(),
             'stock': (item['stock'] ?? 0).toString(),
+            'quantity': (item['quantity'] ?? 0).toString(),
           };
 
           if (groupedData.containsKey(category)) {
@@ -204,6 +206,8 @@ class _WalkinPageState extends State<WalkinPage> {
                                             'Weight Not Available',
                                         stock: product['stock'] ??
                                             'Stock Not Available',
+                                        quantity: product['quantity'] ??
+                                            'Quantity Not Available',
                                       ),
                                     ),
                                   );

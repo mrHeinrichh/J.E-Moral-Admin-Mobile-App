@@ -4,6 +4,8 @@ class Product {
   final String description;
   final String weight;
   final String stock;
+  final String quantity;
+
   final String customerPrice;
   final String retailerPrice;
   final String image;
@@ -15,6 +17,7 @@ class Product {
     required this.description,
     required this.weight,
     required this.stock,
+    required this.quantity,
     required this.customerPrice,
     required this.retailerPrice,
     required this.image,
@@ -28,6 +31,7 @@ class Product {
       description: json['description'],
       weight: json['weight'],
       stock: json['stock'],
+      quantity: json['quantity'],
       customerPrice: json['customerPrice'],
       retailerPrice: json['retailerPrice'],
       image: json['image'],
@@ -42,6 +46,7 @@ class Product {
       'description': description,
       'weight': weight,
       'stock': stock,
+      'quantity': quantity,
       'customerPrice': customerPrice,
       'retailerPrice': retailerPrice,
       'image': image,

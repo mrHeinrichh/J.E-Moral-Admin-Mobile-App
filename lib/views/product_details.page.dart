@@ -12,16 +12,17 @@ class ProductDetailsPage extends StatefulWidget {
   String description;
   String weight;
   String stock;
+  String quantity;
 
-  ProductDetailsPage({
-    required this.productName,
-    required this.productPrice,
-    required this.productImageUrl,
-    required this.category,
-    required this.description, // Added description
-    required this.weight, // Added weight
-    required this.stock, // Added stock
-  });
+  ProductDetailsPage(
+      {required this.productName,
+      required this.productPrice,
+      required this.productImageUrl,
+      required this.category,
+      required this.description, // Added description
+      required this.weight, // Added weight
+      required this.stock, // Added stock
+      required this.quantity});
 
   @override
   _ProductDetailsPageState createState() => _ProductDetailsPageState();

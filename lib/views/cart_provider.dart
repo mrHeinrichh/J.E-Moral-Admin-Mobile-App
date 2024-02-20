@@ -20,8 +20,8 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void incrementStock(CartItem item) {
-    item.stock++;
+  void incrementQuantity(CartItem item) {
+    item.quantity++;
     notifyListeners();
   }
 
@@ -32,10 +32,10 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void decrementStock(CartItem item) {
-    if (item.stock > 0) {
-      item.stock--;
-      if (item.stock == 0) {
+  void decrementQuantity(CartItem item) {
+    if (item.quantity > 0) {
+      item.quantity--;
+      if (item.quantity == 0) {
         removeFromCart(item);
       }
     }
@@ -46,7 +46,7 @@ class CartProvider extends ChangeNotifier {
     double totalPrice = 0.0;
     for (var cartItem in _cartItems) {
       if (cartItem.isSelected) {
-        totalPrice += cartItem.price * cartItem.stock;
+        totalPrice += cartItem.price * cartItem.quantity;
       }
     }
     return totalPrice;
@@ -57,16 +57,19 @@ class CartItem {
   int id;
   String name;
   double price;
+  int stock;
+
   String imageUrl;
   bool isSelected;
-  int stock;
+  int quantity;
 
   CartItem({
     required this.id,
     required this.name,
+    required this.stock,
     required this.price,
     required this.imageUrl,
     this.isSelected = true,
-    this.stock = 1,
+    this.quantity = 1,
   });
 }
