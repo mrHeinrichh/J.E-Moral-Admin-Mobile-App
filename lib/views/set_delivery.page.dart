@@ -211,7 +211,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
         elevation: 0,
         backgroundColor: Colors.white,
         title: const Text(
-          'Set Delivery',
+          'Walkin Information',
           style: TextStyle(color: Color(0xFF232937), fontSize: 24),
         ),
         leading: IconButton(
