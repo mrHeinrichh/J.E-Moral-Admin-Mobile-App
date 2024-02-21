@@ -18,32 +18,6 @@ class _WalkinPageState extends State<WalkinPage> {
   void initState() {
     super.initState();
     fetchDataFromAPI();
-    fetchAnnouncements();
-  }
-
-  Future<void> fetchAnnouncements() async {
-    final url =
-        Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/announcements/');
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final parsedData = json.decode(response.body);
-      final data = parsedData['data'];
-
-      final DateTime currentDate = DateTime.now();
-
-      // Filter announcements based on the current date
-      final filteredAnnouncements =
-          List<Map<String, dynamic>>.from(data).where((announcement) {
-        final DateTime startTime = DateTime.parse(announcement['start']);
-        final DateTime endTime = DateTime.parse(announcement['end']);
-        return currentDate.isAfter(startTime) && currentDate.isBefore(endTime);
-      }).toList();
-
-      setState(() {
-        announcements = filteredAnnouncements;
-      });
-    }
   }
 
   void searchItems() async {
@@ -65,14 +39,15 @@ class _WalkinPageState extends State<WalkinPage> {
         data.forEach((item) {
           final category = item['category'];
           final product = {
-            'id': item['_id'] ?? 'ID Not Available',
+            '_id': item['_id'] ?? 'ID Not Available',
             'name': item['name'] ?? 'Name Not Available',
             'price': (item['customerPrice'] ?? 0.0).toString(),
             'imageUrl': item['image'] ?? 'Image URL Not Available',
             'description': item['description'] ?? 'Description Not Available',
             'weight': (item['weight'] ?? 0).toString(),
             'stock': (item['stock'] ?? 0).toString(),
-            'quantity': (item['quantity'] ?? 0).toString(),
+            'quantity': 0,
+            'type': item['type'] ?? 'Type Not Available',
           };
 
           if (groupedData.containsKey(category)) {
@@ -117,6 +92,7 @@ class _WalkinPageState extends State<WalkinPage> {
             'weight': (item['weight'] ?? 0).toString(),
             'stock': (item['stock'] ?? 0).toString(),
             'quantity': (item['quantity'] ?? 0).toString(),
+            'type': item['type'] ?? 'Type Not Available',
           };
 
           if (groupedData.containsKey(category)) {
@@ -206,8 +182,9 @@ class _WalkinPageState extends State<WalkinPage> {
                                             'Weight Not Available',
                                         stock: product['stock'] ??
                                             'Stock Not Available',
-                                        quantity: product['quantity'] ??
-                                            'Quantity Not Available',
+                                        quantity: 0,
+                                        type: product['type'] ??
+                                            'type Not Available',
                                       ),
                                     ),
                                   );

@@ -28,10 +28,15 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
     for (var cartItem in cartItems) {
       if (cartItem.isSelected) {
         itemsList.add({
-          "productId": cartItem.id,
+          "_id": cartItem.id,
           "name": cartItem.name,
-          "customerPrice": cartItem.price,
+          "customerPrice": cartItem.customerPrice,
           "quantity": cartItem.quantity,
+          "description": cartItem.description,
+          "weight": cartItem.weight,
+          "stock": cartItem.stock,
+          "category": cartItem.category,
+          "type": cartItem.type,
         });
       }
     }

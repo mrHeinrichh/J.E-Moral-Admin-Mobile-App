@@ -13,9 +13,35 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
+  late Future<Map<String, dynamic>> userData;
+  bool isDiscountApplied = false;
+
   @override
   void initState() {
     super.initState();
+    final String? userId =
+        Provider.of<UserProvider>(context, listen: false).userId;
+    userData = fetchUserData(userId);
+  }
+
+  Future<Map<String, dynamic>> fetchUserData(String? userId) async {
+    try {
+      final response = await http.get(
+          Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/$userId'));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> userData = json.decode(response.body);
+        print('User ID: $userId');
+        print('Response Body: $userData');
+        return userData;
+      } else {
+        print('Failed to load user data. Status code: ${response.statusCode}');
+        throw Exception('Failed to load user data');
+      }
+    } catch (error) {
+      print('Error: $error');
+      throw error;
+    }
   }
 
   Widget build(BuildContext context) {
@@ -26,13 +52,14 @@ class _CartPageState extends State<CartPage> {
         iconTheme: const IconThemeData(
           color: Colors.black,
         ),
-        title: const Padding(
-          padding: EdgeInsets.fromLTRB(0, 20, 0, 0),
-          child: Text(
-            'Cart',
-            style: TextStyle(color: Color(0xFF232937), fontSize: 24),
-          ),
-        ),
+        // title: const Padding(
+        //   padding: EdgeInsets.fromLTRB(0, 20, 0, 0),
+        //   child: Text(
+        //     'Cart',
+        //     style: TextStyle(color: Color(0xFF232937), fontSize: 24),
+        //   ),
+        // ),
+        title: const Text('Cart'),
       ),
       body: Consumer2<CartProvider, UserProvider>(
         builder: (context, cartProvider, userProvider, child) {
@@ -44,61 +71,78 @@ class _CartPageState extends State<CartPage> {
             double totalPrice = 0.0;
             for (var cartItem in cartItems) {
               if (cartItem.isSelected) {
-                totalPrice += cartItem.price * cartItem.quantity;
+                totalPrice += cartItem.customerPrice * cartItem.quantity;
               }
             }
             return totalPrice;
           }
 
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 20, 5, 5),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    SizedBox(height: 20),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ListView.separated(
-                  itemCount: cartItems.length,
-                  separatorBuilder: (context, index) => Divider(),
-                  itemBuilder: (context, index) {
-                    return CartItemWidget(cartItem: cartItems[index]);
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          return FutureBuilder<Map<String, dynamic>>(
+            future: userData,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else {
+                Map<String, dynamic> userData = snapshot.data!;
+                print('User ID: $userId');
+
+                return Column(
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("Price:"),
-                        Text(
-                          "₱${_calculateTotalPrice()}",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(0, 20, 5, 5),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          SizedBox(height: 20),
+                        ],
+                      ),
                     ),
-                    CustomizedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, setDeliveryPage);
-                      },
-                      text: 'Place Order',
-                      height: 60,
-                      width: 240,
-                      fontz: 20,
+                    Expanded(
+                      child: ListView.separated(
+                        itemCount: cartItems.length,
+                        separatorBuilder: (context, index) => Divider(),
+                        itemBuilder: (context, index) {
+                          return CartItemWidget(cartItem: cartItems[index]);
+                        },
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text("Price:"),
+                              Text(
+                                "₱${_calculateTotalPrice()}",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                          CustomizedButton(
+                            onPressed: () {
+                              Navigator.pushNamed(context, setDeliveryPage);
+                            },
+                            text: 'Checkout',
+                            height: 60,
+                            width: 200,
+                            fontz: 20,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
-                ),
-              ),
-            ],
+                );
+              }
+            },
           );
         },
       ),
@@ -113,45 +157,51 @@ class CartItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
       child: ListTile(
-        contentPadding: EdgeInsets.all(20),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Checkbox(
-                  value: cartItem.isSelected,
-                  onChanged: (value) {
-                    Provider.of<CartProvider>(context, listen: false)
-                        .toggleSelection(cartItem);
-                  },
-                ),
-                Image.network(
-                  cartItem.imageUrl,
-                  width: 90,
-                  height: 90,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.error);
-                  },
-                ),
-                Column(
+        contentPadding: const EdgeInsets.all(20),
+        subtitle: IntrinsicHeight(
+          child: Row(
+            children: [
+              Checkbox(
+                value: cartItem.isSelected,
+                onChanged: (value) {
+                  Provider.of<CartProvider>(context, listen: false)
+                      .toggleSelection(cartItem);
+                },
+              ),
+              const SizedBox(width: 10), // Add some spacing
+
+              Image.network(
+                cartItem.imageUrl,
+                width: 90,
+                height: 90,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(Icons.error);
+                },
+              ),
+              const SizedBox(width: 10), // Add some spacing
+
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       cartItem.name,
-                      style: TextStyle(fontSize: 18),
+                      style: const TextStyle(fontSize: 18),
                     ),
+                    const SizedBox(height: 5), // Add some vertical spacing
                     Text(
-                      '₱${cartItem.price * cartItem.quantity}',
-                      style: TextStyle(
+                      '₱${cartItem.customerPrice * cartItem.quantity}',
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
                     ),
+                    const SizedBox(height: 5), // Add some vertical spacing
+
                     Row(
                       children: [
                         IconButton(
@@ -169,9 +219,7 @@ class CartItemWidget extends StatelessWidget {
                                 .incrementQuantity(cartItem);
                           },
                         ),
-                        SizedBox(
-                          width: 50,
-                        ),
+                        const Spacer(), // Use Spacer to push the following IconButton to the right
                         IconButton(
                           icon: const Icon(
                             Icons.delete,
@@ -186,9 +234,9 @@ class CartItemWidget extends StatelessWidget {
                     ),
                   ],
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

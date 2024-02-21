@@ -72,7 +72,7 @@ class MyApp extends StatelessWidget {
           const description = "Placeholder Description";
           const weight = "Placeholder Weight";
           const stock = "Placeholder Stock";
-          const quantity = "Placeholder Quantity";
+          const quantity = 0;
 
           return ProductDetailsPage(
             productName: productName,
@@ -83,6 +83,7 @@ class MyApp extends StatelessWidget {
             weight: weight,
             stock: stock,
             quantity: quantity,
+            type: "Placeholder Type",
           );
         },
       },

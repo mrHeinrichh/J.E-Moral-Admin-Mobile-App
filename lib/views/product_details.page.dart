@@ -12,17 +12,20 @@ class ProductDetailsPage extends StatefulWidget {
   String description;
   String weight;
   String stock;
-  String quantity;
+  int quantity;
+  String type;
 
-  ProductDetailsPage(
-      {required this.productName,
-      required this.productPrice,
-      required this.productImageUrl,
-      required this.category,
-      required this.description, // Added description
-      required this.weight, // Added weight
-      required this.stock, // Added stock
-      required this.quantity});
+  ProductDetailsPage({
+    required this.productName,
+    required this.productPrice,
+    required this.productImageUrl,
+    required this.category,
+    required this.description, // Added description
+    required this.weight, // Added weight
+    required this.stock, // Added quantity
+    required this.quantity, // Added quantity
+    required this.type,
+  });
 
   @override
   _ProductDetailsPageState createState() => _ProductDetailsPageState();
@@ -224,11 +227,18 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                         CartItem(
                           id: widget.productName.hashCode,
                           name: widget.productName,
-                          price: double.parse(widget.productPrice),
-                          stock: stock,
+                          customerPrice: double.parse(widget.productPrice),
+                          stock: stock, // Use the updated stock value here
+                          quantity:
+                              stock, // Use the updated stock value as the quantity
                           imageUrl: widget.productImageUrl,
+                          category: widget.category,
+                          description: widget.description,
+                          weight: widget.weight,
+                          type: widget.type,
                         ),
                       );
+
                       Navigator.pushNamed(context, cartRoute);
                     }
                   },

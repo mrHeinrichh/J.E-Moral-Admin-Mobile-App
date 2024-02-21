@@ -46,7 +46,7 @@ class CartProvider extends ChangeNotifier {
     double totalPrice = 0.0;
     for (var cartItem in _cartItems) {
       if (cartItem.isSelected) {
-        totalPrice += cartItem.price * cartItem.quantity;
+        totalPrice += cartItem.customerPrice * cartItem.quantity;
       }
     }
     return totalPrice;
@@ -56,20 +56,27 @@ class CartProvider extends ChangeNotifier {
 class CartItem {
   int id;
   String name;
-  double price;
-  int stock;
-
+  double customerPrice;
   String imageUrl;
   bool isSelected;
   int quantity;
+  int stock;
+  String category;
+  String description;
+  String weight;
+  String type;
 
   CartItem({
     required this.id,
     required this.name,
-    required this.stock,
-    required this.price,
+    required this.customerPrice,
     required this.imageUrl,
     this.isSelected = true,
     this.quantity = 1,
+    this.stock = 1,
+    required this.category,
+    required this.description,
+    required this.weight,
+    required this.type,
   });
 }
