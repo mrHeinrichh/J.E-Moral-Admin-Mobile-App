@@ -185,6 +185,8 @@ class _WalkinPageState extends State<WalkinPage> {
                                         quantity: 0,
                                         type: product['type'] ??
                                             'type Not Available',
+                                        id: product['_id'] ??
+                                            'ID Not Available',
                                       ),
                                     ),
                                   );

@@ -54,7 +54,7 @@ class CartProvider extends ChangeNotifier {
 }
 
 class CartItem {
-  int id;
+  String id;
   String name;
   double customerPrice;
   String imageUrl;

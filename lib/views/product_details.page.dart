@@ -14,6 +14,7 @@ class ProductDetailsPage extends StatefulWidget {
   String stock;
   int quantity;
   String type;
+  String id;
 
   ProductDetailsPage({
     required this.productName,
@@ -25,6 +26,7 @@ class ProductDetailsPage extends StatefulWidget {
     required this.stock, // Added quantity
     required this.quantity, // Added quantity
     required this.type,
+    required this.id,
   });
 
   @override
@@ -239,7 +241,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                           } else {
                             cartProvider.addToCart(
                               CartItem(
-                                id: widget.productName.hashCode,
+                                id: widget.id,
                                 name: widget.productName,
                                 customerPrice:
                                     double.parse(widget.productPrice),
