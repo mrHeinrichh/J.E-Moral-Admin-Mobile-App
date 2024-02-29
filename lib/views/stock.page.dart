@@ -275,11 +275,11 @@ class _StocksPageState extends State<StocksPage> {
                     Color dividerColor;
                     Color iconColor;
 
-                    if (stock <= 5) {
+                    if (stock <= 3) {
                       cardColor = Colors.red.withOpacity(0.7);
                       dividerColor = Colors.black;
                       iconColor = Colors.black;
-                    } else if (stock >= 6 && stock <= 10) {
+                    } else if (stock >= 4 && stock <= 7) {
                       cardColor = Colors.orange.withOpacity(0.7);
                       dividerColor = Colors.black;
                       iconColor = Colors.black;
@@ -366,7 +366,7 @@ class _StocksPageState extends State<StocksPage> {
                           fetchData(page: currentPage - 1);
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: const Color(0xFF232937),
+                          backgroundColor: const Color(0xFF232937),
                         ),
                         child: const Text(
                           'Previous',
@@ -379,7 +379,7 @@ class _StocksPageState extends State<StocksPage> {
                         fetchData(page: currentPage + 1);
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: const Color(0xFF232937),
+                        backgroundColor: const Color(0xFF232937),
                       ),
                       child: const Text(
                         'Next',
@@ -396,8 +396,8 @@ class _StocksPageState extends State<StocksPage> {
     );
   }
 
-  int moderatelyLowOnStock = 10;
-  int lowOnStock = 5;
+  int moderatelyLowOnStock = 7;
+  int lowOnStock = 3;
   int outOfStock = 0;
 
   Future<void> fetchStock() async {
