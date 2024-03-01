@@ -193,7 +193,7 @@ class __EditPricesForCustomersPageStateState
                         search(searchController.text);
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: Colors.black,
+                        foregroundColor: Colors.black,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),

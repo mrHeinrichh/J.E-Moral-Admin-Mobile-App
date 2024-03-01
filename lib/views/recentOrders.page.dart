@@ -243,7 +243,9 @@ class _RecentOrdersState extends State<RecentOrders> {
   Future<void> fetchData() async {
     try {
       final response = await http.get(
-        Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions'),
+        Uri.parse(
+          'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"status": "Pending","__t": "Delivery"}&page=1&limit=300',
+        ),
       );
 
       if (_mounted) {
@@ -252,13 +254,8 @@ class _RecentOrdersState extends State<RecentOrders> {
           if (data.containsKey("data")) {
             final List<dynamic> transactionData = data["data"];
 
-            final List<Map<String, dynamic>> filteredTransactions =
-                List<Map<String, dynamic>>.from(transactionData)
-                    .where((transaction) => transaction["status"] == "Pending")
-                    .toList();
-
             setState(() {
-              transactions = filteredTransactions;
+              transactions = List<Map<String, dynamic>>.from(transactionData);
             });
           } else {}
         } else {
@@ -278,17 +275,6 @@ class _RecentOrdersState extends State<RecentOrders> {
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> filteredTransactions = transactions
-        .where((transaction) => transaction["status"] == "Pending")
-        .toList();
-
-    filteredTransactions.sort((b, a) {
-      DateTime dateTimeA = DateTime.parse(a["updatedAt"]);
-      DateTime dateTimeB = DateTime.parse(b["updatedAt"]);
-
-      return dateTimeB.compareTo(dateTimeA);
-    });
-
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -326,11 +312,18 @@ class _RecentOrdersState extends State<RecentOrders> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const Divider(),
+                      const Text(
+                        "Receiver Infomation",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
                       Text.rich(
                         TextSpan(
                           children: [
                             const TextSpan(
-                              text: "Receiver Name: ",
+                              text: "Name: ",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -341,12 +334,11 @@ class _RecentOrdersState extends State<RecentOrders> {
                           ],
                         ),
                       ),
-
                       Text.rich(
                         TextSpan(
                           children: [
                             const TextSpan(
-                              text: "Receiver Contact Number: ",
+                              text: "Mobile Number: ",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -361,23 +353,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                         TextSpan(
                           children: [
                             const TextSpan(
-                              text: "Pin Location: ",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextSpan(
-                              text: '${transaction['deliveryLocation']}',
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            const TextSpan(
-                              text: "Receiver House Number: ",
+                              text: "House Number: ",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -401,6 +377,22 @@ class _RecentOrdersState extends State<RecentOrders> {
                           ),
                         ],
                       ),
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            const TextSpan(
+                              text: "Delivery Location: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(
+                              text: '${transaction['deliveryLocation']}',
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(),
                       Row(
                         children: [
                           const Text(
@@ -417,7 +409,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                       Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(
+                            const TextSpan(
                               text: 'Assemble Option: ',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -432,7 +424,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                       Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(
+                            const TextSpan(
                               text: 'Delivery Date/Time: ',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -448,11 +440,10 @@ class _RecentOrdersState extends State<RecentOrders> {
                           ],
                         ),
                       ),
-
                       Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(
+                            const TextSpan(
                               text: "Items: ",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -473,13 +464,12 @@ class _RecentOrdersState extends State<RecentOrders> {
                           ],
                         ),
                       ),
-
                       Text.rich(
                         TextSpan(
                           children: [
                             const TextSpan(
                               text: "Total Price: ",
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -489,7 +479,6 @@ class _RecentOrdersState extends State<RecentOrders> {
                           ],
                         ),
                       ),
-
                       const Divider(),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -507,7 +496,8 @@ class _RecentOrdersState extends State<RecentOrders> {
                           ),
                         ],
                       ),
-                      if (transaction['discountIdImage'] != null)
+                      if (transaction['discountIdImage'] != null &&
+                          transaction['discountIdImage'] != "")
                         Container(
                           width: 300,
                           height: 300,
@@ -516,8 +506,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                             image: DecorationImage(
                               fit: BoxFit.cover,
                               image: NetworkImage(
-                                transaction['discountIdImage'] ??
-                                    'URL_TO_FALLBACK_IMAGE',
+                                transaction['discountIdImage'] ?? '',
                               ),
                             ),
                           ),
@@ -578,35 +567,6 @@ class _RecentOrdersState extends State<RecentOrders> {
                           ),
                         ],
                       ),
-                      // Padding(
-                      //   padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
-                      //   child: SizedBox(
-                      //     height: 45,
-                      //     width: MediaQuery.of(context).size.width * 0.90,
-                      //     child: ElevatedButton(
-                      //       onPressed: () async {
-                      //         await showConfirmationDialog(
-                      //           context,
-                      //           'Are you sure you want to Approve this transaction with discount?',
-                      //           (String cancelReason) {
-                      //             updateTransactionStatuswithDiscount(
-                      //                 transaction['_id']);
-                      //             Navigator.of(context).pop();
-                      //           },
-                      //         );
-                      //       },
-                      //       style: ElevatedButton.styleFrom(
-                      //         backgroundColor: Colors.green,
-                      //       ),
-                      //       child: const Text(
-                      //         "Approve with Discount",
-                      //         style: TextStyle(
-                      //           color: Color.fromARGB(255, 255, 255, 255),
-                      //         ),
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
                     ],
                   ),
                 ),
