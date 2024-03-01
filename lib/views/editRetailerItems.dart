@@ -205,7 +205,7 @@ class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
                           search(searchController.text);
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: Colors.black,
+                          backgroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
