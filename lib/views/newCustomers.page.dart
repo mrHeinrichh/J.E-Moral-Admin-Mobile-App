@@ -30,7 +30,7 @@ class _NewCustomersState extends State<NewCustomers> {
     try {
       final response = await http.get(
         Uri.parse(
-          'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t": "Customer"}&page=1&limit=300',
+          'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t": "Customer","__t": "Retailer"}&page=1&limit=300',
         ),
       );
 
@@ -87,6 +87,36 @@ class _NewCustomersState extends State<NewCustomers> {
         body: jsonEncode({
           'verified': 'true',
           '__t': 'Customer',
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseData = json.decode(response.body);
+        print('Updated User Data: ${responseData['data']}');
+        print('Verification status updated successfully');
+        refreshData();
+
+        // Send confirmation email to the customer's email address
+        await sendConfirmationEmail(userEmail);
+      } else {
+        print('Error updating verification status: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  Future<void> updateVerificationStatus1(
+      String customerId, String userEmail) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/$customerId'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'verified': 'true',
+          '__t': 'Retailer',
         }),
       );
 
@@ -165,83 +195,177 @@ class _NewCustomersState extends State<NewCustomers> {
             itemCount: unverifiedCustomers.length,
             itemBuilder: (context, index) {
               final customer = unverifiedCustomers[index];
-              return Card(
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text.rich(
-                                TextSpan(
+              String userType = customer['__t'];
+              return Column(
+                children: [
+                  if (userType == 'Customer')
+                    Card(
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const TextSpan(
-                                      text: "Name: ",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
+                                    Text.rich(
+                                      TextSpan(
+                                        children: [
+                                          const TextSpan(
+                                            text: "Name: ",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          TextSpan(
+                                            text: "${customer['name']}",
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    TextSpan(
-                                      text: "${customer['name']}",
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          "Contact Number: ",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${customer['contactNumber']}',
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ),
-                              Row(
-                                children: [
-                                  const Text(
-                                    "Contact Number: ",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${customer['contactNumber']}',
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const Spacer(),
-                          CircleAvatar(
-                            radius: 30,
-                            backgroundImage: NetworkImage(customer['image']),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            await updateVerificationStatus(
-                                customer['_id'], customer['email']);
+                                const Spacer(),
+                                CircleAvatar(
+                                  radius: 30,
+                                  backgroundImage:
+                                      NetworkImage(customer['image']),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  await updateVerificationStatus(
+                                      customer['_id'], customer['email']);
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Customer approved successfully'),
-                                duration: Duration(seconds: 2),
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          'Customer approved successfully'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF232937),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 10),
+                                ),
+                                child: const Text('Approve',
+                                    style: TextStyle(color: Colors.white)),
                               ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            primary: const Color(0xFF232937),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 10),
-                          ),
-                          child: const Text('Approve',
-                              style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+
+                  if (userType == 'Retailer')
+                    Card(
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text.rich(
+                                      TextSpan(
+                                        children: [
+                                          const TextSpan(
+                                            text: "Name: ",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          TextSpan(
+                                            text: "${customer['name']}",
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          "Contact Number: ",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${customer['contactNumber']}',
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const Spacer(),
+                                CircleAvatar(
+                                  radius: 30,
+                                  backgroundImage:
+                                      NetworkImage(customer['image']),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  await updateVerificationStatus1(
+                                      customer['_id'], customer['email']);
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          'Retailer approved successfully'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF232937),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 10),
+                                ),
+                                child: const Text('Approve',
+                                    style: TextStyle(color: Colors.white)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  // Divider between cards (except the last one)
+                  if (index < unverifiedCustomers.length - 1)
+                    const Divider(thickness: 1),
+                ],
               );
             },
           ),

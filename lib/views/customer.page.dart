@@ -711,7 +711,7 @@ class _CustomerPageState extends State<CustomerPage> {
                         openAddCustomerDialog();
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: const Color(0xFF232937),
+                        backgroundColor: const Color(0xFF232937),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -786,7 +786,7 @@ class _CustomerPageState extends State<CustomerPage> {
                           fetchData(page: currentPage - 1);
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: const Color(0xFF232937),
+                          backgroundColor: const Color(0xFF232937),
                         ),
                         child: const Text(
                           'Previous',
@@ -799,7 +799,7 @@ class _CustomerPageState extends State<CustomerPage> {
                         fetchData(page: currentPage + 1);
                       },
                       style: ElevatedButton.styleFrom(
-                        primary: const Color(0xFF232937),
+                        backgroundColor: const Color(0xFF232937),
                       ),
                       child: const Text(
                         'Next',

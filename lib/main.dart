@@ -75,6 +75,7 @@ class MyApp extends StatelessWidget {
           const id = "Placeholder Id";
 
           return ProductDetailsPage(
+            id: "Placeholder ID",
             productName: productName,
             productPrice: productPrice,
             productImageUrl: productImageUrl,
