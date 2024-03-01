@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:admin_app/widgets/circle_card.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -12,12 +11,12 @@ class BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 80,
+      height: 60,
       child: BottomNavigationBar(
         currentIndex: currentIndex,
         onTap: onTap,
-        unselectedItemColor: const Color(0xFFB3B3B3),
-        selectedItemColor: const Color(0xFF232937),
+        unselectedItemColor: const Color(0xFF050404).withOpacity(0.3),
+        selectedItemColor: const Color(0xFF050404).withOpacity(0.8),
         iconSize: 30,
         selectedLabelStyle: const TextStyle(
           fontSize: 0,
@@ -159,8 +158,8 @@ class PendingCustomer extends StatelessWidget {
                     right: 0,
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFd41111).withOpacity(0.8),
                         shape: BoxShape.circle,
                       ),
                       child: Text(
@@ -221,8 +220,8 @@ class PendingOrder extends StatelessWidget {
                     right: 0,
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFd41111).withOpacity(0.8),
                         shape: BoxShape.circle,
                       ),
                       child: Text(
@@ -283,8 +282,8 @@ class OngoingOrder extends StatelessWidget {
                     right: 0,
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFd41111).withOpacity(0.8),
                         shape: BoxShape.circle,
                       ),
                       child: Text(

@@ -27,29 +27,6 @@ class _HomePageState extends State<HomePage> {
     fetchData();
   }
 
-  Future<void> fetchData() async {
-    if (!mounted) {
-      return; // Check if the widget is still mounted
-    }
-
-    final response = await http.get(
-      Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions'),
-    );
-
-    if (!mounted) {
-      return; // Check again after the asynchronous operation
-    }
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body)['data'];
-      setState(() {
-        transactions = List<Map<String, dynamic>>.from(
-          data.where((item) => item['__t'] == 'Delivery'),
-        );
-      });
-    }
-  }
-
   int targetStock = 10;
   int outOfStock = 0;
 
@@ -71,6 +48,46 @@ class _HomePageState extends State<HomePage> {
       return lowStockCount;
     } else {
       throw Exception('Failed to load data from the API');
+    }
+  }
+
+  Future<int> fetchAppointment() async {
+    final response = await http.get(Uri.parse(
+        'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t": "Customer","appointmentStatus": "Pending"}'));
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final List<Map<String, dynamic>> customerData = (data['data'] as List)
+          .where((customerData) => customerData is Map<String, dynamic>)
+          .map((customerData) => customerData as Map<String, dynamic>)
+          .toList();
+
+      final int appointmentCount = customerData.length;
+      return appointmentCount;
+    } else {
+      throw Exception('Failed to load data from the API');
+    }
+  }
+
+  Future<void> fetchData() async {
+    if (!mounted) {
+      return;
+    }
+
+    final response = await http.get(
+      Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions'),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body)['data'];
+      setState(() {
+        transactions = List<Map<String, dynamic>>.from(
+          data.where((item) => item['__t'] == 'Delivery'),
+        );
+      });
     }
   }
 
@@ -259,16 +276,28 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
-        centerTitle: true,
-        title: const Text(
+        elevation: 1,
+        title: Text(
           "Dashboard",
           style: TextStyle(
-            color: Colors.black,
+            color: const Color(0xFF050404).withOpacity(0.9),
+            fontSize: 22,
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [],
+        centerTitle: true,
+        iconTheme: IconThemeData(
+          color: const Color(0xFF050404).withOpacity(0.8),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: Colors.black,
+            height: 0.2,
+          ),
+        ),
       ),
+      backgroundColor: Colors.white,
       body: RefreshIndicator(
         onRefresh: () async {
           await fetchData();
@@ -283,7 +312,7 @@ class _HomePageState extends State<HomePage> {
                     Navigator.pushNamed(context, walkinRoute);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF232937),
+                    backgroundColor: const Color(0xFF050404).withOpacity(0.9),
                     elevation: 4,
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     shape: RoundedRectangleBorder(
@@ -319,17 +348,7 @@ class _HomePageState extends State<HomePage> {
                           fetchLowStockCount: fetchStock,
                         ),
                         AppointmentIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, appointmentRoute);
-                          },
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Container(
-                            width: 1,
-                            height: 40,
-                            color: const Color(0xFF232937),
-                          ),
+                          fetchAppointments: fetchAppointment,
                         ),
                         EditProductIcon(
                           onTap: () {
@@ -340,14 +359,6 @@ class _HomePageState extends State<HomePage> {
                           onTap: () {
                             Navigator.pushNamed(context, editRetailerItemsPage);
                           },
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Container(
-                            width: 1,
-                            height: 40,
-                            color: const Color(0xFF232937),
-                          ),
                         ),
                         CustomerIcon(
                           onTap: () {
@@ -401,16 +412,17 @@ class _HomePageState extends State<HomePage> {
                       title: 'Today Revenue',
                       value: '\₱${calculateTotalSumToday().toStringAsFixed(2)}',
                     ),
-                    RectangleCard(
-                      title: 'Pending Online Orders',
-                      value: '${calculateTotalOnlineTransactionsNotApproved()}',
-                    ),
+                    // RectangleCard(
+                    //   title: 'Pending Online Orders',
+                    //   value: '${calculateTotalOnlineTransactionsNotApproved()}',
+                    // ),
                     RectangleCard(
                       title: 'Completed Online Today',
                       value: '${calculateNumberOfOnlineTransactionsToday()}',
                     ),
                   ],
                 ),
+                const SizedBox(height: 5),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [

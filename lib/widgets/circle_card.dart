@@ -225,8 +225,8 @@ class StocksIcon extends StatelessWidget {
                     right: 0,
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFd41111).withOpacity(0.8),
                         shape: BoxShape.circle,
                       ),
                       child: Text(
@@ -285,35 +285,114 @@ class TransactionsIcon extends StatelessWidget {
   }
 }
 
-class AppointmentIcon extends StatelessWidget {
-  final VoidCallback onTap;
+// class AppointmentIcon extends StatelessWidget {
+//   final VoidCallback onTap;
 
-  AppointmentIcon({required this.onTap});
+//   AppointmentIcon({required this.onTap});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Padding(
+//       padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
+//       child: Column(
+//         children: [
+//           GestureDetector(
+//             onTap: onTap,
+//             child: Card(
+//               shape: RoundedRectangleBorder(
+//                 borderRadius: BorderRadius.circular(25.0),
+//               ),
+//               elevation: 4,
+//               child: const Padding(
+//                 padding: EdgeInsets.all(10.0),
+//                 child: Icon(Icons.edit_calendar_rounded, size: 30),
+//               ),
+//             ),
+//           ),
+//           const Text(
+//             "Appointments",
+//             style: TextStyle(fontSize: 13),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+class AppointmentIcon extends StatelessWidget {
+  final Future<int> Function() fetchAppointments;
+
+  AppointmentIcon({required this.fetchAppointments});
 
   @override
   Widget build(BuildContext context) {
+    return FutureBuilder<int>(
+      future: fetchAppointments(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return _buildIconWithCount(context, 0);
+        } else if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        } else {
+          int appointmentCount = snapshot.data ?? 0;
+          return _buildIconWithCount(context, appointmentCount);
+        }
+      },
+    );
+  }
+
+  Widget _buildIconWithCount(BuildContext context, int appointmentCount) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: onTap,
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25.0),
-              ),
-              elevation: 4,
-              child: const Padding(
-                padding: EdgeInsets.all(10.0),
-                child: Icon(Icons.edit_calendar_rounded, size: 30),
-              ),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            appointmentRoute,
+            arguments: appointmentCount,
+          );
+        },
+        child: Column(
+          children: [
+            Stack(
+              children: [
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25.0),
+                  ),
+                  elevation: 4,
+                  child: const Padding(
+                    padding: EdgeInsets.all(10.0),
+                    child: Icon(Icons.edit_calendar_rounded, size: 30),
+                  ),
+                ),
+                if (appointmentCount > 0)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFd41111).withOpacity(0.8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        appointmentCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          ),
-          const Text(
-            "Appointments",
-            style: TextStyle(fontSize: 13),
-          ),
-        ],
+            const Text(
+              "Appointments",
+              style: TextStyle(fontSize: 13),
+            ),
+          ],
+        ),
       ),
     );
   }

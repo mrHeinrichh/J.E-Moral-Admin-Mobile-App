@@ -63,7 +63,6 @@ class MyApp extends StatelessWidget {
         newCustomerRoute: (context) => NewCustomers(),
         activeOrdersRoute: (context) => ActiveOrders(),
         announcementRoute: (context) => AnnouncementPage(),
-
         faqRoute: (context) => FaqPage(),
         productDetailsPage: (context) {
           const productName = "Placeholder Name";
@@ -73,6 +72,7 @@ class MyApp extends StatelessWidget {
           const weight = "Placeholder Weight";
           const stock = "Placeholder Stock";
           const quantity = 0;
+          const id = "Placeholder Id";
 
           return ProductDetailsPage(
             productName: productName,
@@ -84,6 +84,7 @@ class MyApp extends StatelessWidget {
             stock: stock,
             quantity: quantity,
             type: "Placeholder Type",
+            id: id,
           );
         },
       },
