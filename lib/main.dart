@@ -6,8 +6,9 @@ import 'package:admin_app/views/chat.page.dart';
 import 'package:admin_app/views/customer.page.dart';
 import 'package:admin_app/views/dashboard.page.dart';
 import 'package:admin_app/views/drivers.page.dart';
-import 'package:admin_app/views/ediIitems.dart';
-import 'package:admin_app/views/editRetailerItems.dart';
+import 'package:admin_app/views/editItems.page.dart';
+import 'package:admin_app/views/editRetailerItems.page.dart';
+import 'package:admin_app/views/editCustomerItems.page.dart';
 import 'package:admin_app/views/newCustomers.page.dart';
 import 'package:admin_app/views/product_details.page.dart';
 import 'package:admin_app/views/products.page.dart';
@@ -57,7 +58,8 @@ class MyApp extends StatelessWidget {
         cartRoute: (context) => CartView.CartPage(),
         setDeliveryPage: (context) => SetDeliveryPage(),
         editItemsPage: (context) => EditItemsPage(),
-        editRetailerItemsPage: (context) => EditRetailerItemsPage(),
+        // editRetailerItemsPage: (context) => EditRetailerItemsPage(),
+        // editCustomerItemsPage: (context) => EditCustomerItemsPage(),
         transactionRoute: (context) => transactionPage(),
         appointmentRoute: (context) => AppointmentPage(),
         newCustomerRoute: (context) => NewCustomers(),
@@ -75,7 +77,7 @@ class MyApp extends StatelessWidget {
           const id = "Placeholder Id";
 
           return ProductDetailsPage(
-            id: "Placeholder ID",
+            id: id,
             productName: productName,
             productPrice: productPrice,
             productImageUrl: productImageUrl,
@@ -85,7 +87,6 @@ class MyApp extends StatelessWidget {
             stock: stock,
             quantity: quantity,
             type: "Placeholder Type",
-            id: id,
           );
         },
       },

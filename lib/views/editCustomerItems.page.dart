@@ -2,19 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
-import 'package:flutter/services.dart';
 
-class EditItemsPage extends StatefulWidget {
+class EditPricesForCustomersPage extends StatefulWidget {
   @override
-  _EditItemsPageState createState() => _EditItemsPageState();
+  __EditPricesForCustomersPageStateState createState() =>
+      __EditPricesForCustomersPageStateState();
 }
 
-class _EditItemsPageState extends State<EditItemsPage> {
+class __EditPricesForCustomersPageStateState
+    extends State<EditPricesForCustomersPage> {
   List<Map<String, dynamic>> productDataList = [];
   TextEditingController searchController = TextEditingController();
   ScrollController _scrollController = ScrollController();
-
-  final formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -26,7 +25,6 @@ class _EditItemsPageState extends State<EditItemsPage> {
   void _scrollListener() {
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
-      // Reached the end of the list, load more data
       fetchData(page: currentPage + 1);
     }
   }
@@ -65,14 +63,15 @@ class _EditItemsPageState extends State<EditItemsPage> {
     TextEditingController customerPriceController =
         TextEditingController(text: productToEdit['customerPrice'].toString());
     TextEditingController reasonController = TextEditingController();
+    final _formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Edit Prices for Customer'),
+          title: const Text('Edit Price for Customer'),
           content: Form(
-            key: formKey,
+            key: _formKey,
             child: SingleChildScrollView(
               child: Column(
                 children: [
@@ -89,7 +88,14 @@ class _EditItemsPageState extends State<EditItemsPage> {
                   ),
                   TextFormField(
                     controller: reasonController,
-                    decoration: const InputDecoration(labelText: 'Reason'),
+                    decoration:
+                        const InputDecoration(labelText: 'Customer Reason'),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the Reason';
+                      }
+                      return null;
+                    },
                   ),
                 ],
               ),
@@ -104,10 +110,9 @@ class _EditItemsPageState extends State<EditItemsPage> {
             ),
             TextButton(
               onPressed: () async {
-                if (formKey.currentState!.validate()) {
+                if (_formKey.currentState!.validate()) {
                   Map<String, dynamic> updateData = {
                     "price": customerPriceController.text,
-                    "reason": reasonController.text,
                     "type": "Customer"
                   };
 
@@ -149,8 +154,7 @@ class _EditItemsPageState extends State<EditItemsPage> {
           .where((productData) =>
               productData is Map<String, dynamic> &&
               productData.containsKey('type') &&
-              productData['type'] ==
-                  'Product') // Only include products with type 'Products'
+              productData['type'] == 'Product')
           .map((productData) => productData as Map<String, dynamic>)
           .toList();
 
@@ -165,97 +169,89 @@ class _EditItemsPageState extends State<EditItemsPage> {
     final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
     return Scaffold(
-        key: _scaffoldKey,
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: Colors.white,
-          title: const Text(
-            'Edit Prices for Customers',
-            style: TextStyle(color: Color(0xFF232937), fontSize: 24),
-          ),
-          iconTheme: const IconThemeData(color: Color(0xFF232937)),
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(15.0),
-          child: Form(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: searchController,
-                          decoration: const InputDecoration(
-                            hintText: 'Search',
-                            border: InputBorder.none,
-                          ),
+      key: _scaffoldKey,
+      body: Padding(
+        padding: const EdgeInsets.all(15.0),
+        child: Form(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: searchController,
+                        decoration: const InputDecoration(
+                          hintText: 'Search',
+                          border: InputBorder.none,
                         ),
                       ),
-                      ElevatedButton(
-                        onPressed: () {
-                          search(searchController.text);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        child: const Icon(Icons.search),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: NotificationListener<ScrollNotification>(
-                    onNotification: (ScrollNotification scrollInfo) {
-                      if (scrollInfo.metrics.pixels ==
-                          scrollInfo.metrics.maxScrollExtent) {
-                        fetchData(page: currentPage + 1);
-                      }
-                      return false;
-                    },
-                    child: ListView.builder(
-                      itemCount: productDataList.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        final productData = productDataList[index];
-                        final id = productData['_id'];
-
-                        return Card(
-                          child: ListTile(
-                            title: Text(productData['name'] ?? ''),
-                            subtitle: Text(productData['category'] ?? ''),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text("₱" +
-                                        (productData['customerPrice']
-                                                .toString() ??
-                                            '')),
-                                  ],
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () => updateData(id),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
                     ),
+                    ElevatedButton(
+                      onPressed: () {
+                        search(searchController.text);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: const Icon(Icons.search),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (ScrollNotification scrollInfo) {
+                    if (scrollInfo.metrics.pixels ==
+                        scrollInfo.metrics.maxScrollExtent) {
+                      fetchData(page: currentPage + 1);
+                    }
+                    return false;
+                  },
+                  child: ListView.builder(
+                    itemCount: productDataList.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final productData = productDataList[index];
+                      final id = productData['_id'];
+
+                      return Card(
+                        child: ListTile(
+                          title: Text(productData['name'] ?? ''),
+                          subtitle: Text(productData['category'] ?? ''),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Column(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text("₱" +
+                                      (productData['customerPrice']
+                                              .toString() ??
+                                          '')),
+                                ],
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.edit),
+                                onPressed: () => updateData(id),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ));
+        ),
+      ),
+    );
   }
 }

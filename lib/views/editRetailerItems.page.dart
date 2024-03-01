@@ -2,20 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
-import 'package:flutter/services.dart';
 
-class EditRetailerItemsPage extends StatefulWidget {
+class EditPricesForRetailersPage extends StatefulWidget {
   @override
-  __EditRetailerItemsPageStateState createState() =>
-      __EditRetailerItemsPageStateState();
+  __EditPricesForRetailersPageStateState createState() =>
+      __EditPricesForRetailersPageStateState();
 }
 
-class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
+class __EditPricesForRetailersPageStateState
+    extends State<EditPricesForRetailersPage> {
   List<Map<String, dynamic>> productDataList = [];
   TextEditingController searchController = TextEditingController();
   ScrollController _scrollController = ScrollController();
-
-  final formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -27,7 +25,6 @@ class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
   void _scrollListener() {
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
-      // Reached the end of the list, load more data
       fetchData(page: currentPage + 1);
     }
   }
@@ -40,8 +37,13 @@ class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
 
   int currentPage = 1;
   int limit = 10;
+  bool isLoading = false;
 
   Future<void> fetchData({int page = 1}) async {
+    setState(() {
+      isLoading = true;
+    });
+
     final response = await http.get(Uri.parse(
         'https://lpg-api-06n8.onrender.com/api/v1/items/?page=$page&limit=$limit'));
     if (response.statusCode == 200) {
@@ -52,8 +54,13 @@ class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
           .toList();
 
       setState(() {
-        productDataList.addAll(productData);
+        if (page == 1) {
+          productDataList = productData;
+        } else {
+          productDataList.addAll(productData);
+        }
         currentPage = page;
+        isLoading = false;
       });
     } else {
       throw Exception('Failed to load data from the API');
@@ -66,6 +73,7 @@ class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
     TextEditingController retailerPriceController =
         TextEditingController(text: productToEdit['retailerPrice'].toString());
     TextEditingController reasonController = TextEditingController();
+    final _formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
@@ -73,7 +81,7 @@ class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
         return AlertDialog(
           title: const Text('Edit Price for Retailer'),
           content: Form(
-            key: formKey,
+            key: _formKey,
             child: SingleChildScrollView(
               child: Column(
                 children: [
@@ -92,12 +100,12 @@ class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
                     controller: reasonController,
                     decoration:
                         const InputDecoration(labelText: 'Retailer Reason'),
-                    // validator: (value) {
-                    //   if (value!.isEmpty) {
-                    //     return 'Please enter the Reason';
-                    //   }
-                    //   return null;
-                    // },
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter the Reason';
+                      }
+                      return null;
+                    },
                   ),
                 ],
               ),
@@ -112,7 +120,7 @@ class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
             ),
             TextButton(
               onPressed: () async {
-                if (formKey.currentState!.validate()) {
+                if (_formKey.currentState!.validate()) {
                   Map<String, dynamic> updateData = {
                     "price": retailerPriceController.text,
                     "type": "Retailer"
@@ -167,60 +175,56 @@ class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
     } else {}
   }
 
+  Future<void> _handleRefresh() async {
+    await fetchData();
+  }
+
   @override
   Widget build(BuildContext context) {
     final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
     return Scaffold(
-        key: _scaffoldKey,
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: Colors.white,
-          title: const Text(
-            'Edit Prices for Retailers',
-            style: TextStyle(color: Color(0xFF232937), fontSize: 24),
-          ),
-          iconTheme: const IconThemeData(color: Color(0xFF232937)),
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(15.0),
-          child: Form(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: searchController,
-                          decoration: const InputDecoration(
-                            hintText: 'Search',
-                            border: InputBorder.none,
-                          ),
+      key: _scaffoldKey,
+      body: Padding(
+        padding: const EdgeInsets.all(15.0),
+        child: Form(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: searchController,
+                        decoration: const InputDecoration(
+                          hintText: 'Search',
+                          border: InputBorder.none,
                         ),
                       ),
-                      ElevatedButton(
-                        onPressed: () {
-                          search(searchController.text);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        search(searchController.text);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Icon(Icons.search),
                       ),
-                    ],
-                  ),
+                      child: const Icon(Icons.search),
+                    ),
+                  ],
                 ),
-                Expanded(
+              ),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _handleRefresh,
                   child: NotificationListener<ScrollNotification>(
                     onNotification: (ScrollNotification scrollInfo) {
                       if (scrollInfo.metrics.pixels ==
                           scrollInfo.metrics.maxScrollExtent) {
-                        // Reached the end of the list, load more data
                         fetchData(page: currentPage + 1);
                       }
                       return false;
@@ -261,9 +265,11 @@ class __EditRetailerItemsPageStateState extends State<EditRetailerItemsPage> {
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ));
+        ),
+      ),
+    );
   }
 }

@@ -350,14 +350,9 @@ class _HomePageState extends State<HomePage> {
                         AppointmentIcon(
                           fetchAppointments: fetchAppointment,
                         ),
-                        EditProductIcon(
+                        UpdatePriceIcon(
                           onTap: () {
                             Navigator.pushNamed(context, editItemsPage);
-                          },
-                        ),
-                        EditRetailerProductIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, editRetailerItemsPage);
                           },
                         ),
                         CustomerIcon(
