@@ -34,31 +34,49 @@ class _EditItemsPageState extends State<EditItemsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        backgroundColor: Colors.white,
+        elevation: 1,
+        title: Text(
           'Update Prices',
           style: TextStyle(
-            color: Colors.black,
+            color: const Color(0xFF050404).withOpacity(0.9),
+            fontSize: 22,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
+        iconTheme: IconThemeData(
+          color: const Color(0xFF050404).withOpacity(0.8),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: Colors.black,
+            height: 0.2,
+          ),
+        ),
       ),
+      backgroundColor: Colors.white,
       body: _selectedIndex == 0
           ? EditPricesForCustomersPage()
           : EditPricesForRetailersPage(),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.people),
+            icon: Icon(Icons.people,
+                color: const Color(0xFF050404).withOpacity(0.9)),
             label: 'Customers Price',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
+            icon: Icon(Icons.business_center_rounded,
+                color: const Color(0xFF050404).withOpacity(0.9)),
             label: 'Retailers Price',
           ),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+        selectedItemColor: const Color(0xFF050404).withOpacity(0.9),
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
       ),
     );
   }

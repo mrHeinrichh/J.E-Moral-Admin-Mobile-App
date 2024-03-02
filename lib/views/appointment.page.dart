@@ -17,6 +17,11 @@ class _AppointmentPageState extends State<AppointmentPage> {
   bool loadingData = false;
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
     loadingData = true;
