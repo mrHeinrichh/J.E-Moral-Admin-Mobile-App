@@ -9,10 +9,10 @@ class BodyMedium extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: Theme.of(context)
-          .textTheme
-          .bodyMedium!
-          .copyWith(fontWeight: FontWeight.bold),
+      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF050404).withOpacity(0.9),
+          ),
       overflow: TextOverflow.ellipsis,
       maxLines: 1,
     );
@@ -35,17 +35,17 @@ class BodyMediumText extends StatelessWidget {
         children: [
           TextSpan(
             text: prefix,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium!
-                .copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF050404).withOpacity(0.9),
+                ),
           ),
           TextSpan(
             text: restOfText,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium!
-                .copyWith(fontWeight: FontWeight.normal),
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  fontWeight: FontWeight.normal,
+                  color: const Color(0xFF050404).withOpacity(0.9),
+                ),
           ),
         ],
       ),
@@ -71,17 +71,17 @@ class BodyMediumOver extends StatelessWidget {
         children: [
           TextSpan(
             text: prefix,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium!
-                .copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF050404).withOpacity(0.9),
+                ),
           ),
           TextSpan(
             text: restOfText,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium!
-                .copyWith(fontWeight: FontWeight.normal),
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  fontWeight: FontWeight.normal,
+                  color: const Color(0xFF050404).withOpacity(0.9),
+                ),
           ),
         ],
       ),
@@ -98,10 +98,10 @@ class TitleMedium extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: Theme.of(context)
-          .textTheme
-          .titleMedium!
-          .copyWith(fontWeight: FontWeight.bold),
+      style: Theme.of(context).textTheme.titleMedium!.copyWith(
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF050404).withOpacity(0.9),
+          ),
       overflow: TextOverflow.ellipsis,
       maxLines: 1,
     );
@@ -162,17 +162,17 @@ class TitleMediumText extends StatelessWidget {
         children: [
           TextSpan(
             text: prefix,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium!
-                .copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF050404).withOpacity(0.9),
+                ),
           ),
           TextSpan(
             text: restOfText,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium!
-                .copyWith(fontWeight: FontWeight.normal),
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                  fontWeight: FontWeight.normal,
+                  color: const Color(0xFF050404).withOpacity(0.9),
+                ),
           ),
         ],
       ),

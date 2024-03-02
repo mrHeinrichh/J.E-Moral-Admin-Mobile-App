@@ -114,7 +114,6 @@ class _StocksPageState extends State<StocksPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Divider(),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Container(
@@ -372,7 +371,7 @@ class _StocksPageState extends State<StocksPage> {
                           children: [
                             SizedBox(height: 20),
                             Text(
-                              'No Items Available',
+                              'No items to display.',
                               style: TextStyle(
                                   fontSize: 18, fontWeight: FontWeight.bold),
                             ),
@@ -407,6 +406,7 @@ class _StocksPageState extends State<StocksPage> {
                                     padding: const EdgeInsets.only(bottom: 8.0),
                                     child: SizedBox(
                                       child: Card(
+                                        color: Colors.white,
                                         elevation: 6,
                                         child: Column(
                                           children: [

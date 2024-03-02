@@ -313,7 +313,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                       ),
                       const Divider(),
                       const Text(
-                        "Receiver Infomation",
+                        "Receiver Infomation:",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                         ),

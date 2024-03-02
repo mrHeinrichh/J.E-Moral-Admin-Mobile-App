@@ -61,6 +61,7 @@ class BottomNavBar extends StatelessWidget {
   }
 }
 
+// ERROR
 Future<int> fetchCustomers() async {
   final response = await http
       .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users'));
@@ -80,39 +81,43 @@ Future<int> fetchCustomers() async {
   }
 }
 
+// Future<int> fetchCustomers() async {
+//   final response = await http.get(Uri.parse(
+//       'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"__t": "Customer", "verified": false}&limit=300'));
+
+//   if (response.statusCode == 200) {
+//     final Map<String, dynamic> data = json.decode(response.body);
+//     final List<dynamic> unverifiedCustomers = data['data'];
+
+//     return unverifiedCustomers.length;
+//   } else {
+//     throw Exception('Failed to load data from the API');
+//   }
+// }
+
 Future<int> fetchOrders() async {
-  final response = await http
-      .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions'));
+  final response = await http.get(Uri.parse(
+      'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"status": "Pending","__t": "Delivery"}&limit=300'));
+
   if (response.statusCode == 200) {
     final Map<String, dynamic> data = json.decode(response.body);
     final List<dynamic> allTransactionsData = data['data'];
 
-    final List<Map<String, dynamic>> ongoingOrders =
-        List<Map<String, dynamic>>.from(allTransactionsData.where(
-            (transactionData) =>
-                transactionData is Map<String, dynamic> &&
-                transactionData['status'] == 'Pending'));
-
-    return ongoingOrders.length;
+    return allTransactionsData.length;
   } else {
     throw Exception('Failed to load data from the API');
   }
 }
 
 Future<int> fetchOngoingOrders() async {
-  final response = await http
-      .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions'));
+  final response = await http.get(Uri.parse(
+      'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"status": "On Going","__t": "Delivery"}&limit=300'));
+
   if (response.statusCode == 200) {
     final Map<String, dynamic> data = json.decode(response.body);
     final List<dynamic> allTransactionsData = data['data'];
 
-    final List<Map<String, dynamic>> ongoingOrders =
-        List<Map<String, dynamic>>.from(allTransactionsData.where(
-            (transactionData) =>
-                transactionData is Map<String, dynamic> &&
-                transactionData['status'] == 'On Going'));
-
-    return ongoingOrders.length;
+    return allTransactionsData.length;
   } else {
     throw Exception('Failed to load data from the API');
   }

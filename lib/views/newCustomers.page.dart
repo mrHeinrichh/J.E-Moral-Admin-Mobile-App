@@ -26,11 +26,12 @@ class _NewCustomersState extends State<NewCustomers> {
     super.dispose();
   }
 
+  // ERROR
   Future<void> fetchCustomers() async {
     try {
       final response = await http.get(
         Uri.parse(
-          'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t": "Customer","__t": "Retailer"}&page=1&limit=300',
+          'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t": "Customer", "__t": "Retailer"}&page=1&limit=300',
         ),
       );
 
