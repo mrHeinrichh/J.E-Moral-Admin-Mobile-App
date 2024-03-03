@@ -47,6 +47,7 @@ class __EditPricesForRetailersPageStateState
           .toList();
 
       setState(() {
+        productDataList.clear();
         productDataList.addAll(productData);
         currentPage = page;
         loadingData = false;
@@ -59,7 +60,7 @@ class __EditPricesForRetailersPageStateState
   Future<void> search(String query) async {
     final response = await http.get(
       Uri.parse(
-          'https://lpg-api-06n8.onrender.com/api/v1/items/?search=$query'),
+          'https://lpg-api-06n8.onrender.com/api/v1/items/?search=$query&limit=300'),
     );
 
     if (response.statusCode == 200) {
@@ -113,7 +114,6 @@ class __EditPricesForRetailersPageStateState
             key: formKey,
             child: SingleChildScrollView(
               child: Column(
-                // mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 5),
@@ -238,7 +238,6 @@ class __EditPricesForRetailersPageStateState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //  backgroundColor: Colors.white,
       body: loadingData
           ? Center(
               child: LoadingAnimationWidget.flickr(
@@ -309,147 +308,138 @@ class __EditPricesForRetailersPageStateState
                     const SizedBox(height: 10),
                     if (productDataList.isEmpty && !loadingData)
                       const Center(
-                        child: Column(
-                          children: [
-                            SizedBox(height: 20),
-                            Text(
-                              'No items to display.',
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (productDataList.isNotEmpty)
-                      Expanded(
                         child: SingleChildScrollView(
                           child: Column(
                             children: [
-                              const SizedBox(height: 10),
-                              ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: productDataList.length,
-                                itemBuilder: (BuildContext context, int index) {
-                                  final productData = productDataList[index];
-                                  final id = productData['_id'];
+                              SizedBox(height: 40),
+                              Text(
+                                'No items to display.',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 30),
+                            ],
+                          ),
+                        ),
+                      ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: productDataList.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                final productData = productDataList[index];
+                                final id = productData['_id'];
 
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 8.0),
-                                    child: SizedBox(
-                                      child: Card(
-                                        color: Colors.white,
-                                        elevation: 6,
-                                        child: Column(
-                                          children: [
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: Container(
-                                                width: double.infinity,
-                                                height: 100,
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                  border: Border.all(
-                                                    color: Colors.black,
-                                                    width: 1,
-                                                  ),
-                                                  image: DecorationImage(
-                                                    image: NetworkImage(
-                                                        productData['image'] ??
-                                                            ''),
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                                ),
-                                              ),
+                                return Card(
+                                  color: Colors.white,
+                                  elevation: 2,
+                                  child: Column(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Container(
+                                          width: double.infinity,
+                                          height: 100,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            border: Border.all(
+                                              color: Colors.black,
+                                              width: 1,
                                             ),
-                                            ListTile(
-                                              title: TitleMedium(
-                                                  text:
-                                                      '${productData['name']}'),
-                                              subtitle: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  const Divider(),
-                                                  TitleMediumText(
-                                                      text:
-                                                          'Retailer Price: ${productData['retailerPrice'] % 1 == 0 ? '₱${productData['retailerPrice'].toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match match) => '${match[1]},')}' : productData['retailerPrice'].toStringAsFixed(productData['retailerPrice'].truncateToDouble() == productData['retailerPrice'] ? 0 : 2) == productData['retailerPrice'].toStringAsFixed(0) ? '₱${productData['retailerPrice'].toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match match) => '${match[1]},')}' : '₱${productData['retailerPrice'].toStringAsFixed(2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match match) => '${match[1]},')}'}'),
-                                                  const SizedBox(height: 2),
-                                                  BodyMediumText(
-                                                      text:
-                                                          'Type: ${productData['type'] ?? ''}'),
-                                                  BodyMediumText(
-                                                      text:
-                                                          'Category: ${productData['category'] ?? ''}'),
-                                                ],
-                                              ),
-                                              trailing: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  SizedBox(
-                                                    width: 40,
-                                                    child: IconButton(
-                                                      icon: Icon(
-                                                        Icons.edit,
-                                                        color: const Color(
-                                                                0xFF050404)
-                                                            .withOpacity(0.9),
-                                                      ),
-                                                      onPressed: () =>
-                                                          updateData(id),
-                                                    ),
-                                                  ),
-                                                ],
+                                            image: DecorationImage(
+                                              image: NetworkImage(
+                                                  productData['image'] ?? ''),
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      ListTile(
+                                        title: TitleMedium(
+                                            text: '${productData['name']}'),
+                                        subtitle: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Divider(),
+                                            TitleMediumText(
+                                                text:
+                                                    'Retailer Price: ${productData['retailerPrice'] % 1 == 0 ? '₱${productData['retailerPrice'].toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match match) => '${match[1]},')}' : productData['retailerPrice'].toStringAsFixed(productData['retailerPrice'].truncateToDouble() == productData['retailerPrice'] ? 0 : 2) == productData['retailerPrice'].toStringAsFixed(0) ? '₱${productData['retailerPrice'].toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match match) => '${match[1]},')}' : '₱${productData['retailerPrice'].toStringAsFixed(2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match match) => '${match[1]},')}'}'),
+                                            const SizedBox(height: 2),
+                                            BodyMediumText(
+                                                text:
+                                                    'Type: ${productData['type'] ?? ''}'),
+                                            BodyMediumText(
+                                                text:
+                                                    'Category: ${productData['category'] ?? ''}'),
+                                          ],
+                                        ),
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            SizedBox(
+                                              width: 40,
+                                              child: IconButton(
+                                                icon: Icon(
+                                                  Icons.edit,
+                                                  color: const Color(0xFF050404)
+                                                      .withOpacity(0.9),
+                                                ),
+                                                onPressed: () => updateData(id),
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 5),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                if (currentPage > 1)
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      fetchData(page: currentPage - 1);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF050404)
+                                          .withOpacity(0.9),
                                     ),
-                                  );
-                                },
-                              ),
-                              if (productDataList.isNotEmpty)
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    if (currentPage > 1)
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          fetchData(page: currentPage - 1);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFF050404)
-                                                  .withOpacity(0.9),
-                                        ),
-                                        child: const Text(
-                                          'Previous',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                      ),
-                                    const SizedBox(width: 10),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        fetchData(page: currentPage + 1);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF050404)
-                                            .withOpacity(0.9),
-                                      ),
-                                      child: const Text(
-                                        'Next',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
+                                    child: const Text(
+                                      'Previous',
+                                      style: TextStyle(color: Colors.white),
                                     ),
-                                  ],
+                                  ),
+                                const SizedBox(width: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    fetchData(page: currentPage + 1);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF050404)
+                                        .withOpacity(0.9),
+                                  ),
+                                  child: const Text(
+                                    'Next',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
-                            ],
-                          ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                          ],
                         ),
                       ),
+                    ),
                   ],
                 ),
               ),

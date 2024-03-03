@@ -56,7 +56,7 @@ class _StocksPageState extends State<StocksPage> {
   Future<void> search(String query) async {
     final response = await http.get(
       Uri.parse(
-          'https://lpg-api-06n8.onrender.com/api/v1/items/?search=$query'),
+          'https://lpg-api-06n8.onrender.com/api/v1/items/?search=$query&limit=300'),
     );
 
     if (response.statusCode == 200) {
@@ -369,156 +369,145 @@ class _StocksPageState extends State<StocksPage> {
                       const Center(
                         child: Column(
                           children: [
-                            SizedBox(height: 20),
+                            SizedBox(height: 40),
                             Text(
                               'No items to display.',
                               style: TextStyle(
                                   fontSize: 18, fontWeight: FontWeight.bold),
                             ),
+                            SizedBox(height: 30),
                           ],
                         ),
                       ),
-                    if (stockDataList.isNotEmpty)
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: stockDataList.length,
-                                itemBuilder: (BuildContext context, int index) {
-                                  final userData = stockDataList[index];
-                                  final id = userData['_id'];
-                                  final stock = userData['stock'] ?? 0;
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: stockDataList.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                final userData = stockDataList[index];
+                                final id = userData['_id'];
+                                final stock = userData['stock'] ?? 0;
 
-                                  int checkColor;
+                                int checkColor;
 
-                                  if (stock <= 3) {
-                                    checkColor = stock;
-                                  } else if (stock >= 4 && stock <= 7) {
-                                    checkColor = stock;
-                                  } else {
-                                    checkColor = stock;
-                                  }
+                                if (stock <= 3) {
+                                  checkColor = stock;
+                                } else if (stock >= 4 && stock <= 7) {
+                                  checkColor = stock;
+                                } else {
+                                  checkColor = stock;
+                                }
 
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 8.0),
-                                    child: SizedBox(
-                                      child: Card(
-                                        color: Colors.white,
-                                        elevation: 6,
-                                        child: Column(
-                                          children: [
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: Container(
-                                                width: double.infinity,
-                                                height: 100,
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                  border: Border.all(
-                                                    color: Colors.black,
-                                                    width: 1,
-                                                  ),
-                                                  image: DecorationImage(
-                                                    image: NetworkImage(
-                                                        userData['image'] ??
-                                                            ''),
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                                ),
-                                              ),
+                                return Card(
+                                  color: Colors.white,
+                                  elevation: 2,
+                                  child: Column(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Container(
+                                          width: double.infinity,
+                                          height: 100,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            border: Border.all(
+                                              color: Colors.black,
+                                              width: 1,
                                             ),
-                                            ListTile(
-                                              title: TitleMedium(
-                                                  text: '${userData['name']}'),
-                                              subtitle: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  const Divider(),
-                                                  TitleMediumText(
-                                                    text:
-                                                        'Available Stock: $stock',
-                                                    checkColor: checkColor,
-                                                  ),
-                                                  const SizedBox(height: 2),
-                                                  BodyMediumText(
-                                                      text:
-                                                          'Type: ${userData['type'] ?? ''}'),
-                                                  BodyMediumText(
-                                                      text:
-                                                          'Category: ${userData['category'] ?? ''}'),
-                                                ],
-                                              ),
-                                              trailing: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  SizedBox(
-                                                    width: 40,
-                                                    child: IconButton(
-                                                      icon: Icon(
-                                                        Icons.assignment_add,
-                                                        color: const Color(
-                                                                0xFF050404)
-                                                            .withOpacity(0.9),
-                                                      ),
-                                                      onPressed: () =>
-                                                          updateData(id),
-                                                    ),
-                                                  ),
-                                                ],
+                                            image: DecorationImage(
+                                              image: NetworkImage(
+                                                  userData['image'] ?? ''),
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      ListTile(
+                                        title: TitleMedium(
+                                            text: '${userData['name']}'),
+                                        subtitle: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Divider(),
+                                            TitleMediumText(
+                                              text: 'Available Stock: $stock',
+                                              checkColor: checkColor,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            BodyMediumText(
+                                                text:
+                                                    'Type: ${userData['type'] ?? ''}'),
+                                            BodyMediumText(
+                                                text:
+                                                    'Category: ${userData['category'] ?? ''}'),
+                                          ],
+                                        ),
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            SizedBox(
+                                              width: 40,
+                                              child: IconButton(
+                                                icon: Icon(
+                                                  Icons.assignment_add,
+                                                  color: const Color(0xFF050404)
+                                                      .withOpacity(0.9),
+                                                ),
+                                                onPressed: () => updateData(id),
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 5),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                if (currentPage > 1)
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      fetchData(page: currentPage - 1);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF050404)
+                                          .withOpacity(0.9),
                                     ),
-                                  );
-                                },
-                              ),
-                              if (stockDataList.isNotEmpty)
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    if (currentPage > 1)
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          fetchData(page: currentPage - 1);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFF050404)
-                                                  .withOpacity(0.9),
-                                        ),
-                                        child: const Text(
-                                          'Previous',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                      ),
-                                    const SizedBox(width: 10),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        fetchData(page: currentPage + 1);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF050404)
-                                            .withOpacity(0.9),
-                                      ),
-                                      child: const Text(
-                                        'Next',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
+                                    child: const Text(
+                                      'Previous',
+                                      style: TextStyle(color: Colors.white),
                                     ),
-                                  ],
+                                  ),
+                                const SizedBox(width: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    fetchData(page: currentPage + 1);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF050404)
+                                        .withOpacity(0.9),
+                                  ),
+                                  child: const Text(
+                                    'Next',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
+                    ),
                   ],
                 ),
               ),

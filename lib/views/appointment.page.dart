@@ -55,7 +55,7 @@ class _AppointmentPageState extends State<AppointmentPage> {
   Future<void> search(String query) async {
     final response = await http.get(
       Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t": "Customer","appointmentStatus": "Pending"}&search=$query',
+        'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t": "Customer","appointmentStatus": "Pending"}&search=$query&limit=500',
       ),
     );
 
@@ -243,228 +243,213 @@ class _AppointmentPageState extends State<AppointmentPage> {
                       const Center(
                         child: Column(
                           children: [
-                            SizedBox(height: 20),
+                            SizedBox(height: 40),
                             Text(
                               'No appointments to display.',
                               style: TextStyle(
                                   fontSize: 18, fontWeight: FontWeight.bold),
                             ),
+                            SizedBox(height: 30),
                           ],
                         ),
                       ),
-                    if (customerDataList.isNotEmpty)
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: customerDataList.length,
-                                itemBuilder: (BuildContext context, int index) {
-                                  final userData = customerDataList[index];
-                                  final id = userData['_id'];
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: customerDataList.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                final userData = customerDataList[index];
+                                final id = userData['_id'];
 
-                                  return Column(
-                                    children: [
-                                      Card(
-                                        color: Colors.white,
-                                        elevation: 4,
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
+                                return Card(
+                                  color: Colors.white,
+                                  elevation: 2,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            CircleAvatar(
+                                              radius: 30,
+                                              backgroundImage: NetworkImage(
+                                                userData['image'] ?? '',
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Expanded(
+                                              child: Column(
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
                                                 children: [
-                                                  CircleAvatar(
-                                                    radius: 30,
-                                                    backgroundImage:
-                                                        NetworkImage(
-                                                      userData['image'] ?? '',
-                                                    ),
+                                                  TitleMedium(
+                                                      text: userData['name']),
+                                                  const Divider(),
+                                                  BodyMediumText(
+                                                    text:
+                                                        'Mobile #: ${userData['contactNumber']}',
                                                   ),
-                                                  const SizedBox(width: 10),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        TitleMedium(
-                                                            text: userData[
-                                                                'name']),
-                                                        const Divider(),
-                                                        BodyMediumText(
-                                                          text:
-                                                              'Contact #: ${userData['contactNumber']}',
-                                                        ),
-                                                        BodyMediumText(
-                                                          text:
-                                                              'Appointment: ${userData['appointmentStatus']}',
-                                                        ),
-                                                        BodyMediumText(
-                                                          text:
-                                                              'Date: ${DateFormat('MMMM d, y').format(DateTime.parse(userData['appointmentDate']))}',
-                                                        ),
-                                                        BodyMediumText(
-                                                          text:
-                                                              'Time: ${DateFormat('h:mm a ').format(DateTime.parse(userData['appointmentDate']))}',
-                                                        ),
-                                                      ],
-                                                    ),
+                                                  BodyMediumText(
+                                                    text:
+                                                        'Appointment: ${userData['appointmentStatus']}',
+                                                  ),
+                                                  BodyMediumText(
+                                                    text:
+                                                        'Date: ${DateFormat('MMMM d, y').format(DateTime.parse(userData['appointmentDate']))}',
+                                                  ),
+                                                  BodyMediumText(
+                                                    text:
+                                                        'Time: ${DateFormat('h:mm a ').format(DateTime.parse(userData['appointmentDate']))}',
                                                   ),
                                                 ],
                                               ),
-                                              const SizedBox(height: 10),
-                                              Center(
-                                                child: SizedBox(
-                                                  width: 250,
-                                                  child: ElevatedButton(
-                                                    style: ElevatedButton
-                                                        .styleFrom(
-                                                      backgroundColor:
-                                                          const Color(
-                                                                  0xFF050404)
-                                                              .withOpacity(0.9),
-                                                      shape:
-                                                          RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(10),
-                                                      ),
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                          vertical: 14),
-                                                    ),
-                                                    onPressed: () async {
-                                                      showDialog(
-                                                        context: context,
-                                                        builder: (BuildContext
-                                                            context) {
-                                                          return AlertDialog(
-                                                            title: const Text(
-                                                              'Confirmation',
-                                                              style: TextStyle(
-                                                                fontSize: 20,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                            ),
-                                                            content: const Text(
-                                                              'Are you sure you want to approve this appointment?',
-                                                            ),
-                                                            actions: [
-                                                              TextButton(
-                                                                onPressed: () {
-                                                                  Navigator.of(
-                                                                          context)
-                                                                      .pop();
-                                                                },
-                                                                style: TextButton
-                                                                    .styleFrom(
-                                                                  foregroundColor: const Color(
-                                                                          0xFF050404)
-                                                                      .withOpacity(
-                                                                          0.8),
-                                                                ),
-                                                                child: const Text(
-                                                                    'Cancel'),
-                                                              ),
-                                                              TextButton(
-                                                                onPressed: () {
-                                                                  Navigator.of(
-                                                                          context)
-                                                                      .pop();
-                                                                  updateAppointmentStatus(
-                                                                      id);
-                                                                },
-                                                                style: TextButton
-                                                                    .styleFrom(
-                                                                  foregroundColor: const Color(
-                                                                          0xFF050404)
-                                                                      .withOpacity(
-                                                                          0.9),
-                                                                ),
-                                                                child:
-                                                                    const Text(
-                                                                  'Approve',
-                                                                  style:
-                                                                      TextStyle(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          );
-                                                        },
-                                                      );
-                                                    },
-                                                    child: const Text(
-                                                      'Approve',
-                                                      style: TextStyle(
-                                                          color: Colors.white),
-                                                    ),
-                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Center(
+                                          child: SizedBox(
+                                            width: 250,
+                                            child: ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    const Color(0xFF050404)
+                                                        .withOpacity(0.9),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
                                                 ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 14),
                                               ),
-                                            ],
+                                              onPressed: () async {
+                                                showDialog(
+                                                  context: context,
+                                                  builder:
+                                                      (BuildContext context) {
+                                                    return AlertDialog(
+                                                      title: const Text(
+                                                        'Confirmation',
+                                                        style: TextStyle(
+                                                          fontSize: 20,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                      ),
+                                                      content: const Text(
+                                                        'Are you sure you want to approve this appointment?',
+                                                      ),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () {
+                                                            Navigator.of(
+                                                                    context)
+                                                                .pop();
+                                                          },
+                                                          style: TextButton
+                                                              .styleFrom(
+                                                            foregroundColor:
+                                                                const Color(
+                                                                        0xFF050404)
+                                                                    .withOpacity(
+                                                                        0.8),
+                                                          ),
+                                                          child: const Text(
+                                                              'Cancel'),
+                                                        ),
+                                                        TextButton(
+                                                          onPressed: () {
+                                                            Navigator.of(
+                                                                    context)
+                                                                .pop();
+                                                            updateAppointmentStatus(
+                                                                id);
+                                                          },
+                                                          style: TextButton
+                                                              .styleFrom(
+                                                            foregroundColor:
+                                                                const Color(
+                                                                        0xFF050404)
+                                                                    .withOpacity(
+                                                                        0.9),
+                                                          ),
+                                                          child: const Text(
+                                                            'Approve',
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+                                              },
+                                              child: const Text(
+                                                'Approve',
+                                                style: TextStyle(
+                                                    color: Colors.white),
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 5),
-                                    ],
-                                  );
-                                },
-                              ),
-                              if (customerDataList.isNotEmpty)
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    if (currentPage > 1)
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          fetchData(page: currentPage - 1);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFF050404)
-                                                  .withOpacity(0.9),
-                                        ),
-                                        child: const Text(
-                                          'Previous',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                      ),
-                                    const SizedBox(width: 10),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        fetchData(page: currentPage + 1);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF050404)
-                                            .withOpacity(0.9),
-                                      ),
-                                      child: const Text(
-                                        'Next',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 5),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                if (currentPage > 1)
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      fetchData(page: currentPage - 1);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF050404)
+                                          .withOpacity(0.9),
+                                    ),
+                                    child: const Text(
+                                      'Previous',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                const SizedBox(width: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    fetchData(page: currentPage + 1);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF050404)
+                                        .withOpacity(0.9),
+                                  ),
+                                  child: const Text(
+                                    'Next',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
+                    ),
                   ],
                 ),
               ),

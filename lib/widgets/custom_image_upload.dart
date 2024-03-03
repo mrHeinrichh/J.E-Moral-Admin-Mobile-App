@@ -53,9 +53,10 @@ class ImageUploaderValidator extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               buttonText,
-              style: const TextStyle(
-                color: Colors.blue,
-                fontSize: 15.0,
+              style: TextStyle(
+                color: const Color(0xFF050404).withOpacity(0.9),
+                fontSize: 15,
+                decoration: TextDecoration.underline,
               ),
               textAlign: TextAlign.center,
             ),
@@ -116,9 +117,10 @@ class ImageUploader extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               buttonText,
-              style: const TextStyle(
-                color: Colors.blue,
-                fontSize: 15.0,
+              style: TextStyle(
+                color: const Color(0xFF050404).withOpacity(0.9),
+                fontSize: 15,
+                decoration: TextDecoration.underline,
               ),
               textAlign: TextAlign.center,
             ),

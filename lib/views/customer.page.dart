@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class CustomerPage extends StatefulWidget {
   @override
@@ -16,10 +17,10 @@ class CustomerPage extends StatefulWidget {
 
 class _CustomerPageState extends State<CustomerPage> {
   File? _profileImage;
-
   final _profileImageStreamController = StreamController<File?>.broadcast();
 
   final formKey = GlobalKey<FormState>();
+  bool loadingData = false;
 
   List<Map<String, dynamic>> customerDataList = [];
   TextEditingController searchController = TextEditingController();
@@ -33,11 +34,36 @@ class _CustomerPageState extends State<CustomerPage> {
   @override
   void initState() {
     super.initState();
+    loadingData = true;
     fetchData();
   }
 
   int currentPage = 1;
   int limit = 100;
+
+  Future<void> fetchData({int page = 1}) async {
+    final response = await http.get(Uri.parse(
+        'https://lpg-api-06n8.onrender.com/api/v1/users/?page=$page&limit=$limit'));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+
+      final List<Map<String, dynamic>> customerData = (data['data'] as List)
+          .where((userData) =>
+              userData is Map<String, dynamic> && userData['__t'] == 'Customer')
+          .map((userData) => userData as Map<String, dynamic>)
+          .toList();
+
+      setState(() {
+        customerDataList.clear();
+        customerDataList.addAll(customerData);
+        currentPage = page;
+        loadingData = false;
+      });
+    } else {
+      throw Exception('Failed to load data from the API');
+    }
+  }
 
   Future<void> _profileTakeImage() async {
     final profilepickedFile =
@@ -140,29 +166,6 @@ class _CustomerPageState extends State<CustomerPage> {
     }
   }
 
-  Future<void> fetchData({int page = 1}) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/users/?page=$page&limit=$limit'));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-
-      final List<Map<String, dynamic>> customerData = (data['data'] as List)
-          .where((userData) =>
-              userData is Map<String, dynamic> && userData['__t'] == 'Customer')
-          .map((userData) => userData as Map<String, dynamic>)
-          .toList();
-
-      setState(() {
-        customerDataList.clear();
-        customerDataList.addAll(customerData);
-        currentPage = page;
-      });
-    } else {
-      throw Exception('Failed to load data from the API');
-    }
-  }
-
   Future<void> addCustomerToAPI(Map<String, dynamic> newCustomer) async {
     final url = Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users');
     final headers = {'Content-Type': 'application/json'};
@@ -198,28 +201,41 @@ class _CustomerPageState extends State<CustomerPage> {
   }
 
   Future<void> search(String query) async {
-    if (query.isEmpty) {
-      await fetchData();
-    } else {
-      final response = await http.get(Uri.parse(
-          'https://lpg-api-06n8.onrender.com/api/v1/users/?search=$query'));
+    final response = await http.get(
+      Uri.parse(
+          'https://lpg-api-06n8.onrender.com/api/v1/users/?search=$query&limit=1000'),
+    );
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
 
-        final List<Map<String, dynamic>> customerData = (data['data'] as List)
-            .where((userData) =>
-                userData is Map<String, dynamic> &&
-                userData.containsKey('__t') &&
-                userData['__t'] == 'Customer')
-            .map((userData) => userData as Map<String, dynamic>)
-            .toList();
+      final List<Map<String, dynamic>> filteredData = (data['data'] as List)
+          .where((userData) =>
+              userData is Map<String, dynamic> &&
+              userData['__t'] == "Customer" &&
+              (userData['name']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  userData['contactNumber']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  userData['email']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  userData['address']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase())))
+          .map((productData) => productData as Map<String, dynamic>)
+          .toList();
 
-        setState(() {
-          customerDataList = customerData;
-        });
-      } else {}
-    }
+      setState(() {
+        customerDataList = filteredData;
+      });
+    } else {}
   }
 
   void openAddCustomerDialog() {
@@ -228,7 +244,6 @@ class _CustomerPageState extends State<CustomerPage> {
     TextEditingController addressController = TextEditingController();
     TextEditingController emailController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
-
     bool isProfileImageSelected = false;
 
     showDialog(
@@ -263,7 +278,8 @@ class _CustomerPageState extends State<CustomerPage> {
                                 backgroundImage: snapshot.data != null
                                     ? FileImage(snapshot.data!)
                                     : null,
-                                backgroundColor: Colors.grey,
+                                backgroundColor:
+                                    const Color(0xFF050404).withOpacity(0.7),
                                 child: snapshot.data == null
                                     ? const Icon(
                                         Icons.person,
@@ -288,66 +304,73 @@ class _CustomerPageState extends State<CustomerPage> {
                       );
                     },
                   ),
-                  TextFormField(
-                      controller: nameController,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please Enter Name";
-                        } else {
-                          return null;
-                        }
-                      }),
-                  TextFormField(
-                    controller: contactNumberController,
-                    decoration:
-                        const InputDecoration(labelText: 'Contact Number'),
+                  EditTextField(
+                    controller: nameController,
+                    labelText: "Full Name",
+                    hintText: 'Enter the Full Name',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return "Please Enter Number";
-                        // } else if (!RegExp(
-                        //         r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]+$')
-                        //     .hasMatch(value!)) {
-                        //   return "Enter Correct Phone Number";
+                        return "Please Enter the Full Name";
                       } else {
                         return null;
                       }
                     },
+                  ),
+                  EditTextField(
+                    labelText: 'Mobile Number',
+                    hintText: 'Enter the Mobile Number',
+                    controller: contactNumberController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                     ],
-                  ),
-                  TextFormField(
-                    controller: addressController,
-                    decoration: const InputDecoration(labelText: 'Address'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return "Please Enter Address";
+                        return "Please Enter the Mobile Number";
+                      } else if (value.length != 11) {
+                        return "Please Enter the Correct Mobile Number";
+                      } else if (!value.startsWith('09')) {
+                        return "Please Enter the Correct Mobile Number";
                       } else {
                         return null;
                       }
                     },
                   ),
-                  TextFormField(
-                      controller: emailController,
-                      decoration: const InputDecoration(labelText: 'Email'),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please Enter Email";
-                        } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}')
-                            .hasMatch(value!)) {
-                          return "Enter Correct Email";
-                        } else {
-                          return null;
-                        }
-                      }),
-                  TextFormField(
-                    controller: passwordController,
-                    decoration: const InputDecoration(labelText: 'Password'),
+                  EditTextField(
+                    controller: addressController,
+                    labelText: "Address",
+                    hintText: 'Enter the Address',
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Please Enter Password";
+                      if (value!.isEmpty) {
+                        return "Please Enter the Address";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                  EditTextField(
+                    controller: emailController,
+                    labelText: 'Email Address',
+                    hintText: 'Enter your Email Address',
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter Email Address";
+                      } else if (!RegExp(
+                              r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$')
+                          .hasMatch(value)) {
+                        return "Please Enter Correct Email Address";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                  EditTextField(
+                    controller: passwordController,
+                    labelText: "Password",
+                    hintText: 'Enter the Password',
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter the Password";
                       } else {
                         return null;
                       }
@@ -362,6 +385,9 @@ class _CustomerPageState extends State<CustomerPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
@@ -384,7 +410,15 @@ class _CustomerPageState extends State<CustomerPage> {
                   }
                 }
               },
-              child: const Text('Save'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Save',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -403,7 +437,7 @@ class _CustomerPageState extends State<CustomerPage> {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
             decoration: BoxDecoration(
-              color: Colors.red,
+              color: const Color(0xFFd41111).withOpacity(0.7),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -460,7 +494,6 @@ class _CustomerPageState extends State<CustomerPage> {
               key: formKey,
               child: Column(
                 children: [
-                  const Divider(),
                   StreamBuilder<File?>(
                     stream: _profileImageStreamController.stream,
                     builder: (context, snapshot) {
@@ -504,56 +537,63 @@ class _CustomerPageState extends State<CustomerPage> {
                       );
                     },
                   ),
-                  TextFormField(
-                      controller: nameController,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please Enter Name";
-                        } else {
-                          return null;
-                        }
-                      }),
-                  TextFormField(
-                    controller: contactNumberController,
-                    decoration:
-                        const InputDecoration(labelText: 'Contact Number'),
+                  EditTextField(
+                    controller: nameController,
+                    labelText: "Full Name",
+                    hintText: 'Enter the Full Name',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return "Please Enter Number";
-                        // } else if (!RegExp(
-                        //         r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]+$')
-                        //     .hasMatch(value!)) {
-                        //   return "Enter Correct Phone Number";
+                        return "Please Enter the Full Name";
                       } else {
                         return null;
                       }
                     },
+                  ),
+                  EditTextField(
+                    labelText: 'Mobile Number',
+                    hintText: 'Enter the Mobile Number',
+                    controller: contactNumberController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                     ],
-                  ),
-                  TextFormField(
-                    controller: addressController,
-                    decoration: const InputDecoration(labelText: 'Address'),
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return "Please Enter Address";
+                        return "Please Enter the Mobile Number";
+                      } else if (value.length != 11) {
+                        return "Please Enter the Correct Mobile Number";
+                      } else if (!value.startsWith('09')) {
+                        return "Please Enter the Correct Mobile Number";
                       } else {
                         return null;
                       }
                     },
                   ),
-                  TextFormField(
-                    controller: emailController,
-                    decoration: const InputDecoration(labelText: 'Email'),
+                  EditTextField(
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null,
+                    controller: addressController,
+                    labelText: "Address",
+                    hintText: 'Enter the Address',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return "Please Enter Email";
-                      } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}')
-                          .hasMatch(value!)) {
-                        return "Enter Correct Email";
+                        return "Please Enter the Address";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                  EditTextField(
+                    controller: emailController,
+                    labelText: 'Email Address',
+                    hintText: 'Enter your Email Address',
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter Email Address";
+                      } else if (!RegExp(
+                              r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$')
+                          .hasMatch(value)) {
+                        return "Please Enter Correct Email Address";
                       } else {
                         return null;
                       }
@@ -568,6 +608,9 @@ class _CustomerPageState extends State<CustomerPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
@@ -578,6 +621,7 @@ class _CustomerPageState extends State<CustomerPage> {
                       contactNumberController.text;
                   customerToEdit['address'] = addressController.text;
                   customerToEdit['email'] = emailController.text;
+                  customerToEdit['__t'] = "Customer";
 
                   if (_profileImage != null) {
                     var editprofileUploadResponse =
@@ -611,7 +655,126 @@ class _CustomerPageState extends State<CustomerPage> {
                   }
                 }
               },
-              child: const Text('Save'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Save',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void changePassData(String id) async {
+    Map<String, dynamic> customerToEdit =
+        customerDataList.firstWhere((data) => data['_id'] == id);
+
+    TextEditingController passwordController = TextEditingController(text: "");
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Change Password',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundImage: NetworkImage(
+                        customerToEdit['image'].toString(),
+                      ),
+                    ),
+                  ),
+                  const Divider(),
+                  BodyMediumOver(
+                    text: 'Name: ${customerToEdit['name']}',
+                  ),
+                  BodyMediumText(
+                    text: 'Mobile #: ${customerToEdit['contactNumber']}',
+                  ),
+                  BodyMediumOver(
+                    text: 'Address: ${customerToEdit['address']}',
+                  ),
+                  BodyMediumOver(
+                    text: 'Email Address: ${customerToEdit['email']}',
+                  ),
+                  EditTextField(
+                    controller: passwordController,
+                    labelText: "New Password",
+                    hintText: 'Enter the New Password',
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter the New Password";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  customerToEdit['password'] = passwordController.text;
+
+                  final url = Uri.parse(
+                      'https://lpg-api-06n8.onrender.com/api/v1/users/$id/password');
+                  final headers = {'Content-Type': 'application/json'};
+
+                  final response = await http.patch(
+                    url,
+                    headers: headers,
+                    body: jsonEncode(customerToEdit),
+                  );
+
+                  if (response.statusCode == 200) {
+                    fetchData();
+                    Navigator.pop(context);
+                  } else {
+                    print(
+                        'Failed to update the customer. Status code: ${response.statusCode}');
+                  }
+                }
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Save',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -620,17 +783,70 @@ class _CustomerPageState extends State<CustomerPage> {
   }
 
   void archiveData(String id) async {
+    Map<String, dynamic> customerToEdit =
+        customerDataList.firstWhere((data) => data['_id'] == id);
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Archive Data'),
-          content: const Text('Are you sure you want to Archive this data?'),
+          title: const Text(
+            'Archive Data',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundImage: NetworkImage(
+                        customerToEdit['image'].toString(),
+                      ),
+                    ),
+                  ),
+                  const Divider(),
+                  BodyMediumOver(
+                    text: 'Name: ${customerToEdit['name']}',
+                  ),
+                  BodyMediumText(
+                    text: 'Mobile #: ${customerToEdit['contactNumber']}',
+                  ),
+                  BodyMediumOver(
+                    text: 'Address: ${customerToEdit['address']}',
+                  ),
+                  BodyMediumOver(
+                    text: 'Email Address: ${customerToEdit['email']}',
+                  ),
+                  const Divider(),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Are you sure you want to Archive this data?',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFd41111).withOpacity(0.9),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
@@ -650,7 +866,15 @@ class _CustomerPageState extends State<CustomerPage> {
                       'Failed to Archive the data. Status code: ${response.statusCode}');
                 }
               },
-              child: const Text('Archive'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFd41111).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Archive',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -662,158 +886,278 @@ class _CustomerPageState extends State<CustomerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Customer List'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: RefreshIndicator(
-          onRefresh: () => fetchData(),
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: IntrinsicWidth(
-                          child: TextField(
-                            controller: searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Search',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              isDense: true,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(horizontal: 10),
-                              suffixIcon: InkWell(
-                                onTap: () {
-                                  search(searchController.text);
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  child: const Icon(
-                                    Icons.search,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        openAddCustomerDialog();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF232937),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text(
-                        'Add Customer',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: customerDataList.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final userData = customerDataList[index];
-                    final id = userData['_id'];
-
-                    return Card(
-                      elevation: 4,
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          radius: 30,
-                          backgroundImage: NetworkImage(
-                            userData['image'] ?? '',
-                          ),
-                        ),
-                        title: TitleMedium(text: userData['name']),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Divider(),
-                            BodyMediumText(
-                                text:
-                                    'Contact #: ${userData['contactNumber']}'),
-                            BodyMediumText(
-                                text: 'Address: ${userData['address']}'),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 40,
-                              child: IconButton(
-                                icon: const Icon(Icons.edit),
-                                onPressed: () => updateData(id),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 20,
-                              child: IconButton(
-                                icon: const Icon(Icons.archive),
-                                onPressed: () => archiveData(id),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 5),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (currentPage > 1)
-                      ElevatedButton(
-                        onPressed: () {
-                          fetchData(page: currentPage - 1);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF232937),
-                        ),
-                        child: const Text(
-                          'Previous',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-                      onPressed: () {
-                        fetchData(page: currentPage + 1);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF232937),
-                      ),
-                      child: const Text(
-                        'Next',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-              ],
-            ),
+        backgroundColor: Colors.white,
+        elevation: 1,
+        title: Text(
+          'Customer List',
+          style: TextStyle(
+            color: const Color(0xFF050404).withOpacity(0.9),
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        iconTheme: IconThemeData(
+          color: const Color(0xFF050404).withOpacity(0.8),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: Colors.black,
+            height: 0.2,
           ),
         ),
       ),
+      backgroundColor: Colors.white,
+      body: loadingData
+          ? Center(
+              child: LoadingAnimationWidget.flickr(
+                leftDotColor: const Color(0xFF050404).withOpacity(0.8),
+                rightDotColor: const Color(0xFFd41111).withOpacity(0.8),
+                size: 40,
+              ),
+            )
+          : RefreshIndicator(
+              color: const Color(0xFF050404),
+              strokeWidth: 2.5,
+              onRefresh: () async {
+                await fetchData();
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: IntrinsicWidth(
+                              child: TextField(
+                                controller: searchController,
+                                onChanged: (query) {
+                                  search(query);
+                                },
+                                decoration: InputDecoration(
+                                  hintText: 'Search',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFF050404)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFF050404)),
+                                  ),
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  suffixIcon: InkWell(
+                                    onTap: () {
+                                      search(searchController.text);
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      child: const Icon(
+                                        Icons.search,
+                                        color: Color(0xFF050404),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                cursorColor: const Color(0xFF050404),
+                              ),
+                            ),
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            openAddCustomerDialog();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color(0xFF050404).withOpacity(0.9),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            'Add Customer',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    if (customerDataList.isEmpty && !loadingData)
+                      const Center(
+                        child: Column(
+                          children: [
+                            SizedBox(height: 40),
+                            Text(
+                              'No customers to display.',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 30),
+                          ],
+                        ),
+                      ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: customerDataList.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                final userData = customerDataList[index];
+                                final id = userData['_id'];
+
+                                return SizedBox(
+                                  child: Card(
+                                    color: Colors.white,
+                                    elevation: 2,
+                                    child: Column(
+                                      children: [
+                                        // Padding(
+                                        //   padding: const EdgeInsets.all(8.0),
+                                        //   child: Container(
+                                        //     width: double.infinity,
+                                        //     height: 100,
+                                        //     decoration: BoxDecoration(
+                                        //       borderRadius:
+                                        //           BorderRadius.circular(10),
+                                        //       border: Border.all(
+                                        //         color: Colors.black,
+                                        //         width: 1,
+                                        //       ),
+                                        //       image: DecorationImage(
+                                        //         image: NetworkImage(
+                                        //             userData['image'] ?? ''),
+                                        //         fit: BoxFit.cover,
+                                        //       ),
+                                        //     ),
+                                        //   ),
+                                        // ),
+                                        ListTile(
+                                          title: TitleMedium(
+                                              text: '${userData['name']}'),
+                                          subtitle: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              const Divider(),
+                                              BodyMediumText(
+                                                  text:
+                                                      'Mobile #: ${userData['contactNumber']}'),
+                                              BodyMediumText(
+                                                  text:
+                                                      'Email: ${userData['email']}'),
+                                              BodyMediumText(
+                                                  text:
+                                                      'Address: ${userData['address']}'),
+                                            ],
+                                          ),
+                                          trailing: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              SizedBox(
+                                                width: 40,
+                                                child: IconButton(
+                                                  icon: Icon(
+                                                    Icons.edit,
+                                                    color:
+                                                        const Color(0xFF050404)
+                                                            .withOpacity(0.9),
+                                                  ),
+                                                  onPressed: () =>
+                                                      updateData(id),
+                                                ),
+                                              ),
+                                              SizedBox(
+                                                width: 40,
+                                                child: IconButton(
+                                                  icon: Icon(
+                                                    Icons.password,
+                                                    color:
+                                                        const Color(0xFF050404)
+                                                            .withOpacity(0.9),
+                                                  ),
+                                                  onPressed: () =>
+                                                      changePassData(id),
+                                                ),
+                                              ),
+                                              SizedBox(
+                                                width: 20,
+                                                child: IconButton(
+                                                  icon: Icon(
+                                                    Icons.archive,
+                                                    color:
+                                                        const Color(0xFF050404)
+                                                            .withOpacity(0.9),
+                                                  ),
+                                                  onPressed: () =>
+                                                      archiveData(id),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 5),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                if (currentPage > 1)
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      fetchData(page: currentPage - 1);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF050404)
+                                          .withOpacity(0.9),
+                                    ),
+                                    child: const Text(
+                                      'Previous',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                const SizedBox(width: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    fetchData(page: currentPage + 1);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF050404)
+                                        .withOpacity(0.9),
+                                  ),
+                                  child: const Text(
+                                    'Next',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 }
