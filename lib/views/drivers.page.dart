@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class DriversPage extends StatefulWidget {
   @override
@@ -26,6 +27,7 @@ class _DriversPageState extends State<DriversPage> {
   final _certImageStreamController = StreamController<File?>.broadcast();
 
   final formKey = GlobalKey<FormState>();
+  bool loadingData = false;
 
   List<Map<String, dynamic>> riderDataList = [];
   TextEditingController searchController = TextEditingController();
@@ -42,11 +44,37 @@ class _DriversPageState extends State<DriversPage> {
   @override
   void initState() {
     super.initState();
+    loadingData = true;
     fetchData();
   }
 
   int currentPage = 1;
   int limit = 100;
+
+  Future<void> fetchData({int page = 1}) async {
+    final filter = Uri.encodeComponent('{"__t": "Rider"}');
+    final response = await http.get(Uri.parse(
+        'https://lpg-api-06n8.onrender.com/api/v1/users/?filter=$filter&page=$page&limit=$limit'));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+
+      final List<Map<String, dynamic>> riderData = (data['data'] as List)
+          .where((userData) =>
+              userData is Map<String, dynamic> && userData['__t'] == 'Rider')
+          .map((userData) => userData as Map<String, dynamic>)
+          .toList();
+
+      setState(() {
+        riderDataList.clear();
+        riderDataList.addAll(riderData);
+        currentPage = page;
+        loadingData = false;
+      });
+    } else {
+      throw Exception('Failed to load data from the API');
+    }
+  }
 
   Future<void> _profileTakeImage() async {
     final profilepickedFile =
@@ -441,30 +469,6 @@ class _DriversPageState extends State<DriversPage> {
     }
   }
 
-  Future<void> fetchData({int page = 1}) async {
-    final filter = Uri.encodeComponent('{"__t": "Rider"}');
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/users/?filter=$filter&page=$page&limit=$limit'));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-
-      final List<Map<String, dynamic>> riderData = (data['data'] as List)
-          .where((userData) =>
-              userData is Map<String, dynamic> && userData['__t'] == 'Rider')
-          .map((userData) => userData as Map<String, dynamic>)
-          .toList();
-
-      setState(() {
-        riderDataList.clear();
-        riderDataList.addAll(riderData);
-        currentPage = page;
-      });
-    } else {
-      throw Exception('Failed to load data from the API');
-    }
-  }
-
   Future<void> addRiderToAPI(Map<String, dynamic> newRider) async {
     final url = Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users');
     final headers = {'Content-Type': 'application/json'};
@@ -538,22 +542,39 @@ class _DriversPageState extends State<DriversPage> {
   }
 
   Future<void> search(String query) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/users/?search=$query'));
+    final response = await http.get(
+      Uri.parse(
+          'https://lpg-api-06n8.onrender.com/api/v1/users/?search=$query&limit=1000'),
+    );
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
 
-      final List<Map<String, dynamic>> riderData = (data['data'] as List)
+      final List<Map<String, dynamic>> filteredData = (data['data'] as List)
           .where((userData) =>
               userData is Map<String, dynamic> &&
-              userData.containsKey('__t') &&
-              userData['__t'] == 'Rider')
-          .map((userData) => userData as Map<String, dynamic>)
+              userData['__t'] == "Rider" &&
+              (userData['name']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  userData['contactNumber']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  userData['email']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  userData['address']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase())))
+          .map((productData) => productData as Map<String, dynamic>)
           .toList();
 
       setState(() {
-        riderDataList = riderData;
+        riderDataList = filteredData;
       });
     } else {}
   }
@@ -603,7 +624,8 @@ class _DriversPageState extends State<DriversPage> {
                                 backgroundImage: snapshot.data != null
                                     ? FileImage(snapshot.data!)
                                     : null,
-                                backgroundColor: Colors.grey,
+                                backgroundColor:
+                                    const Color(0xFF050404).withOpacity(0.7),
                                 child: snapshot.data == null
                                     ? const Icon(
                                         Icons.person,
@@ -628,58 +650,69 @@ class _DriversPageState extends State<DriversPage> {
                       );
                     },
                   ),
-                  TextFormField(
-                      controller: nameController,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please Enter Name";
-                        } else {
-                          return null;
-                        }
-                      }),
-                  TextFormField(
+                  EditTextField(
+                    controller: nameController,
+                    labelText: "Full Name",
+                    hintText: 'Enter the Full Name',
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter the Full Name";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                  EditTextField(
                     controller: addressController,
-                    decoration: const InputDecoration(labelText: 'Address'),
+                    labelText: "Address",
+                    hintText: 'Enter the Address',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return "Please Enter Address";
+                        return "Please Enter the Address";
                       } else {
                         return null;
                       }
                     },
                   ),
-                  TextFormField(
+                  EditTextField(
+                    labelText: 'Mobile Number',
+                    hintText: 'Enter the Mobile Number',
                     controller: contactNumberController,
-                    decoration:
-                        const InputDecoration(labelText: 'Contact Number'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return "Please Enter Number";
-                      } else {
-                        return null;
-                      }
-                    },
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                     ],
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter the Mobile Number";
+                      } else if (value.length != 11) {
+                        return "Please Enter the Correct Mobile Number";
+                      } else if (!value.startsWith('09')) {
+                        return "Please Enter the Correct Mobile Number";
+                      } else {
+                        return null;
+                      }
+                    },
                   ),
-                  TextFormField(
+                  EditTextField(
+                    labelText: 'GCash Number',
+                    hintText: 'Enter the GCash Number',
                     controller: gcashController,
-                    decoration:
-                        const InputDecoration(labelText: 'GCash Number'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return "Please Enter Number";
-                      } else {
-                        return null;
-                      }
-                    },
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                     ],
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter the GCash Number";
+                      } else if (value.length != 11) {
+                        return "Please Enter the Correct GCash Number";
+                      } else if (!value.startsWith('09')) {
+                        return "Please Enter the Correct GCash Number";
+                      } else {
+                        return null;
+                      }
+                    },
                   ),
                   const SizedBox(height: 10),
                   StreamBuilder<File?>(
@@ -693,7 +726,8 @@ class _DriversPageState extends State<DriversPage> {
                               DecoratedBox(
                                 decoration: BoxDecoration(
                                   border: Border.all(
-                                    color: Colors.black,
+                                    color: const Color(0xFF050404)
+                                        .withOpacity(0.9),
                                     width: 1.0,
                                   ),
                                   borderRadius: BorderRadius.circular(8),
@@ -736,25 +770,29 @@ class _DriversPageState extends State<DriversPage> {
                       );
                     },
                   ),
-                  TextFormField(
-                      controller: emailController,
-                      decoration: const InputDecoration(labelText: 'Email'),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please Enter Email";
-                        } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}')
-                            .hasMatch(value!)) {
-                          return "Enter Correct Email";
-                        } else {
-                          return null;
-                        }
-                      }),
-                  TextFormField(
-                    controller: passwordController,
-                    decoration: const InputDecoration(labelText: 'Password'),
+                  EditTextField(
+                    controller: emailController,
+                    labelText: 'Email Address',
+                    hintText: 'Enter your Email Address',
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Please Enter Password";
+                      if (value!.isEmpty) {
+                        return "Please Enter Email Address";
+                      } else if (!RegExp(
+                              r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$')
+                          .hasMatch(value)) {
+                        return "Please Enter Correct Email Address";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                  EditTextField(
+                    controller: passwordController,
+                    labelText: "Password",
+                    hintText: 'Enter the Password',
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter the Password";
                       } else {
                         return null;
                       }
@@ -772,7 +810,8 @@ class _DriversPageState extends State<DriversPage> {
                               DecoratedBox(
                                 decoration: BoxDecoration(
                                   border: Border.all(
-                                    color: Colors.black,
+                                    color: const Color(0xFF050404)
+                                        .withOpacity(0.9),
                                     width: 1.0,
                                   ),
                                   borderRadius: BorderRadius.circular(8),
@@ -826,7 +865,8 @@ class _DriversPageState extends State<DriversPage> {
                               DecoratedBox(
                                 decoration: BoxDecoration(
                                   border: Border.all(
-                                    color: Colors.black,
+                                    color: const Color(0xFF050404)
+                                        .withOpacity(0.9),
                                     width: 1.0,
                                   ),
                                   borderRadius: BorderRadius.circular(8),
@@ -878,6 +918,9 @@ class _DriversPageState extends State<DriversPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
@@ -892,23 +935,33 @@ class _DriversPageState extends State<DriversPage> {
                   showCustomOverlay(
                       context, 'Please Upload a Seminar Certificate');
                 } else {
-                  Map<String, dynamic> newRider = {
-                    "name": nameController.text,
-                    "contactNumber": contactNumberController.text,
-                    "address": addressController.text,
-                    "gcash": gcashController.text,
-                    "__t": "Rider",
-                    "email": emailController.text,
-                    "password": passwordController.text,
-                    "image": "",
-                    "gcashQr": "",
-                    "license": "",
-                    "seminarCert": "",
-                  };
-                  addRiderToAPI(newRider);
+                  if (formKey.currentState!.validate()) {
+                    Map<String, dynamic> newRider = {
+                      "name": nameController.text,
+                      "contactNumber": contactNumberController.text,
+                      "address": addressController.text,
+                      "gcash": gcashController.text,
+                      "__t": "Rider",
+                      "email": emailController.text,
+                      "password": passwordController.text,
+                      "image": "",
+                      "gcashQr": "",
+                      "license": "",
+                      "seminarCert": "",
+                    };
+                    addRiderToAPI(newRider);
+                  }
                 }
               },
-              child: const Text('Save'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Save',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -927,7 +980,7 @@ class _DriversPageState extends State<DriversPage> {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
             decoration: BoxDecoration(
-              color: Colors.red,
+              color: const Color(0xFFd41111).withOpacity(0.7),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -1029,58 +1082,69 @@ class _DriversPageState extends State<DriversPage> {
                       );
                     },
                   ),
-                  TextFormField(
-                      controller: nameController,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please Enter Name";
-                        } else {
-                          return null;
-                        }
-                      }),
-                  TextFormField(
-                    controller: contactNumberController,
-                    decoration:
-                        const InputDecoration(labelText: 'Contact Number'),
+                  EditTextField(
+                    controller: nameController,
+                    labelText: "Full Name",
+                    hintText: 'Enter the Full Name',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return "Please Enter Number";
+                        return "Please Enter the Full Name";
                       } else {
                         return null;
                       }
                     },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
                   ),
-                  TextFormField(
+                  EditTextField(
                     controller: addressController,
-                    decoration: const InputDecoration(labelText: 'Address'),
+                    labelText: "Address",
+                    hintText: 'Enter the Address',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return "Please Enter Address";
+                        return "Please Enter the Address";
                       } else {
                         return null;
                       }
                     },
                   ),
-                  TextFormField(
-                    controller: gcashController,
-                    decoration:
-                        const InputDecoration(labelText: 'GCash Number'),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return "Please Enter Number";
-                      } else {
-                        return null;
-                      }
-                    },
+                  EditTextField(
+                    labelText: 'Mobile Number',
+                    hintText: 'Enter the Mobile Number',
+                    controller: contactNumberController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                     ],
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter the Mobile Number";
+                      } else if (value.length != 11) {
+                        return "Please Enter the Correct Mobile Number";
+                      } else if (!value.startsWith('09')) {
+                        return "Please Enter the Correct Mobile Number";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                  EditTextField(
+                    labelText: 'GCash Number',
+                    hintText: 'Enter the GCash Number',
+                    controller: gcashController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter the GCash Number";
+                      } else if (value.length != 11) {
+                        return "Please Enter the Correct GCash Number";
+                      } else if (!value.startsWith('09')) {
+                        return "Please Enter the Correct GCash Number";
+                      } else {
+                        return null;
+                      }
+                    },
                   ),
                   const SizedBox(height: 10),
                   StreamBuilder<File?>(
@@ -1094,7 +1158,8 @@ class _DriversPageState extends State<DriversPage> {
                               DecoratedBox(
                                 decoration: BoxDecoration(
                                   border: Border.all(
-                                    color: Colors.black,
+                                    color: const Color(0xFF050404)
+                                        .withOpacity(0.9),
                                     width: 1.0,
                                   ),
                                   borderRadius: BorderRadius.circular(8),
@@ -1141,15 +1206,17 @@ class _DriversPageState extends State<DriversPage> {
                       );
                     },
                   ),
-                  TextFormField(
+                  EditTextField(
                     controller: emailController,
-                    decoration: const InputDecoration(labelText: 'Email'),
+                    labelText: 'Email Address',
+                    hintText: 'Enter your Email Address',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return "Please Enter Email";
-                      } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}')
-                          .hasMatch(value!)) {
-                        return "Enter Correct Email";
+                        return "Please Enter Email Address";
+                      } else if (!RegExp(
+                              r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$')
+                          .hasMatch(value)) {
+                        return "Please Enter Correct Email Address";
                       } else {
                         return null;
                       }
@@ -1167,7 +1234,8 @@ class _DriversPageState extends State<DriversPage> {
                               DecoratedBox(
                                 decoration: BoxDecoration(
                                   border: Border.all(
-                                    color: Colors.black,
+                                    color: const Color(0xFF050404)
+                                        .withOpacity(0.9),
                                     width: 1.0,
                                   ),
                                   borderRadius: BorderRadius.circular(8),
@@ -1225,7 +1293,8 @@ class _DriversPageState extends State<DriversPage> {
                               DecoratedBox(
                                 decoration: BoxDecoration(
                                   border: Border.all(
-                                    color: Colors.black,
+                                    color: const Color(0xFF050404)
+                                        .withOpacity(0.9),
                                     width: 1.0,
                                   ),
                                   borderRadius: BorderRadius.circular(8),
@@ -1281,6 +1350,9 @@ class _DriversPageState extends State<DriversPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
@@ -1291,6 +1363,7 @@ class _DriversPageState extends State<DriversPage> {
                   riderToEdit['address'] = addressController.text;
                   riderToEdit['gcash'] = gcashController.text;
                   riderToEdit['email'] = emailController.text;
+                  riderToEdit['__t'] = "Rider";
 
                   if (_profileImage != null) {
                     var editProfileUploadResponse =
@@ -1349,7 +1422,129 @@ class _DriversPageState extends State<DriversPage> {
                   }
                 }
               },
-              child: const Text('Save'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Save',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void changePassData(String id) async {
+    Map<String, dynamic> riderToEdit =
+        riderDataList.firstWhere((data) => data['_id'] == id);
+
+    TextEditingController passwordController = TextEditingController(text: "");
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Change Password',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundImage: NetworkImage(
+                        riderToEdit['image'].toString(),
+                      ),
+                    ),
+                  ),
+                  const Divider(),
+                  BodyMediumOver(
+                    text: 'Name: ${riderToEdit['name']}',
+                  ),
+                  BodyMediumOver(
+                    text: 'Address: ${riderToEdit['address']}',
+                  ),
+                  BodyMediumText(
+                    text: 'Mobile #: ${riderToEdit['contactNumber']}',
+                  ),
+                  BodyMediumText(
+                    text: 'GCash #: ${riderToEdit['gcash']}',
+                  ),
+                  BodyMediumOver(
+                    text: 'Email Address: ${riderToEdit['email']}',
+                  ),
+                  EditTextField(
+                    controller: passwordController,
+                    labelText: "New Password",
+                    hintText: 'Enter the New Password',
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter the New Password";
+                      } else {
+                        return null;
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  riderToEdit['password'] = passwordController.text;
+
+                  final url = Uri.parse(
+                      'https://lpg-api-06n8.onrender.com/api/v1/users/$id/password');
+                  final headers = {'Content-Type': 'application/json'};
+
+                  final response = await http.patch(
+                    url,
+                    headers: headers,
+                    body: jsonEncode(riderToEdit),
+                  );
+
+                  if (response.statusCode == 200) {
+                    fetchData();
+                    Navigator.pop(context);
+                  } else {
+                    print(
+                        'Failed to update the delivery driver. Status code: ${response.statusCode}');
+                  }
+                }
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Save',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -1358,17 +1553,73 @@ class _DriversPageState extends State<DriversPage> {
   }
 
   void archiveData(String id) async {
+    Map<String, dynamic> riderToEdit =
+        riderDataList.firstWhere((data) => data['_id'] == id);
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Archive Data'),
-          content: const Text('Are you sure you want to Archive this data?'),
+          title: const Text(
+            'Archive Data',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundImage: NetworkImage(
+                        riderToEdit['image'].toString(),
+                      ),
+                    ),
+                  ),
+                  const Divider(),
+                  BodyMediumOver(
+                    text: 'Name: ${riderToEdit['name']}',
+                  ),
+                  BodyMediumOver(
+                    text: 'Address: ${riderToEdit['address']}',
+                  ),
+                  BodyMediumText(
+                    text: 'Mobile #: ${riderToEdit['contactNumber']}',
+                  ),
+                  BodyMediumText(
+                    text: 'GCash #: ${riderToEdit['gcash']}',
+                  ),
+                  BodyMediumOver(
+                    text: 'Email Address: ${riderToEdit['email']}',
+                  ),
+                  const Divider(),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Are you sure you want to Archive this data?',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFd41111).withOpacity(0.9),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
@@ -1382,13 +1633,22 @@ class _DriversPageState extends State<DriversPage> {
                     riderDataList.removeWhere((data) => data['_id'] == id);
                   });
 
+                  fetchData();
                   Navigator.pop(context);
                 } else {
                   print(
                       'Failed to Archive the data. Status code: ${response.statusCode}');
                 }
               },
-              child: const Text('Archive'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFd41111).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Archive',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -1400,168 +1660,281 @@ class _DriversPageState extends State<DriversPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Delivery Driver List'),
+        backgroundColor: Colors.white,
+        elevation: 1,
+        title: Text(
+          'Delivery Driver List',
+          style: TextStyle(
+            color: const Color(0xFF050404).withOpacity(0.9),
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        iconTheme: IconThemeData(
+          color: const Color(0xFF050404).withOpacity(0.8),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: Colors.black,
+            height: 0.2,
+          ),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: RefreshIndicator(
-          onRefresh: () => fetchData(),
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: Colors.white,
+      body: loadingData
+          ? Center(
+              child: LoadingAnimationWidget.flickr(
+                leftDotColor: const Color(0xFF050404).withOpacity(0.8),
+                rightDotColor: const Color(0xFFd41111).withOpacity(0.8),
+                size: 40,
+              ),
+            )
+          : RefreshIndicator(
+              color: const Color(0xFF050404),
+              strokeWidth: 2.5,
+              onRefresh: () async {
+                await fetchData();
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: IntrinsicWidth(
-                          child: TextField(
-                            controller: searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Search',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              isDense: true,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(horizontal: 10),
-                              suffixIcon: InkWell(
-                                onTap: () {
-                                  search(searchController.text);
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: IntrinsicWidth(
+                              child: TextField(
+                                controller: searchController,
+                                onChanged: (query) {
+                                  search(query);
                                 },
-                                child: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  child: const Icon(
-                                    Icons.search,
-                                    color: Colors.black,
+                                decoration: InputDecoration(
+                                  hintText: 'Search',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFF050404)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFF050404)),
+                                  ),
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  suffixIcon: InkWell(
+                                    onTap: () {
+                                      search(searchController.text);
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      child: const Icon(
+                                        Icons.search,
+                                        color: Color(0xFF050404),
+                                      ),
+                                    ),
                                   ),
                                 ),
+                                cursorColor: const Color(0xFF050404),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        openAddRiderDialog();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF232937),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text(
-                        'Add Delivery Driver',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: riderDataList.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final userData = riderDataList[index];
-                    final id = userData['_id'];
-
-                    return Column(
-                      children: [
-                        Card(
-                          elevation: 4,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ListTile(
-                                leading: CircleAvatar(
-                                  radius: 30,
-                                  backgroundImage: NetworkImage(
-                                    userData['image'] ?? '',
-                                  ),
-                                ),
-                                title: TitleMedium(text: userData['name']),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Divider(),
-                                    BodyMediumText(
-                                        text:
-                                            'Contact #: ${userData['contactNumber']}'),
-                                    BodyMediumText(
-                                        text:
-                                            'Address: ${userData['address']}'),
-                                  ],
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(
-                                      width: 40,
-                                      child: IconButton(
-                                        icon: const Icon(Icons.edit),
-                                        onPressed: () => updateData(id),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 20,
-                                      child: IconButton(
-                                        icon: const Icon(Icons.archive),
-                                        onPressed: () => archiveData(id),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                        ElevatedButton(
+                          onPressed: () {
+                            openAddRiderDialog();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color(0xFF050404).withOpacity(0.9),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            'Add Delivery Driver',
+                            style: TextStyle(color: Colors.white),
                           ),
                         ),
                       ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 5),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (currentPage > 1)
-                      ElevatedButton(
-                        onPressed: () {
-                          fetchData(page: currentPage - 1);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF232937),
-                        ),
-                        child: const Text(
-                          'Previous',
-                          style: TextStyle(color: Colors.white),
+                    ),
+                    const SizedBox(height: 10),
+                    if (riderDataList.isEmpty && !loadingData)
+                      const Center(
+                        child: Column(
+                          children: [
+                            SizedBox(height: 40),
+                            Text(
+                              'No delivery drivers to display.',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 30),
+                          ],
                         ),
                       ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-                      onPressed: () {
-                        fetchData(page: currentPage + 1);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF232937),
-                      ),
-                      child: const Text(
-                        'Next',
-                        style: TextStyle(color: Colors.white),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: riderDataList.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                final userData = riderDataList[index];
+                                final id = userData['_id'];
+
+                                return SizedBox(
+                                  child: Card(
+                                    color: Colors.white,
+                                    elevation: 2,
+                                    child: Column(
+                                      children: [
+                                        // Padding(
+                                        //   padding: const EdgeInsets.all(8.0),
+                                        //   child: Container(
+                                        //     width: double.infinity,
+                                        //     height: 100,
+                                        //     decoration: BoxDecoration(
+                                        //       borderRadius:
+                                        //           BorderRadius.circular(10),
+                                        //       border: Border.all(
+                                        //         color: Colors.black,
+                                        //         width: 1,
+                                        //       ),
+                                        //       image: DecorationImage(
+                                        //         image: NetworkImage(
+                                        //             userData['image'] ?? ''),
+                                        //         fit: BoxFit.cover,
+                                        //       ),
+                                        //     ),
+                                        //   ),
+                                        // ),
+                                        ListTile(
+                                          title: TitleMedium(
+                                              text: '${userData['name']}'),
+                                          subtitle: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              const Divider(),
+                                              BodyMediumText(
+                                                  text:
+                                                      'Mobile no.: ${userData['contactNumber']}'),
+                                              BodyMediumText(
+                                                  text:
+                                                      'GCash no.: ${userData['contactNumber']}'),
+                                              BodyMediumText(
+                                                  text:
+                                                      'Email: ${userData['email']}'),
+                                              BodyMediumText(
+                                                  text:
+                                                      'Address: ${userData['address']}'),
+                                            ],
+                                          ),
+                                          trailing: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              SizedBox(
+                                                width: 35,
+                                                child: IconButton(
+                                                  icon: Icon(
+                                                    Icons.edit,
+                                                    color:
+                                                        const Color(0xFF050404)
+                                                            .withOpacity(0.9),
+                                                  ),
+                                                  onPressed: () =>
+                                                      updateData(id),
+                                                ),
+                                              ),
+                                              SizedBox(
+                                                width: 35,
+                                                child: IconButton(
+                                                  icon: Icon(
+                                                    Icons.password,
+                                                    color:
+                                                        const Color(0xFF050404)
+                                                            .withOpacity(0.9),
+                                                  ),
+                                                  onPressed: () =>
+                                                      changePassData(id),
+                                                ),
+                                              ),
+                                              SizedBox(
+                                                width: 20,
+                                                child: IconButton(
+                                                  icon: Icon(
+                                                    Icons.archive,
+                                                    color:
+                                                        const Color(0xFF050404)
+                                                            .withOpacity(0.9),
+                                                  ),
+                                                  onPressed: () =>
+                                                      archiveData(id),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 5),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                if (currentPage > 1)
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      fetchData(page: currentPage - 1);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF050404)
+                                          .withOpacity(0.9),
+                                    ),
+                                    child: const Text(
+                                      'Previous',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                const SizedBox(width: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    fetchData(page: currentPage + 1);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF050404)
+                                        .withOpacity(0.9),
+                                  ),
+                                  child: const Text(
+                                    'Next',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }

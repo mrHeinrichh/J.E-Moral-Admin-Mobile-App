@@ -860,6 +860,7 @@ class _CustomerPageState extends State<CustomerPage> {
                     customerDataList.removeWhere((data) => data['_id'] == id);
                   });
 
+                  fetchData();
                   Navigator.pop(context);
                 } else {
                   print(
