@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+// ERROR! NO INSTANT RELOAD
+
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
@@ -61,39 +63,21 @@ class BottomNavBar extends StatelessWidget {
   }
 }
 
-// ERROR
 Future<int> fetchCustomers() async {
-  final response = await http
-      .get(Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users'));
+  final response = await http.get(
+    Uri.parse(
+      'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t": {"in": ["Customer", "Retailer"]}, "verified": false}&page=1&limit=300',
+    ),
+  );
   if (response.statusCode == 200) {
     final Map<String, dynamic> data = json.decode(response.body);
-    final List<dynamic> allUserData = data['data'];
+    final List<dynamic> allTransactionsData = data['data'];
 
-    final List<Map<String, dynamic>> unverifiedCustomers =
-        List<Map<String, dynamic>>.from(allUserData.where((userData) =>
-            userData is Map<String, dynamic> &&
-            userData['__t'] == 'Customer' &&
-            userData['verified'] == false));
-
-    return unverifiedCustomers.length;
+    return allTransactionsData.length;
   } else {
     throw Exception('Failed to load data from the API');
   }
 }
-
-// Future<int> fetchCustomers() async {
-//   final response = await http.get(Uri.parse(
-//       'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"__t": "Customer", "verified": false}&limit=300'));
-
-//   if (response.statusCode == 200) {
-//     final Map<String, dynamic> data = json.decode(response.body);
-//     final List<dynamic> unverifiedCustomers = data['data'];
-
-//     return unverifiedCustomers.length;
-//   } else {
-//     throw Exception('Failed to load data from the API');
-//   }
-// }
 
 Future<int> fetchOrders() async {
   final response = await http.get(Uri.parse(

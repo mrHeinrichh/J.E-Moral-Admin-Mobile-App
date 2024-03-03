@@ -441,7 +441,7 @@ class _transactionPageState extends State<transactionPage> {
                   ),
                   BodyMediumText(
                     text:
-                        'Delivery Date: ${DateFormat('MMM d, y - h:mm a ').format(DateTime.parse(userData['deliveryDate']))}',
+                        'Delivery Date: ${userData['deliveryDate'] != null && userData['deliveryDate'] != "" ? DateFormat('MMM d, y - h:mm a ').format(DateTime.parse(userData['deliveryDate'])) : ""}',
                   ),
                   const SizedBox(height: 5),
                   BodyMediumText(

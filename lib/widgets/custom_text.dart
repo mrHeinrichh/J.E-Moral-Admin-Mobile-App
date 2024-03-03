@@ -183,6 +183,61 @@ class TitleMediumText extends StatelessWidget {
   }
 }
 
+class TitleMediumOver extends StatelessWidget {
+  final String text;
+  final int? checkColor;
+
+  const TitleMediumOver({required this.text, this.checkColor});
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> parts = text.split(':');
+    final String prefix = parts.length > 1 ? '${parts[0]}:' : '';
+    final String restOfText =
+        parts.length > 1 ? parts.sublist(1).join(':') : text;
+
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: prefix,
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF050404).withOpacity(0.9),
+                ),
+          ),
+          TextSpan(
+            text: restOfText,
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                  fontWeight: FontWeight.normal,
+                  color: const Color(0xFF050404).withOpacity(0.9),
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TitleLarge extends StatelessWidget {
+  final String text;
+
+  const TitleLarge({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.titleLarge!.copyWith(
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF050404).withOpacity(0.9),
+          ),
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+    );
+  }
+}
+
 class LoginTextField extends StatelessWidget {
   final TextEditingController controller;
   final String labelText;

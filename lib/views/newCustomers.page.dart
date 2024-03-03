@@ -1,5 +1,8 @@
+import 'package:admin_app/widgets/custom_text.dart';
+import 'package:admin_app/widgets/fullscreen_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'package:mailer/mailer.dart';
@@ -11,13 +14,15 @@ class NewCustomers extends StatefulWidget {
 }
 
 class _NewCustomersState extends State<NewCustomers> {
-  List<Map<String, dynamic>> customers = [];
+  List<Map<String, dynamic>> users = [];
   bool _mounted = true;
+  bool loadingData = false;
 
   @override
   void initState() {
     super.initState();
-    fetchCustomers();
+    loadingData = true;
+    fetchData();
   }
 
   @override
@@ -26,12 +31,11 @@ class _NewCustomersState extends State<NewCustomers> {
     super.dispose();
   }
 
-  // ERROR
-  Future<void> fetchCustomers() async {
+  Future<void> fetchData() async {
     try {
       final response = await http.get(
         Uri.parse(
-          'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t": "Customer", "__t": "Retailer"}&page=1&limit=300',
+          'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t": {"in": ["Customer", "Retailer"]}}&page=1&limit=300',
         ),
       );
 
@@ -42,8 +46,9 @@ class _NewCustomersState extends State<NewCustomers> {
             final List<dynamic> customerData = data["data"];
 
             setState(() {
-              customers = List<Map<String, dynamic>>.from(customerData);
+              users = List<Map<String, dynamic>>.from(customerData);
             });
+            loadingData = false;
           } else {}
         } else {
           print("Error: ${response.statusCode}");
@@ -56,29 +61,7 @@ class _NewCustomersState extends State<NewCustomers> {
     }
   }
 
-  Future<void> refreshData() async {
-    await fetchCustomers();
-  }
-
-  Future<void> archivedCustomer(String customerId) async {
-    try {
-      final response = await http.delete(
-        Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/$customerId'),
-      );
-
-      if (response.statusCode == 200) {
-        print('Customer deleted successfully');
-        await refreshData();
-      } else {
-        print('Error deleting customer: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error: $e');
-    }
-  }
-
-  Future<void> updateVerificationStatus(
-      String customerId, String userEmail) async {
+  Future<void> verifiedCustomers(String customerId, String userEmail) async {
     try {
       final response = await http.patch(
         Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/$customerId'),
@@ -95,10 +78,10 @@ class _NewCustomersState extends State<NewCustomers> {
         Map<String, dynamic> responseData = json.decode(response.body);
         print('Updated User Data: ${responseData['data']}');
         print('Verification status updated successfully');
-        refreshData();
 
-        // Send confirmation email to the customer's email address
         await sendConfirmationEmail(userEmail);
+
+        fetchData();
       } else {
         print('Error updating verification status: ${response.statusCode}');
       }
@@ -107,8 +90,7 @@ class _NewCustomersState extends State<NewCustomers> {
     }
   }
 
-  Future<void> updateVerificationStatus1(
-      String customerId, String userEmail) async {
+  Future<void> verifiedRetailers(String customerId, String userEmail) async {
     try {
       final response = await http.patch(
         Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users/$customerId'),
@@ -125,10 +107,10 @@ class _NewCustomersState extends State<NewCustomers> {
         Map<String, dynamic> responseData = json.decode(response.body);
         print('Updated User Data: ${responseData['data']}');
         print('Verification status updated successfully');
-        refreshData();
 
-        // Send confirmation email to the customer's email address
         await sendConfirmationEmail(userEmail);
+
+        fetchData();
       } else {
         print('Error updating verification status: ${response.statusCode}');
       }
@@ -138,14 +120,11 @@ class _NewCustomersState extends State<NewCustomers> {
   }
 
   Future<void> sendConfirmationEmail(String userEmail) async {
-    String username =
-        'madridanthonycharles@gmail.com'; // Update with your email address
-    String password = 'lqllbqsftvgihlll'; // Update with your email password
+    String username = 'madridanthonycharles@gmail.com';
+    String password = 'lqllbqsftvgihlll';
 
-    // Create a SMTP server configuration
     final smtpServer = gmail(username, password);
 
-    // Create a plain text message
     final message = Message()
       ..from = Address(username, 'J.E. Moral LPG Dealer Store')
       ..subject = 'Account Verification'
@@ -155,11 +134,9 @@ class _NewCustomersState extends State<NewCustomers> {
       <p><img src="https://raw.githubusercontent.com/mrHeinrichh/J.E-Moral-cdn/main/assets/png/logo-main.png" alt="Verification Image" width="200" height="200"></p>
 
     ''';
-    // Add recipient
-    message.recipients
-        .add(Address(userEmail)); // Send to the provided email address
 
-    // Send the email
+    message.recipients.add(Address(userEmail));
+
     try {
       final sendReport = await send(message, smtpServer);
       print('Email sent');
@@ -170,208 +147,513 @@ class _NewCustomersState extends State<NewCustomers> {
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> unverifiedCustomers =
-        customers.where((customer) => customer['verified'] == false).toList();
+    List<Map<String, dynamic>> unverifiedUsers =
+        users.where((user) => user['verified'] == false).toList();
 
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        elevation: 0,
         backgroundColor: Colors.white,
-        title: const Text(
+        elevation: 1,
+        title: Text(
           'Pending Verification',
           style: TextStyle(
-            color: Color(0xFF232937),
-            fontSize: 20,
+            color: const Color(0xFF050404).withOpacity(0.9),
+            fontSize: 22,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: RefreshIndicator(
-          onRefresh: refreshData,
-          child: ListView.builder(
-            itemCount: unverifiedCustomers.length,
-            itemBuilder: (context, index) {
-              final customer = unverifiedCustomers[index];
-              String userType = customer['__t'];
-              return Column(
-                children: [
-                  if (userType == 'Customer')
-                    Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text.rich(
-                                      TextSpan(
-                                        children: [
-                                          const TextSpan(
-                                            text: "Name: ",
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          TextSpan(
-                                            text: "${customer['name']}",
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        const Text(
-                                          "Contact Number: ",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${customer['contactNumber']}',
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                const Spacer(),
-                                CircleAvatar(
-                                  radius: 30,
-                                  backgroundImage:
-                                      NetworkImage(customer['image']),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 50,
-                              child: ElevatedButton(
-                                onPressed: () async {
-                                  await updateVerificationStatus(
-                                      customer['_id'], customer['email']);
-
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                          'Customer approved successfully'),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF232937),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 20, vertical: 10),
-                                ),
-                                child: const Text('Approve',
-                                    style: TextStyle(color: Colors.white)),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  if (userType == 'Retailer')
-                    Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text.rich(
-                                      TextSpan(
-                                        children: [
-                                          const TextSpan(
-                                            text: "Name: ",
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          TextSpan(
-                                            text: "${customer['name']}",
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        const Text(
-                                          "Contact Number: ",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${customer['contactNumber']}',
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                const Spacer(),
-                                CircleAvatar(
-                                  radius: 30,
-                                  backgroundImage:
-                                      NetworkImage(customer['image']),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 50,
-                              child: ElevatedButton(
-                                onPressed: () async {
-                                  await updateVerificationStatus1(
-                                      customer['_id'], customer['email']);
-
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                          'Retailer approved successfully'),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF232937),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 20, vertical: 10),
-                                ),
-                                child: const Text('Approve',
-                                    style: TextStyle(color: Colors.white)),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  // Divider between cards (except the last one)
-                  if (index < unverifiedCustomers.length - 1)
-                    const Divider(thickness: 1),
-                ],
-              );
-            },
+        iconTheme: IconThemeData(
+          color: const Color(0xFF050404).withOpacity(0.8),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: Colors.black,
+            height: 0.2,
           ),
         ),
       ),
+      backgroundColor: Colors.white,
+      body: loadingData
+          ? Center(
+              child: LoadingAnimationWidget.flickr(
+                leftDotColor: const Color(0xFF050404).withOpacity(0.8),
+                rightDotColor: const Color(0xFFd41111).withOpacity(0.8),
+                size: 40,
+              ),
+            )
+          : RefreshIndicator(
+              color: const Color(0xFF050404),
+              strokeWidth: 2.5,
+              onRefresh: () async {
+                await fetchData();
+              },
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                child: ListView.builder(
+                  itemCount: unverifiedUsers.length,
+                  itemBuilder: (context, index) {
+                    final user = unverifiedUsers[index];
+                    String userType = user['__t'];
+
+                    return Column(
+                      children: [
+                        if (userType == 'Customer')
+                          GestureDetector(
+                            onTap: () {
+                              showCustomerDetailsModal(user);
+                            },
+                            child: Card(
+                              elevation: 2,
+                              child: Padding(
+                                padding: const EdgeInsets.all(20.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    TitleMedium(
+                                      text: 'Type: ${user['__t']}',
+                                    ),
+                                    const Divider(),
+                                    BodyMediumOver(
+                                      text: 'Name: ${user['name']}',
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Mobile Number: ${user['contactNumber']}',
+                                    ),
+                                    BodyMediumOver(
+                                      text: 'Email Address: ${user['email']}',
+                                    ),
+                                    BodyMediumOver(
+                                      text: 'Full Address: ${user['address']}',
+                                    ),
+                                    const SizedBox(height: 10),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 50,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                title: const Text(
+                                                  'Approve Confirmation',
+                                                  style: TextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                                content: const Text(
+                                                  'Are you sure you want to approve this Customer?',
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                                actions: <Widget>[
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                    style: TextButton.styleFrom(
+                                                      foregroundColor:
+                                                          const Color(
+                                                                  0xFF050404)
+                                                              .withOpacity(0.8),
+                                                    ),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () async {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                      await verifiedCustomers(
+                                                          user['_id'],
+                                                          user['email']);
+                                                    },
+                                                    style: TextButton.styleFrom(
+                                                      foregroundColor:
+                                                          const Color(
+                                                                  0xFF050404)
+                                                              .withOpacity(0.9),
+                                                    ),
+                                                    child: const Text(
+                                                      'Approve',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              const Color(0xFF050404)
+                                                  .withOpacity(0.9),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 20, vertical: 10),
+                                        ),
+                                        child: const Text('Approve',
+                                            style:
+                                                TextStyle(color: Colors.white)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        if (userType == 'Retailer')
+                          GestureDetector(
+                            onTap: () {
+                              showCustomerDetailsModal(user);
+                            },
+                            child: Card(
+                              elevation: 2,
+                              child: Padding(
+                                padding: const EdgeInsets.all(20.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    TitleMedium(
+                                      text: 'Type: ${user['__t']}',
+                                    ),
+                                    const Divider(),
+                                    BodyMediumOver(
+                                      text: 'Name: ${user['name']}',
+                                    ),
+                                    BodyMediumText(
+                                      text:
+                                          'Mobile Number: ${user['contactNumber']}',
+                                    ),
+                                    BodyMediumOver(
+                                      text: 'Email Address: ${user['email']}',
+                                    ),
+                                    BodyMediumOver(
+                                      text: 'Full Address: ${user['address']}',
+                                    ),
+                                    const SizedBox(height: 10),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 50,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return AlertDialog(
+                                                title: const Text(
+                                                  'Approve Confirmation',
+                                                  style: TextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                                content: const Text(
+                                                  'Are you sure you want to approve this Retailer?',
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                                actions: <Widget>[
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                    style: TextButton.styleFrom(
+                                                      foregroundColor:
+                                                          const Color(
+                                                                  0xFF050404)
+                                                              .withOpacity(0.8),
+                                                    ),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () async {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                      await verifiedRetailers(
+                                                          user['_id'],
+                                                          user['email']);
+                                                    },
+                                                    style: TextButton.styleFrom(
+                                                      foregroundColor:
+                                                          const Color(
+                                                                  0xFF050404)
+                                                              .withOpacity(0.9),
+                                                    ),
+                                                    child: const Text(
+                                                      'Approve',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              const Color(0xFF050404)
+                                                  .withOpacity(0.9),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 20, vertical: 10),
+                                        ),
+                                        child: const Text('Approve',
+                                            style:
+                                                TextStyle(color: Colors.white)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+    );
+  }
+
+  void showCustomerDetailsModal(Map<String, dynamic> user) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SingleChildScrollView(
+          child: Container(
+            width: 360,
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Center(
+                  child: TitleMedium(
+                    text: 'User Information',
+                  ),
+                ),
+                const Divider(),
+                Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => FullScreenImageView(
+                            imageUrl: user['image'],
+                            onClose: () => Navigator.of(context).pop()),
+                      ));
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF050404).withOpacity(0.9),
+                          width: 0.2,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundImage: NetworkImage(user['image']),
+                      ),
+                    ),
+                  ),
+                ),
+                TitleMediumText(
+                  text: 'Type: ${user['__t']}',
+                ),
+                const Divider(),
+                BodyMediumOver(
+                  text: 'Name: ${user['name']}',
+                ),
+                BodyMediumText(
+                  text: 'Mobile Number: ${user['contactNumber']}',
+                ),
+                BodyMediumOver(
+                  text: 'Email Address: ${user['email']}',
+                ),
+                BodyMediumOver(
+                  text: 'Full Address: ${user['address']}',
+                ),
+                if (user['__t'] == "Retailer")
+                  Column(
+                    children: [
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Column(
+                            children: [
+                              const Text(
+                                'DOE:',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => FullScreenImageView(
+                                        imageUrl: user['doe'],
+                                        onClose: () =>
+                                            Navigator.of(context).pop()),
+                                  ));
+                                },
+                                child: Container(
+                                  width: 150,
+                                  height: 150,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: const Color(0xFF050404)
+                                          .withOpacity(0.9),
+                                      width: 0.2,
+                                    ),
+                                    image: DecorationImage(
+                                      image: NetworkImage(user['doe'] ?? ''),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              const Text(
+                                'Business Permit:',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => FullScreenImageView(
+                                        imageUrl: user['businessPermit'],
+                                        onClose: () =>
+                                            Navigator.of(context).pop()),
+                                  ));
+                                },
+                                child: Container(
+                                  width: 150,
+                                  height: 150,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: const Color(0xFF050404)
+                                          .withOpacity(0.9),
+                                      width: 0.2,
+                                    ),
+                                    image: DecorationImage(
+                                      image: NetworkImage(
+                                          user['businessPermit'] ?? ''),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Column(
+                            children: [
+                              const Text(
+                                'Fire Safety Permit:',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => FullScreenImageView(
+                                        imageUrl: user['fireSafetyPermit'],
+                                        onClose: () =>
+                                            Navigator.of(context).pop()),
+                                  ));
+                                },
+                                child: Container(
+                                  width: 150,
+                                  height: 150,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: const Color(0xFF050404)
+                                          .withOpacity(0.9),
+                                      width: 0.2,
+                                    ),
+                                    image: DecorationImage(
+                                      image: NetworkImage(
+                                          user['fireSafetyPermit'] ?? ''),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              const Text(
+                                'Agreement:',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => FullScreenImageView(
+                                        imageUrl: user['agreement'],
+                                        onClose: () =>
+                                            Navigator.of(context).pop()),
+                                  ));
+                                },
+                                child: Container(
+                                  width: 150,
+                                  height: 150,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: const Color(0xFF050404)
+                                          .withOpacity(0.9),
+                                      width: 0.2,
+                                    ),
+                                    image: DecorationImage(
+                                      image:
+                                          NetworkImage(user['agreement'] ?? ''),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

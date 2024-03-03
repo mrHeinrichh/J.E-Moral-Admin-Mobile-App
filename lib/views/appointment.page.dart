@@ -295,7 +295,7 @@ class _AppointmentPageState extends State<AppointmentPage> {
                                                   const Divider(),
                                                   BodyMediumText(
                                                     text:
-                                                        'Mobile #: ${userData['contactNumber']}',
+                                                        'Mobile Number: ${userData['contactNumber']}',
                                                   ),
                                                   BodyMediumText(
                                                     text:

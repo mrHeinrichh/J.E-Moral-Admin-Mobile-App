@@ -1055,7 +1055,7 @@ class _CustomerPageState extends State<CustomerPage> {
                                               const Divider(),
                                               BodyMediumText(
                                                   text:
-                                                      'Mobile #: ${userData['contactNumber']}'),
+                                                      'Mobile no.: ${userData['contactNumber']}'),
                                               BodyMediumText(
                                                   text:
                                                       'Email: ${userData['email']}'),
@@ -1068,7 +1068,7 @@ class _CustomerPageState extends State<CustomerPage> {
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               SizedBox(
-                                                width: 40,
+                                                width: 35,
                                                 child: IconButton(
                                                   icon: Icon(
                                                     Icons.edit,
@@ -1081,7 +1081,7 @@ class _CustomerPageState extends State<CustomerPage> {
                                                 ),
                                               ),
                                               SizedBox(
-                                                width: 40,
+                                                width: 35,
                                                 child: IconButton(
                                                   icon: Icon(
                                                     Icons.password,
