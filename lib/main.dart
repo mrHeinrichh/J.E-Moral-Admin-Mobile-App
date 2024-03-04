@@ -7,8 +7,6 @@ import 'package:admin_app/views/customer.page.dart';
 import 'package:admin_app/views/dashboard.page.dart';
 import 'package:admin_app/views/drivers.page.dart';
 import 'package:admin_app/views/editItems.page.dart';
-import 'package:admin_app/views/editRetailerItems.page.dart';
-import 'package:admin_app/views/editCustomerItems.page.dart';
 import 'package:admin_app/views/newCustomers.page.dart';
 import 'package:admin_app/views/product_details.page.dart';
 import 'package:admin_app/views/products.page.dart';
@@ -29,8 +27,7 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-            create: (context) => UserProvider()), // Add UserProvider
+        ChangeNotifierProvider(create: (context) => UserProvider()),
         ChangeNotifierProvider(create: (context) => MessageProvider()),
         ChangeNotifierProvider(
             create: (context) => CartProviderView.CartProvider()),
@@ -45,9 +42,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Your App',
-      initialRoute: loginRoute, // Set the initial route
+      initialRoute: loginRoute,
       routes: {
-        loginRoute: (context) => LoginPage(), // Use the imported route
+        loginRoute: (context) => LoginPage(),
         dashboardRoute: (context) => DashboardPage(),
         customerRoute: (context) => CustomerPage(),
         driversRoute: (context) => DriversPage(),
@@ -58,9 +55,7 @@ class MyApp extends StatelessWidget {
         cartRoute: (context) => CartView.CartPage(),
         setDeliveryPage: (context) => SetDeliveryPage(),
         editItemsPage: (context) => EditItemsPage(),
-        // editRetailerItemsPage: (context) => EditRetailerItemsPage(),
-        // editCustomerItemsPage: (context) => EditCustomerItemsPage(),
-        transactionRoute: (context) => transactionPage(),
+        transactionRoute: (context) => TransactionPage(),
         appointmentRoute: (context) => AppointmentPage(),
         newCustomerRoute: (context) => NewCustomers(),
         activeOrdersRoute: (context) => ActiveOrders(),
