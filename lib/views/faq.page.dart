@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/services.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class FaqPage extends StatefulWidget {
   @override
@@ -19,6 +20,7 @@ class _FaqPageState extends State<FaqPage> {
   final _imageStreamController = StreamController<File?>.broadcast();
 
   final formKey = GlobalKey<FormState>();
+  bool loadingData = false;
 
   List<Map<String, dynamic>> faqDataList = [];
   TextEditingController searchController = TextEditingController();
@@ -31,11 +33,67 @@ class _FaqPageState extends State<FaqPage> {
 
   void initState() {
     super.initState();
+    loadingData = true;
     fetchData();
   }
 
   int currentPage = 1;
   int limit = 20;
+
+  Future<void> fetchData({int page = 1}) async {
+    final response = await http.get(Uri.parse(
+        'https://lpg-api-06n8.onrender.com/api/v1/faqs/?page=$page&limit=$limit'));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+
+      final List<Map<String, dynamic>> faqData = (data['data'] as List)
+          .where((faqData) => faqData is Map<String, dynamic>)
+          .map((faqData) => faqData as Map<String, dynamic>)
+          .toList();
+
+      setState(() {
+        faqDataList.clear();
+        faqDataList.addAll(faqData);
+        currentPage = page;
+        loadingData = false;
+      });
+    } else {
+      throw Exception('Failed to load data from the API');
+    }
+  }
+
+  Future<void> search(String query) async {
+    final response = await http.get(
+      Uri.parse(
+        'https://lpg-api-06n8.onrender.com/api/v1/faqs/?search=$query&limit=300',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+
+      final List<Map<String, dynamic>> filteredData = (data['data'] as List)
+          .where((faqData) =>
+              faqData is Map<String, dynamic> &&
+              (faqData['question']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  faqData['answer']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase())))
+          .map((faqData) => faqData as Map<String, dynamic>)
+          .toList();
+
+      setState(() {
+        faqDataList = filteredData;
+      });
+    } else {
+      print('Failed to fetch data: ${response.statusCode}');
+    }
+  }
 
   Future<void> _takeImage() async {
     final pickedFile =
@@ -132,28 +190,6 @@ class _FaqPageState extends State<FaqPage> {
     }
   }
 
-  Future<void> fetchData({int page = 1}) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/faqs/?page=$page&limit=$limit'));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-
-      final List<Map<String, dynamic>> faqData = (data['data'] as List)
-          .where((faqData) => faqData is Map<String, dynamic>)
-          .map((faqData) => faqData as Map<String, dynamic>)
-          .toList();
-
-      setState(() {
-        faqDataList.clear();
-        faqDataList.addAll(faqData);
-        currentPage = page;
-      });
-    } else {
-      throw Exception('Failed to load data from the API');
-    }
-  }
-
   Future<void> addFaqToAPI(Map<String, dynamic> newFaq) async {
     final url = Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/faqs');
     final headers = {'Content-Type': 'application/json'};
@@ -187,26 +223,6 @@ class _FaqPageState extends State<FaqPage> {
     }
   }
 
-  Future<void> search(String query) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/faqs/?search=$query'));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-
-      final List<Map<String, dynamic>> faqData = (data['data'] as List)
-          .where((faqData) =>
-              faqData is Map<String, dynamic> &&
-              faqData.containsKey('question'))
-          .map((faqData) => faqData as Map<String, dynamic>)
-          .toList();
-
-      setState(() {
-        faqDataList = faqData;
-      });
-    } else {}
-  }
-
   void openAddFaqDialog() {
     TextEditingController questionController = TextEditingController();
     TextEditingController answerController = TextEditingController();
@@ -215,18 +231,26 @@ class _FaqPageState extends State<FaqPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Add New FAQ'),
+          title: const Text(
+            'Add New FAQ',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
           content: SingleChildScrollView(
             child: Form(
               key: formKey,
               child: Column(
                 children: [
                   const Divider(),
-                  TextFormField(
+                  EditTextField(
                     keyboardType: TextInputType.multiline,
                     maxLines: null,
                     controller: questionController,
-                    decoration: const InputDecoration(labelText: 'Question'),
+                    labelText: "Question",
+                    hintText: 'Enter the Question',
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please Enter the Frequently Asked Question';
@@ -234,11 +258,12 @@ class _FaqPageState extends State<FaqPage> {
                       return null;
                     },
                   ),
-                  TextFormField(
+                  EditTextField(
                     keyboardType: TextInputType.multiline,
                     maxLines: null,
                     controller: answerController,
-                    decoration: const InputDecoration(labelText: 'Answer'),
+                    labelText: "Answer",
+                    hintText: 'Enter the Answer',
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please Enter the FAQ Answer';
@@ -305,6 +330,9 @@ class _FaqPageState extends State<FaqPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
@@ -318,7 +346,15 @@ class _FaqPageState extends State<FaqPage> {
                   addFaqToAPI(newFaq);
                 }
               },
-              child: const Text('Save'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Save',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -335,23 +371,22 @@ class _FaqPageState extends State<FaqPage> {
     TextEditingController answerController =
         TextEditingController(text: faqToEdit['answer']);
 
-    final _formKey = GlobalKey<FormState>();
-
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Edit Data'),
           content: Form(
-            key: _formKey,
+            key: formKey,
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  TextFormField(
+                  EditTextField(
                     keyboardType: TextInputType.multiline,
                     maxLines: null,
                     controller: questionController,
-                    decoration: const InputDecoration(labelText: 'Question'),
+                    labelText: "Question",
+                    hintText: 'Enter the Question',
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please Enter the Frequently Asked Question';
@@ -359,11 +394,12 @@ class _FaqPageState extends State<FaqPage> {
                       return null;
                     },
                   ),
-                  TextFormField(
+                  EditTextField(
                     keyboardType: TextInputType.multiline,
                     maxLines: null,
                     controller: answerController,
-                    decoration: const InputDecoration(labelText: 'Answer'),
+                    labelText: "Answer",
+                    hintText: 'Enter the Answer',
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please Enter the FAQ Answer';
@@ -430,11 +466,14 @@ class _FaqPageState extends State<FaqPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
-                if (_formKey.currentState!.validate()) {
+                if (formKey.currentState!.validate()) {
                   faqToEdit['question'] = questionController.text;
                   faqToEdit['answer'] = answerController.text;
 
@@ -470,7 +509,15 @@ class _FaqPageState extends State<FaqPage> {
                   }
                 }
               },
-              child: const Text('Save'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Save',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -479,17 +526,82 @@ class _FaqPageState extends State<FaqPage> {
   }
 
   void archiveData(String id) async {
+    Map<String, dynamic> faqToEdit =
+        faqDataList.firstWhere((data) => data['_id'] == id);
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('archive Data'),
-          content: const Text('Are you sure you want to archive this data?'),
+          title: const Text(
+            'Archive Data',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (faqToEdit['image'] != "")
+                    Column(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.black,
+                              width: 1.0,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          width: double.infinity,
+                          height: 100,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              faqToEdit['image'],
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                            ),
+                          ),
+                        ),
+                        const Divider(),
+                      ],
+                    ),
+                  BodyMediumOver(
+                    text: 'Question: ${faqToEdit['question']}',
+                  ),
+                  BodyMediumOver(
+                    text: 'Answer: ${faqToEdit['answer']}',
+                  ),
+                  const Divider(),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Are you sure you want to Archive this data?',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFd41111).withOpacity(0.9),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
@@ -503,13 +615,22 @@ class _FaqPageState extends State<FaqPage> {
                     faqDataList.removeWhere((data) => data['_id'] == id);
                   });
 
+                  fetchData();
                   Navigator.pop(context);
                 } else {
                   print(
                       'Failed to archive the data. Status code: ${response.statusCode}');
                 }
               },
-              child: const Text('archive'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFd41111).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Archive',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -521,150 +642,258 @@ class _FaqPageState extends State<FaqPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FAQ List'),
+        backgroundColor: Colors.white,
+        elevation: 1,
+        title: Text(
+          'FAQ List',
+          style: TextStyle(
+            color: const Color(0xFF050404).withOpacity(0.9),
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        iconTheme: IconThemeData(
+          color: const Color(0xFF050404).withOpacity(0.8),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: Colors.black,
+            height: 0.2,
+          ),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: RefreshIndicator(
-          onRefresh: () => fetchData(),
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: Colors.white,
+      body: loadingData
+          ? Center(
+              child: LoadingAnimationWidget.flickr(
+                leftDotColor: const Color(0xFF050404).withOpacity(0.8),
+                rightDotColor: const Color(0xFFd41111).withOpacity(0.8),
+                size: 40,
+              ),
+            )
+          : RefreshIndicator(
+              color: const Color(0xFF050404),
+              strokeWidth: 2.5,
+              onRefresh: () async {
+                await fetchData();
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: IntrinsicWidth(
-                          child: TextField(
-                            controller: searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Search',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              isDense: true,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(horizontal: 10),
-                              suffixIcon: InkWell(
-                                onTap: () {
-                                  search(searchController.text);
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: IntrinsicWidth(
+                              child: TextField(
+                                controller: searchController,
+                                onChanged: (query) {
+                                  search(query);
                                 },
-                                child: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  child: const Icon(
-                                    Icons.search,
-                                    color: Colors.black,
+                                decoration: InputDecoration(
+                                  hintText: 'Search',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFF050404)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFF050404)),
+                                  ),
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  suffixIcon: InkWell(
+                                    onTap: () {
+                                      search(searchController.text);
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      child: const Icon(
+                                        Icons.search,
+                                        color: Color(0xFF050404),
+                                      ),
+                                    ),
                                   ),
                                 ),
+                                cursorColor: const Color(0xFF050404),
                               ),
                             ),
                           ),
                         ),
-                      ),
+                        ElevatedButton(
+                          onPressed: () {
+                            openAddFaqDialog();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color(0xFF050404).withOpacity(0.9),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            'Add FAQ',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ],
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        openAddFaqDialog();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF232937),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                    const SizedBox(height: 10),
+                    if (faqDataList.isEmpty && !loadingData)
+                      const Center(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              SizedBox(height: 40),
+                              Text(
+                                'No faqs to display.',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 30),
+                            ],
+                          ),
                         ),
                       ),
-                      child: const Text(
-                        'Add FAQ',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: faqDataList.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final userData = faqDataList[index];
-                    final id = userData['_id'];
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: faqDataList.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                final faqData = faqDataList[index];
+                                final id = faqData['_id'];
 
-                    return Card(
-                      elevation: 4,
-                      child: ListTile(
-                        title: TitleMedium(text: userData['question']),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Divider(),
-                            BodyMediumText(
-                              text: 'Answer: ${userData['answer']}',
+                                return Card(
+                                  color: Colors.white,
+                                  elevation: 2,
+                                  child: Column(
+                                    children: [
+                                      if (faqData['image'] != "")
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Container(
+                                            width: double.infinity,
+                                            height: 100,
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(
+                                                color: Colors.black,
+                                                width: 1,
+                                              ),
+                                              image: DecorationImage(
+                                                image: NetworkImage(
+                                                    faqData['image'] ?? ''),
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ListTile(
+                                        title: TitleMedium(
+                                            text: '${faqData['question']}'),
+                                        subtitle: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Divider(),
+                                            BodyMediumOver2(
+                                              text:
+                                                  'Answer: ${faqData['answer']}',
+                                            ),
+                                          ],
+                                        ),
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            SizedBox(
+                                              width: 35,
+                                              child: IconButton(
+                                                icon: Icon(
+                                                  Icons.edit,
+                                                  color: const Color(0xFF050404)
+                                                      .withOpacity(0.9),
+                                                ),
+                                                onPressed: () => updateData(id),
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: 25,
+                                              child: IconButton(
+                                                icon: Icon(
+                                                  Icons.archive,
+                                                  color: const Color(0xFF050404)
+                                                      .withOpacity(0.9),
+                                                ),
+                                                onPressed: () =>
+                                                    archiveData(id),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
+                            const SizedBox(height: 5),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                if (currentPage > 1)
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      fetchData(page: currentPage - 1);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF050404)
+                                          .withOpacity(0.9),
+                                    ),
+                                    child: const Text(
+                                      'Previous',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                const SizedBox(width: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    fetchData(page: currentPage + 1);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF050404)
+                                        .withOpacity(0.9),
+                                  ),
+                                  child: const Text(
+                                    'Next',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
                           ],
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 40,
-                              child: IconButton(
-                                icon: const Icon(Icons.edit),
-                                onPressed: () => updateData(id),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 20,
-                              child: IconButton(
-                                icon: const Icon(Icons.archive),
-                                onPressed: () => archiveData(id),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 5),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (currentPage > 1)
-                      ElevatedButton(
-                        onPressed: () {
-                          fetchData(page: currentPage - 1);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF232937),
-                        ),
-                        child: const Text(
-                          'Previous',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-                      onPressed: () {
-                        fetchData(page: currentPage + 1);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF232937),
-                      ),
-                      child: const Text(
-                        'Next',
-                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }
