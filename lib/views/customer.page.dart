@@ -1095,7 +1095,7 @@ class _CustomerPageState extends State<CustomerPage> {
                                                 ),
                                               ),
                                               SizedBox(
-                                                width: 20,
+                                                width: 25,
                                                 child: IconButton(
                                                   icon: Icon(
                                                     Icons.archive,

@@ -1871,7 +1871,7 @@ class _DriversPageState extends State<DriversPage> {
                                                 ),
                                               ),
                                               SizedBox(
-                                                width: 20,
+                                                width: 25,
                                                 child: IconButton(
                                                   icon: Icon(
                                                     Icons.archive,
