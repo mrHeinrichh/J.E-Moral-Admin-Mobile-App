@@ -15,7 +15,7 @@ class EditPricesForCustomersPage extends StatefulWidget {
 
 class __EditPricesForCustomersPageStateState
     extends State<EditPricesForCustomersPage> {
-  List<Map<String, dynamic>> productDataList = [];
+  List<Map<String, dynamic>> itemDataList = [];
   TextEditingController searchController = TextEditingController();
 
   bool loadingData = false;
@@ -41,14 +41,14 @@ class __EditPricesForCustomersPageStateState
         'https://lpg-api-06n8.onrender.com/api/v1/items/?page=$page&limit=$limit'));
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
-      final List<Map<String, dynamic>> productData = (data['data'] as List)
-          .where((productData) => productData is Map<String, dynamic>)
-          .map((productData) => productData as Map<String, dynamic>)
+      final List<Map<String, dynamic>> itemData = (data['data'] as List)
+          .where((itemData) => itemData is Map<String, dynamic>)
+          .map((itemData) => itemData as Map<String, dynamic>)
           .toList();
 
       setState(() {
-        productDataList.clear();
-        productDataList.addAll(productData);
+        itemDataList.clear();
+        itemDataList.addAll(itemData);
         currentPage = page;
         loadingData = false;
       });
@@ -67,33 +67,36 @@ class __EditPricesForCustomersPageStateState
       final Map<String, dynamic> data = json.decode(response.body);
 
       final List<Map<String, dynamic>> filteredData = (data['data'] as List)
-          .where((productData) =>
-              productData is Map<String, dynamic> &&
-              productData['type'] == 'Product' &&
-              (productData['name']
+          .where((itemData) =>
+              itemData is Map<String, dynamic> &&
+              (itemData['name']
                       .toString()
                       .toLowerCase()
                       .contains(query.toLowerCase()) ||
-                  productData['category']
+                  itemData['type']
                       .toString()
                       .toLowerCase()
                       .contains(query.toLowerCase()) ||
-                  productData['customerPrice']
+                  itemData['category']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  itemData['customerPrice']
                       .toString()
                       .toLowerCase()
                       .contains(query.toLowerCase())))
-          .map((productData) => productData as Map<String, dynamic>)
+          .map((itemData) => itemData as Map<String, dynamic>)
           .toList();
 
       setState(() {
-        productDataList = filteredData;
+        itemDataList = filteredData;
       });
     } else {}
   }
 
   void updateData(String id) {
     Map<String, dynamic> productToEdit =
-        productDataList.firstWhere((data) => data['_id'] == id);
+        itemDataList.firstWhere((data) => data['_id'] == id);
     TextEditingController customerPriceController =
         TextEditingController(text: productToEdit['customerPrice'].toString());
     TextEditingController reasonController = TextEditingController();
@@ -306,7 +309,7 @@ class __EditPricesForCustomersPageStateState
                       ],
                     ),
                     const SizedBox(height: 10),
-                    if (productDataList.isEmpty && !loadingData)
+                    if (itemDataList.isEmpty && !loadingData)
                       const Center(
                         child: SingleChildScrollView(
                           child: Column(
@@ -329,10 +332,10 @@ class __EditPricesForCustomersPageStateState
                             ListView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
-                              itemCount: productDataList.length,
+                              itemCount: itemDataList.length,
                               itemBuilder: (BuildContext context, int index) {
-                                final productData = productDataList[index];
-                                final id = productData['_id'];
+                                final itemData = itemDataList[index];
+                                final id = itemData['_id'];
 
                                 return Card(
                                   color: Colors.white,
@@ -353,7 +356,7 @@ class __EditPricesForCustomersPageStateState
                                             ),
                                             image: DecorationImage(
                                               image: NetworkImage(
-                                                  productData['image'] ?? ''),
+                                                  itemData['image'] ?? ''),
                                               fit: BoxFit.cover,
                                             ),
                                           ),
@@ -361,7 +364,7 @@ class __EditPricesForCustomersPageStateState
                                       ),
                                       ListTile(
                                         title: TitleMedium(
-                                            text: '${productData['name']}'),
+                                            text: '${itemData['name']}'),
                                         subtitle: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
@@ -369,14 +372,14 @@ class __EditPricesForCustomersPageStateState
                                             const Divider(),
                                             TitleMediumText(
                                                 text:
-                                                    'Customer Price: ${productData['customerPrice'] % 1 == 0 ? '₱${productData['customerPrice'].toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match match) => '${match[1]},')}' : productData['customerPrice'].toStringAsFixed(productData['customerPrice'].truncateToDouble() == productData['customerPrice'] ? 0 : 2) == productData['customerPrice'].toStringAsFixed(0) ? '₱${productData['customerPrice'].toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match match) => '${match[1]},')}' : '₱${productData['customerPrice'].toStringAsFixed(2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match match) => '${match[1]},')}'}'),
+                                                    'Customer Price: ${itemData['customerPrice'] % 1 == 0 ? '₱${itemData['customerPrice'].toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match match) => '${match[1]},')}' : itemData['customerPrice'].toStringAsFixed(itemData['customerPrice'].truncateToDouble() == itemData['customerPrice'] ? 0 : 2) == itemData['customerPrice'].toStringAsFixed(0) ? '₱${itemData['customerPrice'].toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match match) => '${match[1]},')}' : '₱${itemData['customerPrice'].toStringAsFixed(2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match match) => '${match[1]},')}'}'),
                                             const SizedBox(height: 2),
                                             BodyMediumText(
                                                 text:
-                                                    'Type: ${productData['type'] ?? ''}'),
+                                                    'Type: ${itemData['type'] ?? ''}'),
                                             BodyMediumText(
                                                 text:
-                                                    'Category: ${productData['category'] ?? ''}'),
+                                                    'Category: ${itemData['category'] ?? ''}'),
                                           ],
                                         ),
                                         trailing: Row(

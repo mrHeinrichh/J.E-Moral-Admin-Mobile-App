@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/services.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class AccessoryPage extends StatefulWidget {
   @override
@@ -19,6 +20,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
   final _imageStreamController = StreamController<File?>.broadcast();
 
   final formKey = GlobalKey<FormState>();
+  bool loadingData = false;
 
   List<Map<String, dynamic>> accessoryDataList = [];
   TextEditingController searchController = TextEditingController();
@@ -31,11 +33,69 @@ class _AccessoryPageState extends State<AccessoryPage> {
 
   void initState() {
     super.initState();
+    loadingData = true;
     fetchData();
   }
 
   int currentPage = 1;
   int limit = 20;
+
+  Future<void> fetchData({int page = 1}) async {
+    final response = await http.get(Uri.parse(
+        'https://lpg-api-06n8.onrender.com/api/v1/items/?page=$page&limit=$limit'));
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final List<dynamic> itemList = data['data'];
+
+      final List<Map<String, dynamic>> accessoryData = itemList
+          .where((item) => item['type'] == 'Accessory')
+          .map((accessoryData) => accessoryData as Map<String, dynamic>)
+          .toList();
+
+      setState(() {
+        accessoryDataList.clear();
+        accessoryDataList.addAll(accessoryData);
+        currentPage = page;
+        loadingData = false;
+      });
+    } else {
+      throw Exception('Failed to load data from the API');
+    }
+  }
+
+  Future<void> search(String query) async {
+    final response = await http.get(
+      Uri.parse(
+          'https://lpg-api-06n8.onrender.com/api/v1/items/?search=$query&limit=300'),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+
+      final List<Map<String, dynamic>> filteredData = (data['data'] as List)
+          .where((accessoryData) =>
+              accessoryData is Map<String, dynamic> &&
+              accessoryData['type'] == 'Accessory' &&
+              (accessoryData['name']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  accessoryData['description']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  accessoryData['stock']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase())))
+          .map((accessoryData) => accessoryData as Map<String, dynamic>)
+          .toList();
+
+      setState(() {
+        accessoryDataList = filteredData;
+      });
+    } else {}
+  }
 
   Future<void> _takeImage() async {
     final pickedFile =
@@ -133,26 +193,6 @@ class _AccessoryPageState extends State<AccessoryPage> {
     }
   }
 
-  Future<void> fetchData({int page = 1}) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/items/?page=$page&limit=$limit'));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<Map<String, dynamic>> accessoryData = (data['data'] as List)
-          .where((accessoryData) => accessoryData is Map<String, dynamic>)
-          .map((accessoryData) => accessoryData as Map<String, dynamic>)
-          .toList();
-
-      setState(() {
-        accessoryDataList.clear();
-        accessoryDataList.addAll(accessoryData);
-        currentPage = page;
-      });
-    } else {
-      throw Exception('Failed to load data from the API');
-    }
-  }
-
   Future<void> addAccessoryToAPI(Map<String, dynamic> newAccessory) async {
     final url = Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/items');
     final headers = {'Content-Type': 'application/json'};
@@ -188,34 +228,12 @@ class _AccessoryPageState extends State<AccessoryPage> {
     }
   }
 
-  Future<void> search(String query) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/items/?search=$query'));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-
-      final List<Map<String, dynamic>> accessoryData = (data['data'] as List)
-          .where((accessoryData) =>
-              accessoryData is Map<String, dynamic> &&
-              accessoryData.containsKey('type') &&
-              accessoryData['category'] == 'Accessory')
-          .map((accessoryData) => accessoryData as Map<String, dynamic>)
-          .toList();
-
-      setState(() {
-        accessoryDataList = accessoryData;
-      });
-    } else {}
-  }
-
   void openAddAccessoryDialog() {
     TextEditingController nameController = TextEditingController();
     TextEditingController descriptionController = TextEditingController();
     TextEditingController stockController = TextEditingController();
     TextEditingController customerPriceController = TextEditingController();
     TextEditingController retailerPriceController = TextEditingController();
-
     bool isImageSelected = false;
 
     showDialog(
@@ -291,35 +309,38 @@ class _AccessoryPageState extends State<AccessoryPage> {
                       );
                     },
                   ),
-                  TextFormField(
+                  EditTextField(
                     controller: nameController,
-                    decoration:
-                        const InputDecoration(labelText: 'Accessory Name'),
+                    labelText: "Accessory Name",
+                    hintText: 'Enter the Accessory Name',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the accessory name';
+                        return "Please Enter the Accessory Name";
+                      } else {
+                        return null;
                       }
-                      return null;
                     },
                   ),
-                  TextFormField(
+                  EditTextField(
                     keyboardType: TextInputType.multiline,
                     maxLines: null,
                     controller: descriptionController,
-                    decoration: const InputDecoration(labelText: 'Description'),
+                    labelText: "Description",
+                    hintText: 'Enter the Description',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the accessory description';
+                        return 'Please Enter the Accessory Description';
                       }
                       return null;
                     },
                   ),
-                  TextFormField(
+                  EditTextField(
                     controller: stockController,
-                    decoration: const InputDecoration(labelText: 'Stock'),
+                    labelText: "Stock",
+                    hintText: 'Enter the Stock',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the accessory stock';
+                        return 'Please Enter the Accessory Stock';
                       }
                       return null;
                     },
@@ -328,31 +349,37 @@ class _AccessoryPageState extends State<AccessoryPage> {
                       FilteringTextInputFormatter.digitsOnly,
                     ],
                   ),
-                  TextFormField(
+                  EditTextField(
                     controller: customerPriceController,
-                    decoration:
-                        const InputDecoration(labelText: 'Customer Price'),
+                    labelText: 'Customer Price',
+                    hintText: 'Enter the Customer Price',
+                    keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the accessory customer price';
+                        return 'Please Enter the Price for Customer';
+                      }
+                      final RegExp numberRegex = RegExp(r'^\d+(\.\d+)?$');
+                      if (!numberRegex.hasMatch(value)) {
+                        return 'Please Enter a Valid Price Number';
                       }
                       return null;
                     },
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
                   ),
-                  TextFormField(
+                  EditTextField(
                     controller: retailerPriceController,
-                    decoration:
-                        const InputDecoration(labelText: 'Retailer Price'),
+                    labelText: 'Retailer Price',
+                    hintText: 'Enter the Retailer Price',
+                    keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the accessory retailer price';
+                        return 'Please Enter the Price for Retailer';
+                      }
+                      final RegExp numberRegex = RegExp(r'^\d+(\.\d+)?$');
+                      if (!numberRegex.hasMatch(value)) {
+                        return 'Please Enter a Valid Price Number';
                       }
                       return null;
                     },
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
                   ),
                 ],
               ),
@@ -363,6 +390,9 @@ class _AccessoryPageState extends State<AccessoryPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
@@ -371,21 +401,31 @@ class _AccessoryPageState extends State<AccessoryPage> {
                   showCustomOverlay(
                       context, 'Please Upload the Accessory Image');
                 } else {
-                  Map<String, dynamic> newAccessory = {
-                    "name": nameController.text,
-                    "category": "Accessories",
-                    "description": descriptionController.text,
-                    "weight": 0,
-                    "stock": stockController.text,
-                    "type": "Accessory",
-                    "customerPrice": customerPriceController.text,
-                    "retailerPrice": retailerPriceController.text,
-                    "image": "",
-                  };
-                  addAccessoryToAPI(newAccessory);
+                  if (formKey.currentState!.validate()) {
+                    Map<String, dynamic> newAccessory = {
+                      "name": nameController.text,
+                      "category": "Accessories",
+                      "description": descriptionController.text,
+                      "weight": 0,
+                      "stock": stockController.text,
+                      "type": "Accessory",
+                      "customerPrice": customerPriceController.text,
+                      "retailerPrice": retailerPriceController.text,
+                      "image": "",
+                    };
+                    addAccessoryToAPI(newAccessory);
+                  }
                 }
               },
-              child: const Text('Save'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Save',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -404,7 +444,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
             decoration: BoxDecoration(
-              color: Colors.red,
+              color: const Color(0xFFd41111).withOpacity(0.7),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -517,25 +557,27 @@ class _AccessoryPageState extends State<AccessoryPage> {
                       );
                     },
                   ),
-                  TextFormField(
+                  EditTextField(
                     controller: nameController,
-                    decoration:
-                        const InputDecoration(labelText: 'Accessory Name'),
+                    labelText: "Accessory Name",
+                    hintText: 'Enter the Accessory Name',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the accessory name';
+                        return "Please Enter the Accessory Name";
+                      } else {
+                        return null;
                       }
-                      return null;
                     },
                   ),
-                  TextFormField(
+                  EditTextField(
                     keyboardType: TextInputType.multiline,
                     maxLines: null,
                     controller: descriptionController,
-                    decoration: const InputDecoration(labelText: 'Description'),
+                    labelText: "Description",
+                    hintText: 'Enter the Description',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the accessory decription';
+                        return 'Please Enter the Accessory Description';
                       }
                       return null;
                     },
@@ -549,6 +591,9 @@ class _AccessoryPageState extends State<AccessoryPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
@@ -556,6 +601,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                 if (formKey.currentState!.validate()) {
                   accessoryToEdit['name'] = nameController.text;
                   accessoryToEdit['description'] = descriptionController.text;
+                  accessoryToEdit['type'] = "Accessory";
 
                   if (_image != null) {
                     var uploadResponse = await uploadImageToServer(_image!);
@@ -586,7 +632,15 @@ class _AccessoryPageState extends State<AccessoryPage> {
                   }
                 }
               },
-              child: const Text('Save'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Save',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -595,17 +649,81 @@ class _AccessoryPageState extends State<AccessoryPage> {
   }
 
   void archiveData(String id) async {
+    Map<String, dynamic> accessoryToEdit =
+        accessoryDataList.firstWhere((data) => data['_id'] == id);
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('archive Data'),
-          content: const Text('Are you sure you want to archive this data?'),
+          title: const Text(
+            'Archive Data',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.black,
+                          width: 1.0,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      width: double.infinity,
+                      height: 100,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          accessoryToEdit['image'] ?? '',
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Divider(),
+                  BodyMediumOver(
+                    text: 'Name: ${accessoryToEdit['name']}',
+                  ),
+                  BodyMediumText(
+                    text: 'Category: ${accessoryToEdit['category']}',
+                  ),
+                  BodyMediumOver(
+                    text: 'Description: ${accessoryToEdit['description']}',
+                  ),
+                  const Divider(),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Are you sure you want to Archive this data?',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFd41111).withOpacity(0.9),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
@@ -619,13 +737,22 @@ class _AccessoryPageState extends State<AccessoryPage> {
                     accessoryDataList.removeWhere((data) => data['_id'] == id);
                   });
 
+                  fetchData();
                   Navigator.pop(context);
                 } else {
                   print(
-                      'Failed to archive the data. Status code: ${response.statusCode}');
+                      'Failed to Archive the data. Status code: ${response.statusCode}');
                 }
               },
-              child: const Text('archive'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFd41111).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Archive',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -637,192 +764,265 @@ class _AccessoryPageState extends State<AccessoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Accessory List'),
+        backgroundColor: Colors.white,
+        elevation: 1,
+        title: Text(
+          'Accessory List',
+          style: TextStyle(
+            color: const Color(0xFF050404).withOpacity(0.9),
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        iconTheme: IconThemeData(
+          color: const Color(0xFF050404).withOpacity(0.8),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: Colors.black,
+            height: 0.2,
+          ),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: RefreshIndicator(
-          onRefresh: () async {
-            await fetchData();
-          },
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: Colors.white,
+      body: loadingData
+          ? Center(
+              child: LoadingAnimationWidget.flickr(
+                leftDotColor: const Color(0xFF050404).withOpacity(0.8),
+                rightDotColor: const Color(0xFFd41111).withOpacity(0.8),
+                size: 40,
+              ),
+            )
+          : RefreshIndicator(
+              color: const Color(0xFF050404),
+              strokeWidth: 2.5,
+              onRefresh: () async {
+                await fetchData();
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: IntrinsicWidth(
-                          child: TextField(
-                            controller: searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Search',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              isDense: true,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(horizontal: 10),
-                              suffixIcon: InkWell(
-                                onTap: () {
-                                  search(searchController.text);
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: IntrinsicWidth(
+                              child: TextField(
+                                controller: searchController,
+                                onChanged: (query) {
+                                  search(query);
                                 },
-                                child: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  child: const Icon(
-                                    Icons.search,
-                                    color: Colors.black,
+                                decoration: InputDecoration(
+                                  hintText: 'Search',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFF050404)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFF050404)),
+                                  ),
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  suffixIcon: InkWell(
+                                    onTap: () {
+                                      search(searchController.text);
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      child: const Icon(
+                                        Icons.search,
+                                        color: Color(0xFF050404),
+                                      ),
+                                    ),
                                   ),
                                 ),
+                                cursorColor: const Color(0xFF050404),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        openAddAccessoryDialog();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF232937),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                        ElevatedButton(
+                          onPressed: () {
+                            openAddAccessoryDialog();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color(0xFF050404).withOpacity(0.9),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            'Add Accessory',
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ),
-                      ),
-                      child: const Text(
-                        'Add Accessory',
-                        style: TextStyle(color: Colors.white),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: accessoryDataList
-                      .where((accessoryData) =>
-                          accessoryData['type'] == 'Accessory')
-                      .length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final filteredList = accessoryDataList
-                        .where((accessoryData) =>
-                            accessoryData['type'] == 'Accessory')
-                        .toList();
-                    final userData = filteredList[index];
-                    final id = userData['_id'];
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: SizedBox(
-                        child: Card(
-                          elevation: 6,
+                    const SizedBox(height: 10),
+                    if (accessoryDataList.isEmpty && !loadingData)
+                      const Center(
+                        child: SingleChildScrollView(
                           child: Column(
                             children: [
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Container(
-                                  width: double.infinity,
-                                  height: 100, // Change the size
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: Colors.black,
-                                      width: 1,
-                                    ),
-                                    image: DecorationImage(
-                                      image:
-                                          NetworkImage(userData['image'] ?? ''),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
+                              SizedBox(height: 40),
+                              Text(
+                                'No accessories to display.',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
                               ),
-                              ListTile(
-                                title: TitleMedium(text: userData['name']),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Divider(),
-                                    BodyMediumText(
-                                      text: 'Category: ${userData['category']}',
-                                    ),
-                                    BodyMediumText(
-                                      text:
-                                          'Description: ${userData['description']}',
-                                    ),
-                                    BodyMediumText(
-                                      text: 'Stocks: ${userData['stock']}',
-                                    ),
-                                  ],
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(
-                                      width: 40,
-                                      child: IconButton(
-                                        icon: const Icon(Icons.edit),
-                                        onPressed: () => updateData(id),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 20,
-                                      child: IconButton(
-                                        icon: const Icon(Icons.archive),
-                                        onPressed: () => archiveData(id),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              SizedBox(height: 30),
                             ],
                           ),
                         ),
                       ),
-                    );
-                  },
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (currentPage > 1)
-                      ElevatedButton(
-                        onPressed: () {
-                          fetchData(page: currentPage - 1);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF232937),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: accessoryDataList.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                final accessoryData = accessoryDataList[index];
+                                final id = accessoryData['_id'];
+
+                                return Card(
+                                  color: Colors.white,
+                                  elevation: 2,
+                                  child: Column(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Container(
+                                          width: double.infinity,
+                                          height: 100,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            border: Border.all(
+                                              color: Colors.black,
+                                              width: 1,
+                                            ),
+                                            image: DecorationImage(
+                                              image: NetworkImage(
+                                                  accessoryData['image'] ?? ''),
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      ListTile(
+                                        title: TitleMedium(
+                                            text: '${accessoryData['name']}'),
+                                        subtitle: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Divider(),
+                                            BodyMediumText(
+                                              text:
+                                                  'Category: ${accessoryData['category']}',
+                                            ),
+                                            BodyMediumText(
+                                              text:
+                                                  'Description: ${accessoryData['description']}',
+                                            ),
+                                            BodyMediumText(
+                                              text:
+                                                  'Stocks: ${accessoryData['stock']}',
+                                            ),
+                                          ],
+                                        ),
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            SizedBox(
+                                              width: 35,
+                                              child: IconButton(
+                                                icon: Icon(
+                                                  Icons.edit,
+                                                  color: const Color(0xFF050404)
+                                                      .withOpacity(0.9),
+                                                ),
+                                                onPressed: () => updateData(id),
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: 25,
+                                              child: IconButton(
+                                                icon: Icon(
+                                                  Icons.archive,
+                                                  color: const Color(0xFF050404)
+                                                      .withOpacity(0.9),
+                                                ),
+                                                onPressed: () =>
+                                                    archiveData(id),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 5),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                if (currentPage > 1)
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      fetchData(page: currentPage - 1);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF050404)
+                                          .withOpacity(0.9),
+                                    ),
+                                    child: const Text(
+                                      'Previous',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                const SizedBox(width: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    fetchData(page: currentPage + 1);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF050404)
+                                        .withOpacity(0.9),
+                                  ),
+                                  child: const Text(
+                                    'Next',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                          ],
                         ),
-                        child: const Text(
-                          'Previous',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-                      onPressed: () {
-                        fetchData(page: currentPage + 1);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF232937),
-                      ),
-                      child: const Text(
-                        'Next',
-                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }

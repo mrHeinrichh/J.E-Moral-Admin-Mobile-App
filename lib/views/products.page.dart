@@ -45,8 +45,10 @@ class _ProductsPageState extends State<ProductsPage> {
         'https://lpg-api-06n8.onrender.com/api/v1/items/?page=$page&limit=$limit'));
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
-      final List<Map<String, dynamic>> productData = (data['data'] as List)
-          .where((productData) => productData is Map<String, dynamic>)
+      final List<dynamic> itemList = data['data'];
+
+      final List<Map<String, dynamic>> productData = itemList
+          .where((item) => item['type'] == 'Product')
           .map((productData) => productData as Map<String, dynamic>)
           .toList();
 
@@ -378,7 +380,7 @@ class _ProductsPageState extends State<ProductsPage> {
                     hintText: 'Enter the Description',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the product description';
+                        return 'Please Enter the Product Description';
                       }
                       return null;
                     },
@@ -389,7 +391,7 @@ class _ProductsPageState extends State<ProductsPage> {
                     hintText: 'Enter the Weight (in kg.)',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the product weight (in kg.)';
+                        return 'Please Enter the Product Weight (in kg.)';
                       }
                       return null;
                     },
@@ -404,7 +406,7 @@ class _ProductsPageState extends State<ProductsPage> {
                     hintText: 'Enter the Stock',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the product stock';
+                        return 'Please Enter the Product Stock';
                       }
                       return null;
                     },
@@ -678,7 +680,7 @@ class _ProductsPageState extends State<ProductsPage> {
                     hintText: 'Enter the Description',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the product description';
+                        return 'Please Enter the Product Description';
                       }
                       return null;
                     },
@@ -689,7 +691,7 @@ class _ProductsPageState extends State<ProductsPage> {
                     hintText: 'Enter the Weight (in kg.)',
                     validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please enter the product weight (in kg.)';
+                        return 'Please Enter the Product Weight (in kg.)';
                       }
                       return null;
                     },
@@ -999,7 +1001,7 @@ class _ProductsPageState extends State<ProductsPage> {
                             children: [
                               SizedBox(height: 40),
                               Text(
-                                'No items to display.',
+                                'No products to display.',
                                 style: TextStyle(
                                     fontSize: 18, fontWeight: FontWeight.bold),
                               ),
