@@ -30,6 +30,18 @@ class _DateTimePickerState extends State<DateTimePicker> {
       initialDate: selectedDateTime ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.light(
+              primary: const Color(0xFF050404).withOpacity(0.8),
+              onPrimary: Colors.white,
+            ),
+            backgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {
@@ -38,6 +50,18 @@ class _DateTimePickerState extends State<DateTimePicker> {
         initialTime: selectedDateTime != null
             ? TimeOfDay.fromDateTime(selectedDateTime!)
             : TimeOfDay.now(),
+        builder: (BuildContext context, Widget? child) {
+          return Theme(
+            data: ThemeData.light().copyWith(
+              colorScheme: ColorScheme.light(
+                primary: const Color(0xFF050404).withOpacity(0.8),
+                onPrimary: Colors.white,
+              ),
+              backgroundColor: Colors.white,
+            ),
+            child: child!,
+          );
+        },
       );
 
       if (pickedTime != null) {

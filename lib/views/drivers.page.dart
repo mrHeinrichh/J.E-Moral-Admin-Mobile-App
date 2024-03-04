@@ -76,6 +76,44 @@ class _DriversPageState extends State<DriversPage> {
     }
   }
 
+  Future<void> search(String query) async {
+    final response = await http.get(
+      Uri.parse(
+          'https://lpg-api-06n8.onrender.com/api/v1/users/?search=$query&limit=1000'),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+
+      final List<Map<String, dynamic>> filteredData = (data['data'] as List)
+          .where((userData) =>
+              userData is Map<String, dynamic> &&
+              userData['__t'] == "Rider" &&
+              (userData['name']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  userData['contactNumber']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  userData['email']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  userData['address']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase())))
+          .map((productData) => productData as Map<String, dynamic>)
+          .toList();
+
+      setState(() {
+        riderDataList = filteredData;
+      });
+    } else {}
+  }
+
   Future<void> _profileTakeImage() async {
     final profilepickedFile =
         await ImagePicker().pickImage(source: ImageSource.camera);
@@ -539,44 +577,6 @@ class _DriversPageState extends State<DriversPage> {
       print(
           'Failed to add or update the rider. Status code: ${response.statusCode}');
     }
-  }
-
-  Future<void> search(String query) async {
-    final response = await http.get(
-      Uri.parse(
-          'https://lpg-api-06n8.onrender.com/api/v1/users/?search=$query&limit=1000'),
-    );
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-
-      final List<Map<String, dynamic>> filteredData = (data['data'] as List)
-          .where((userData) =>
-              userData is Map<String, dynamic> &&
-              userData['__t'] == "Rider" &&
-              (userData['name']
-                      .toString()
-                      .toLowerCase()
-                      .contains(query.toLowerCase()) ||
-                  userData['contactNumber']
-                      .toString()
-                      .toLowerCase()
-                      .contains(query.toLowerCase()) ||
-                  userData['email']
-                      .toString()
-                      .toLowerCase()
-                      .contains(query.toLowerCase()) ||
-                  userData['address']
-                      .toString()
-                      .toLowerCase()
-                      .contains(query.toLowerCase())))
-          .map((productData) => productData as Map<String, dynamic>)
-          .toList();
-
-      setState(() {
-        riderDataList = filteredData;
-      });
-    } else {}
   }
 
   void openAddRiderDialog() {

@@ -65,6 +65,44 @@ class _CustomerPageState extends State<CustomerPage> {
     }
   }
 
+  Future<void> search(String query) async {
+    final response = await http.get(
+      Uri.parse(
+          'https://lpg-api-06n8.onrender.com/api/v1/users/?search=$query&limit=1000'),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+
+      final List<Map<String, dynamic>> filteredData = (data['data'] as List)
+          .where((userData) =>
+              userData is Map<String, dynamic> &&
+              userData['__t'] == "Customer" &&
+              (userData['name']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  userData['contactNumber']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  userData['email']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  userData['address']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase())))
+          .map((productData) => productData as Map<String, dynamic>)
+          .toList();
+
+      setState(() {
+        customerDataList = filteredData;
+      });
+    } else {}
+  }
+
   Future<void> _profileTakeImage() async {
     final profilepickedFile =
         await ImagePicker().pickImage(source: ImageSource.camera);
@@ -198,44 +236,6 @@ class _CustomerPageState extends State<CustomerPage> {
           'Failed to add or update the customer. Status code: ${response.statusCode}');
       print('Response body: ${response.body}');
     }
-  }
-
-  Future<void> search(String query) async {
-    final response = await http.get(
-      Uri.parse(
-          'https://lpg-api-06n8.onrender.com/api/v1/users/?search=$query&limit=1000'),
-    );
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-
-      final List<Map<String, dynamic>> filteredData = (data['data'] as List)
-          .where((userData) =>
-              userData is Map<String, dynamic> &&
-              userData['__t'] == "Customer" &&
-              (userData['name']
-                      .toString()
-                      .toLowerCase()
-                      .contains(query.toLowerCase()) ||
-                  userData['contactNumber']
-                      .toString()
-                      .toLowerCase()
-                      .contains(query.toLowerCase()) ||
-                  userData['email']
-                      .toString()
-                      .toLowerCase()
-                      .contains(query.toLowerCase()) ||
-                  userData['address']
-                      .toString()
-                      .toLowerCase()
-                      .contains(query.toLowerCase())))
-          .map((productData) => productData as Map<String, dynamic>)
-          .toList();
-
-      setState(() {
-        customerDataList = filteredData;
-      });
-    } else {}
   }
 
   void openAddCustomerDialog() {
