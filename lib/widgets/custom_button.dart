@@ -1,103 +1,37 @@
 import 'package:flutter/material.dart';
 
-class CustomButton extends StatelessWidget {
-  final VoidCallback onPressed;
-  final String text;
-  final Color backgroundColor;
-
-  CustomButton({
-    required this.onPressed,
-    required this.text,
-    required this.backgroundColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: backgroundColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
-        ),
-      ),
-      child: Container(
-        width: double.infinity,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class CustomWhiteButton extends StatelessWidget {
-  final VoidCallback onPressed;
-  final String text;
-
-  CustomWhiteButton({required this.onPressed, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor:
-            const Color.fromARGB(255, 255, 255, 255), // Background color
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
-        ),
-      ),
-      child: Container(
-        width: double.infinity,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Color(0xFF232937),
-            fontSize: 18,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class CustomizedButton extends StatelessWidget {
   final VoidCallback onPressed;
   final String text;
   final double height;
   final double width;
-  final double fontz; // Add the type declaration 'double' here
+  final double fontz;
+  final bool enabled;
 
   CustomizedButton({
     required this.onPressed,
     required this.text,
     required this.height,
     required this.width,
-    required this.fontz, // Add the type declaration 'double' here
+    required this.fontz,
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(8),
       child: Container(
         height: height,
         width: width,
         child: ElevatedButton(
-          onPressed: onPressed,
+          onPressed: enabled ? onPressed : null,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF232937), // Background color
+            backgroundColor: enabled
+                ? const Color(0xFF050404).withOpacity(0.9)
+                : const Color(0xFF050404).withOpacity(0.4),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
           child: Container(
@@ -144,6 +78,62 @@ class LoginButton extends StatelessWidget {
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class CartButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final String text;
+  final double height;
+  final double width;
+  final double fontz;
+
+  CartButton({
+    required this.onPressed,
+    required this.text,
+    required this.height,
+    required this.width,
+    required this.fontz,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: SizedBox(
+        height: height,
+        width: width,
+        child: ElevatedButton(
+          onPressed: onPressed,
+          style: ButtonStyle(
+            backgroundColor: MaterialStateProperty.resolveWith<Color>(
+              (Set<MaterialState> states) {
+                if (states.contains(MaterialState.disabled)) {
+                  return const Color(0xFF050404).withOpacity(0.6);
+                }
+                return const Color(0xFF050404).withOpacity(0.9);
+              },
+            ),
+            shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+          ),
+          child: Container(
+            width: double.infinity,
+            alignment: Alignment.center,
+            child: Text(
+              text,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: fontz,
+              ),
             ),
           ),
         ),

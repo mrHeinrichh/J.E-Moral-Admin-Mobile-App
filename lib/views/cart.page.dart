@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:admin_app/routes/app_routes.dart';
+import 'package:admin_app/widgets/checkout_cart.dart';
 import 'package:admin_app/widgets/custom_button.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
 import 'cart_provider.dart';
 import 'user_provider.dart';
@@ -47,27 +49,44 @@ class _CartPageState extends State<CartPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 0,
         backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(
-          color: Colors.black,
+        elevation: 1,
+        title: Text(
+          "Cart",
+          style: TextStyle(
+            color: const Color(0xFF050404).withOpacity(0.9),
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        // title: const Padding(
-        //   padding: EdgeInsets.fromLTRB(0, 20, 0, 0),
-        //   child: Text(
-        //     'Cart',
-        //     style: TextStyle(color: Color(0xFF232937), fontSize: 24),
-        //   ),
-        // ),
-        title: const Text('Cart'),
+        centerTitle: true,
+        iconTheme: IconThemeData(
+          color: const Color(0xFF050404).withOpacity(0.8),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: Colors.black,
+            height: 0.2,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_shopping_cart_rounded),
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, walkinRoute);
+            },
+          ),
+        ],
       ),
+      backgroundColor: Colors.white,
       body: Consumer2<CartProvider, UserProvider>(
         builder: (context, cartProvider, userProvider, child) {
           String? userId = userProvider.userId;
           print('User ID: $userId');
           List<CartItem> cartItems = cartProvider.cartItems;
 
-          double _calculateTotalPrice() {
+          double calculateTotalPrice() {
             double totalPrice = 0.0;
             for (var cartItem in cartItems) {
               if (cartItem.isSelected) {
@@ -81,7 +100,13 @@ class _CartPageState extends State<CartPage> {
             future: userData,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return Center(
+                  child: LoadingAnimationWidget.flickr(
+                    leftDotColor: const Color(0xFF050404).withOpacity(0.8),
+                    rightDotColor: const Color(0xFFd41111).withOpacity(0.8),
+                    size: 40,
+                  ),
+                );
               } else if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
               } else {
@@ -91,52 +116,93 @@ class _CartPageState extends State<CartPage> {
                 return Column(
                   children: [
                     const Padding(
-                      padding: EdgeInsets.fromLTRB(0, 20, 5, 5),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          SizedBox(height: 20),
-                        ],
+                      padding: EdgeInsets.fromLTRB(0, 0, 5, 5),
+                      child: SizedBox(
+                        height: 20,
                       ),
                     ),
                     Expanded(
                       child: ListView.separated(
                         itemCount: cartItems.length,
-                        separatorBuilder: (context, index) => Divider(),
+                        separatorBuilder: (context, index) => const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          child: Divider(),
+                        ),
                         itemBuilder: (context, index) {
                           return CartItemWidget(cartItem: cartItems[index]);
                         },
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text("Price:"),
-                              Text(
-                                "₱${_calculateTotalPrice()}",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border(
+                          top: BorderSide(
+                            color: const Color(0xFF050404).withOpacity(0.8),
+                            width: 0.2,
+                          ),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 15, 20, 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Selected Item${cartItems.where((item) => item.isSelected).length > 1 ? 's' : ''}: (${cartItems.where((item) => item.isSelected).length})",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF050404).withOpacity(0.8),
                               ),
-                            ],
-                          ),
-                          CustomizedButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, setDeliveryPage);
-                            },
-                            text: 'Checkout',
-                            height: 60,
-                            width: 200,
-                            fontz: 20,
-                          ),
-                        ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "Total Price:",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF050404)
+                                            .withOpacity(0.8),
+                                      ),
+                                    ),
+                                    Text(
+                                      calculateTotalPrice() % 1 == 0
+                                          ? '₱${calculateTotalPrice().toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match match) => '${match[1]},')}'
+                                          : '₱${calculateTotalPrice().toStringAsFixed(2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match match) => '${match[1]},')}',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 20,
+                                        color: const Color(0xFFd41111)
+                                            .withOpacity(0.8),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Center(
+                                  child: CartButton(
+                                    onPressed: cartItems.isNotEmpty
+                                        ? () {
+                                            Navigator.pushNamed(
+                                                context, setDeliveryPage);
+                                          }
+                                        : null,
+                                    text: 'Checkout',
+                                    height: 50,
+                                    width: 220,
+                                    fontz: 20,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -145,99 +211,6 @@ class _CartPageState extends State<CartPage> {
             },
           );
         },
-      ),
-    );
-  }
-}
-
-class CartItemWidget extends StatelessWidget {
-  final CartItem cartItem;
-
-  const CartItemWidget({required this.cartItem});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(20),
-        subtitle: IntrinsicHeight(
-          child: Row(
-            children: [
-              Checkbox(
-                value: cartItem.isSelected,
-                onChanged: (value) {
-                  Provider.of<CartProvider>(context, listen: false)
-                      .toggleSelection(cartItem);
-                },
-              ),
-              const SizedBox(width: 10), // Add some spacing
-
-              Image.network(
-                cartItem.imageUrl,
-                width: 90,
-                height: 90,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.error);
-                },
-              ),
-              const SizedBox(width: 10), // Add some spacing
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      cartItem.name,
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                    const SizedBox(height: 5), // Add some vertical spacing
-                    Text(
-                      '₱${cartItem.customerPrice * cartItem.quantity}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    const SizedBox(height: 5), // Add some vertical spacing
-
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.remove),
-                          onPressed: () {
-                            Provider.of<CartProvider>(context, listen: false)
-                                .decrementQuantity(cartItem);
-                          },
-                        ),
-                        Text('${cartItem.quantity}'),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: () {
-                            Provider.of<CartProvider>(context, listen: false)
-                                .incrementQuantity(cartItem);
-                          },
-                        ),
-                        const Spacer(), // Use Spacer to push the following IconButton to the right
-                        IconButton(
-                          icon: const Icon(
-                            Icons.delete,
-                            color: Colors.red,
-                          ),
-                          onPressed: () {
-                            Provider.of<CartProvider>(context, listen: false)
-                                .removeFromCart(cartItem);
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

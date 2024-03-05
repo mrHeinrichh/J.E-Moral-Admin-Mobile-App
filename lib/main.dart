@@ -62,26 +62,29 @@ class MyApp extends StatelessWidget {
         announcementRoute: (context) => AnnouncementPage(),
         faqRoute: (context) => FaqPage(),
         productDetailsPage: (context) {
+          const id = "Placeholder ID";
           const productName = "Placeholder Name";
           const productPrice = "Placeholder Price";
+          const showProductPrice = "Placeholder Price";
           const productImageUrl = "Placeholder Image URL";
           const description = "Placeholder Description";
           const weight = "Placeholder Weight";
-          const stock = "Placeholder Stock";
           const quantity = 0;
-          const id = "Placeholder Id";
+          const stock = "Placeholder Stock";
+          const itemType = "Placeholder Type";
 
           return ProductDetailsPage(
             id: id,
             productName: productName,
             productPrice: productPrice,
+            showProductPrice: showProductPrice,
             productImageUrl: productImageUrl,
             category: "Placeholder Category Name",
             description: description,
             weight: weight,
-            stock: stock,
             quantity: quantity,
-            type: "Placeholder Type",
+            stock: stock,
+            itemType: itemType,
           );
         },
       },

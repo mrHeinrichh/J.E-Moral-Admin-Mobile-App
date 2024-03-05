@@ -1,8 +1,7 @@
 import 'package:admin_app/routes/app_routes.dart';
 import 'package:admin_app/views/cart_provider.dart';
 import 'package:admin_app/widgets/custom_button.dart';
-// import 'package:admin_app/widgets/custom_timepicker.dart';
-import 'package:admin_app/widgets/text_field.dart';
+import 'package:admin_app/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -15,7 +14,7 @@ class SetDeliveryPage extends StatefulWidget {
 }
 
 DateTime? selectedDateTime;
-final formKey = GlobalKey<FormState>();
+
 bool isDiscounted = false;
 
 class _SetDeliveryPageState extends State<SetDeliveryPage> {
@@ -30,13 +29,16 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
         itemsList.add({
           "_id": cartItem.id,
           "name": cartItem.name,
-          "customerPrice": cartItem.customerPrice,
-          "quantity": cartItem.quantity,
+          "category": cartItem.category,
           "description": cartItem.description,
           "weight": cartItem.weight,
           "stock": cartItem.stock,
-          "category": cartItem.category,
-          "type": cartItem.type,
+          "customerPrice": cartItem.customerPrice,
+          // "retailerPrice": cartItem.retailerPrice,
+          "image": cartItem.imageUrl,
+          "type": cartItem.itemType,
+          "quantity": cartItem.quantity,
+          // "totalPrice": cartItem.customerPrice * cartItem.quantity,
         });
       }
     }
@@ -52,10 +54,11 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
     final Map<String, dynamic> requestData = {
       "name": nameController.text,
       "contactNumber": contactNumberController.text,
-      "completed": "true",
-      "type": "Transactions",
       "items": itemsList,
       "discounted": isDiscounted,
+      "completed": "true",
+      "type": "Walkin",
+      "priceType": "Customer",
     };
 
     try {
@@ -68,17 +71,13 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
       if (response.statusCode == 200) {
         print('Transaction successful');
         print('Response: ${response.body}');
-        // If the transaction is successful, you can proceed with navigation.
         Navigator.pushNamed(context, walkinRoute);
       } else {
         print('Transaction failed with status code: ${response.statusCode}');
         print('Response: ${response.body}');
-        // You might want to display an error message to the user.
       }
     } catch (e) {
       print('Error: $e');
-      // Handle other types of errors, if any.
-      // You might want to display an error message to the user.
     }
   }
 
@@ -129,55 +128,63 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Confirmation'),
+          title: const Center(
+            child: Text(
+              'Confirmation',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      "Name:",
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelMedium!
-                          .copyWith(fontWeight: FontWeight.bold),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: 'Name: ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      "${nameController.text}",
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium!
-                          .copyWith(fontWeight: FontWeight.bold),
+                    TextSpan(
+                      text: nameController.text,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      "Contact Number:",
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelMedium!
-                          .copyWith(fontWeight: FontWeight.bold),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: 'Mobile Number: ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      "${contactNumberController.text}",
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium!
-                          .copyWith(fontWeight: FontWeight.bold),
+                    TextSpan(
+                      text: contactNumberController.text,
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              ),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: 'Discounted: ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextSpan(
+                      text: isDiscounted != false ? 'Yes' : 'No',
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -186,6 +193,9 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
               onPressed: () {
                 Navigator.of(context).pop();
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.7),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
@@ -194,9 +204,16 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
                 await sendTransactionData();
                 Provider.of<CartProvider>(currentContext, listen: false)
                     .clearCart();
-                Navigator.pushNamed(currentContext, walkinRoute);
+                Navigator.pushNamed(currentContext, dashboardRoute);
+                isDiscounted = false;
               },
-              child: const Text('Confirm'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Confirm',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -206,21 +223,39 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
+
     return Scaffold(
       appBar: AppBar(
-        elevation: 0,
         backgroundColor: Colors.white,
-        title: const Text(
+        elevation: 1,
+        title: Text(
           'Walkin Information',
-          style: TextStyle(color: Color(0xFF232937), fontSize: 24),
+          style: TextStyle(
+            color: const Color(0xFF050404).withOpacity(0.9),
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        iconTheme: IconThemeData(
+          color: const Color(0xFF050404).withOpacity(0.8),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: Colors.black,
+            height: 0.2,
+          ),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pushReplacementNamed(context, dashboardRoute);
+            Navigator.pushReplacementNamed(context, cartRoute);
           },
         ),
       ),
+      backgroundColor: Colors.white,
       body: ListView(
         children: [
           Padding(
@@ -229,38 +264,76 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
               key: formKey,
               child: Column(
                 children: [
-                  SetDeliveryText(
+                  CustomTextField(
                     labelText: 'Name',
-                    hintText: 'Enter Name',
+                    hintText: 'Enter the Name',
                     controller: nameController,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please Enter the name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  SetDeliveryTextNumber(
-                    labelText: 'Contact Number',
-                    controller: contactNumberController,
-                    validator: (value) {
                       if (value!.isEmpty) {
-                        return 'Please Enter the Number';
+                        return "Please Enter the Name";
                       } else {
                         return null;
                       }
                     },
                   ),
-                  const SizedBox(height: 20),
-                  CheckboxListTile(
-                    title: Text('Apply Discount'),
-                    value: isDiscounted,
-                    onChanged: (value) {
-                      setState(() {
-                        isDiscounted = value!;
-                      });
-                    },
+                  CustomTextField(
+                    labelText: 'Mobile Number',
+                    hintText: 'Enter the Mobile Number',
+                    controller: contactNumberController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    // validator: (value) {
+                    //   if (value!.isEmpty) {
+                    //     return "Please Enter the Mobile Number";
+                    //   } else if (value.length != 11) {
+                    //     return "Please Enter the Correct Mobile Number";
+                    //   } else if (!value.startsWith('09')) {
+                    //     return "Please Enter the Correct Mobile Number";
+                    //   } else {
+                    //     return null;
+                    //   }
+                    // },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      children: <Widget>[
+                        Text(
+                          'Apply Discount: ',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: const Color(0xFF050404).withOpacity(0.9),
+                          ),
+                        ),
+                        Theme(
+                          data: ThemeData(
+                            unselectedWidgetColor: Colors.white,
+                            checkboxTheme: CheckboxThemeData(
+                              fillColor:
+                                  MaterialStateProperty.resolveWith<Color>(
+                                (Set<MaterialState> states) {
+                                  if (states.contains(MaterialState.selected)) {
+                                    return const Color(0xFF050404)
+                                        .withOpacity(0.9);
+                                  }
+                                  return Colors.white;
+                                },
+                              ),
+                            ),
+                          ),
+                          child: Checkbox(
+                            value: isDiscounted,
+                            onChanged: (value) {
+                              setState(() {
+                                isDiscounted = value!;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -271,13 +344,13 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
             children: [
               CustomizedButton(
                 onPressed: () {
-                  if (formKey.currentState?.validate() == true) {
+                  if (formKey.currentState!.validate()) {
                     confirmDialog();
                   }
                 },
                 text: 'Save',
                 height: 50,
-                width: 180,
+                width: 200,
                 fontz: 20,
               ),
             ],

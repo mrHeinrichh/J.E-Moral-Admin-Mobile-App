@@ -38,7 +38,8 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
       final List<Map<String, dynamic>> transactionData = (data['data'] as List)
           .where((transactionData) =>
               transactionData is Map<String, dynamic> &&
-              transactionData['cancelReason'] != null)
+              transactionData['cancelReason'] != null &&
+              transactionData['cancellationImages'] != null)
           .map((transactionData) => transactionData as Map<String, dynamic>)
           .toList();
 

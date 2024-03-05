@@ -177,36 +177,36 @@ class _RecentOrdersState extends State<RecentOrders> {
     }
   }
 
-  Future<void> updateTransactionStatuswithDiscount(String transactionId) async {
-    try {
-      Map<String, dynamic> updateData = {
-        "status": "Approved",
-        "discounted": true,
-        "__t": "Delivery"
-      };
+  // Future<void> updateTransactionStatuswithDiscount(String transactionId) async {
+  //   try {
+  //     Map<String, dynamic> updateData = {
+  //       "status": "Approved",
+  //       "discounted": true,
+  //       "__t": "Delivery"
+  //     };
 
-      final String apiUrl =
-          'https://lpg-api-06n8.onrender.com/api/v1/transactions/$transactionId';
-      final http.Response response = await http.patch(
-        Uri.parse(apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(updateData),
-      );
+  //     final String apiUrl =
+  //         'https://lpg-api-06n8.onrender.com/api/v1/transactions/$transactionId';
+  //     final http.Response response = await http.patch(
+  //       Uri.parse(apiUrl),
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: json.encode(updateData),
+  //     );
 
-      if (response.statusCode == 200) {
-        print('Transaction updated successfully');
-        print('Response: ${response.body}');
-        print(response.statusCode);
-        await refreshData();
-      } else {
-        print(
-            'Failed to update transaction. Status code: ${response.statusCode}');
-        print('Response: ${response.body}');
-      }
-    } catch (error) {
-      print('Error updating transaction: $error');
-    }
-  }
+  //     if (response.statusCode == 200) {
+  //       print('Transaction updated successfully');
+  //       print('Response: ${response.body}');
+  //       print(response.statusCode);
+  //       await refreshData();
+  //     } else {
+  //       print(
+  //           'Failed to update transaction. Status code: ${response.statusCode}');
+  //       print('Response: ${response.body}');
+  //     }
+  //   } catch (error) {
+  //     print('Error updating transaction: $error');
+  //   }
+  // }
 
   Future<void> declineTransactionStatus(
       String transactionId, String cancelReason) async {
