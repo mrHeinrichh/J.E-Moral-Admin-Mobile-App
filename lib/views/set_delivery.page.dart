@@ -57,7 +57,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
       "items": itemsList,
       "discounted": isDiscounted,
       "completed": "true",
-      "type": "Walkin",
+      "type": "Transactions",
       "priceType": "Customer",
     };
 
