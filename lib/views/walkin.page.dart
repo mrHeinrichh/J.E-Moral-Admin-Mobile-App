@@ -56,7 +56,6 @@ class _WalkinPageState extends State<WalkinPage> {
             'type': item['type'] ?? 'Type Not Available',
             'weight': (item['weight'] ?? 0).toString(),
             'stock': (item['stock'] ?? 0).toString(),
-            'availableStock': (item['stock'] ?? 0).toString(),
           };
 
           if (groupedData.containsKey(category)) {
@@ -107,7 +106,6 @@ class _WalkinPageState extends State<WalkinPage> {
             'type': item['type'] ?? 'Type Not Available',
             'weight': (item['weight'] ?? 0).toString(),
             'stock': (item['stock'] ?? 0).toString(),
-            'availableStock': (item['stock'] ?? 0).toString(),
           };
 
           if (groupedData.containsKey(category)) {
@@ -154,6 +152,12 @@ class _WalkinPageState extends State<WalkinPage> {
             color: Colors.black,
             height: 0.2,
           ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushReplacementNamed(context, dashboardRoute);
+          },
         ),
       ),
       backgroundColor: Colors.white,

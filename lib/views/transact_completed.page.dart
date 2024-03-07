@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:intl/intl.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class TransactionCompletedPage extends StatefulWidget {
   @override
@@ -18,6 +19,11 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
 
   TextEditingController searchController = TextEditingController();
   bool loadingData = false;
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -51,53 +57,119 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
     }
   }
 
+  // Future<void> fetchData({int page = 1}) async {
+  //   final response = await http.get(Uri.parse(
+  //       'https://lpg-api-06n8.onrender.com/api/v1/transactions/&page=$page&limit=$limit'));
+
+  //   if (response.statusCode == 200) {
+  //     final Map<String, dynamic> data = json.decode(response.body);
+  //     final List<Map<String, dynamic>> transactionData = (data['data'] as List)
+  //         .where((transactionData) =>
+  //             transactionData is Map<String, dynamic> &&
+  //             transactionData['__t'] == 'Delivery' &&
+  //             transactionData['status'] == 'Completed')
+  //         .map((transactionData) => transactionData as Map<String, dynamic>)
+  //         .toList();
+
+  //     setState(() {
+  //       transactionDataList.clear();
+  //       transactionDataList.addAll(transactionData);
+  //       currentPage = page;
+  //       loadingData = false;
+  //     });
+  //   } else {
+  //     throw Exception('Failed to load data from the API');
+  //   }
+  // }
+
   Future<void> search(String query) async {
-    if (query.isEmpty) {
-      final response = await http.get(
-          Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions/'));
+    final response = await http.get(
+      Uri.parse(
+          'https://lpg-api-06n8.onrender.com/api/v1/transactions/?search=$query&limit=10000'),
+    );
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
 
-        final List<Map<String, dynamic>> transactionData = (data['data']
-                as List)
-            .where((transactionData) =>
-                transactionData is Map<String, dynamic> &&
-                transactionData.containsKey('name'))
-            .map((transactionData) => transactionData as Map<String, dynamic>)
-            .toList();
+      final List<Map<String, dynamic>> filteredData = (data['data'] as List)
+          .where((transactionData) =>
+              transactionData is Map<String, dynamic> &&
+              transactionData['__t'] == 'Delivery' &&
+              transactionData['status'] == 'Completed' &&
+              (transactionData['_id']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  transactionData['createdAt']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  _isMonthQuery(query, transactionData['createdAt']) ||
+                  transactionData['paymentMethod']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  (_isDiscountedQuery(query) &&
+                      transactionData['discountIdImage'] != null &&
+                      transactionData['discountIdImage']
+                          .toString()
+                          .isNotEmpty) ||
+                  transactionData['items']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  transactionData['total']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase())))
+          .map((transactionData) => transactionData as Map<String, dynamic>)
+          .toList();
 
-        setState(() {
-          transactionDataList = transactionData;
-        });
-      } else {}
+      setState(() {
+        transactionDataList = filteredData;
+      });
     } else {
-      final Map<String, dynamic> filter = {"name": query};
-      final String filterParam = Uri.encodeComponent(jsonEncode(filter));
-
-      final response = await http.get(Uri.parse(
-          'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter=$filterParam'));
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-
-        final List<Map<String, dynamic>> transactionData = (data['data']
-                as List)
-            .where((transactionData) =>
-                transactionData is Map<String, dynamic> &&
-                transactionData.containsKey('name') &&
-                transactionData['name']
-                    .toString()
-                    .toLowerCase()
-                    .contains(query.toLowerCase()))
-            .map((transactionData) => transactionData as Map<String, dynamic>)
-            .toList();
-
-        setState(() {
-          transactionDataList = transactionData;
-        });
-      } else {}
+      // Handle error
     }
+  }
+
+  bool _isMonthQuery(String query, String appointmentDate) {
+    final months = {
+      'january': '01',
+      'jan': '01',
+      'february': '02',
+      'feb': '02',
+      'march': '03',
+      'mar': '03',
+      'april': '04',
+      'apr': '04',
+      'may': '05',
+      'june': '06',
+      'jun': '06',
+      'july': '07',
+      'jul': '07',
+      'august': '08',
+      'aug': '08',
+      'september': '09',
+      'sep': '09',
+      'october': '10',
+      'oct': '10',
+      'november': '11',
+      'nov': '11',
+      'december': '12',
+      'dec': '12',
+    };
+
+    final lowerCaseQuery = query.toLowerCase();
+    if (months.containsKey(lowerCaseQuery)) {
+      final numericMonth = months[lowerCaseQuery];
+      return appointmentDate.contains('-$numericMonth-');
+    }
+    return false;
+  }
+
+  bool _isDiscountedQuery(String query) {
+    return query.toLowerCase() == 'discounted';
   }
 
   Future<Map<String, dynamic>> fetchCustomer(String customerId) async {
@@ -141,23 +213,87 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
   }
 
   void archiveData(String id) async {
+    Map<String, dynamic> transactionToEdit =
+        transactionDataList.firstWhere((data) => data['_id'] == id);
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Archive Data'),
-          content: const Text('Are you sure you want to Archive this data?'),
+          title: const Text(
+            'Archive Data',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  BodyMediumOver(
+                    text: 'Transaction ID: ${transactionToEdit['_id']}',
+                  ),
+                  const Divider(),
+                  BodyMediumOver(
+                    text:
+                        'Date Ordered: ${DateFormat('MMM d, y - h:mm a ').format(DateTime.parse(transactionToEdit['createdAt']))}',
+                  ),
+                  BodyMediumText(
+                    text:
+                        'Discounted: ${transactionToEdit['discountIdImage'] != null ? 'Yes' : 'No'}',
+                  ),
+                  BodyMediumOver(
+                    text: 'Items: ${transactionToEdit['items']!.map((item) {
+                      if (item is Map<String, dynamic> &&
+                          item.containsKey('name') &&
+                          item.containsKey('quantity') &&
+                          item.containsKey('customerPrice')) {
+                        final itemName = item['name'];
+                        final quantity = item['quantity'];
+                        final price = NumberFormat.decimalPattern().format(
+                            double.parse(
+                                (item['customerPrice']).toStringAsFixed(2)));
+
+                        return '$itemName (₱$price x $quantity)';
+                      }
+                    }).join(', ')}',
+                  ),
+                  BodyMediumText(
+                    text:
+                        'Total: ₱${NumberFormat.decimalPattern().format(double.parse((transactionToEdit['total']).toStringAsFixed(2)))}',
+                  ),
+                  const Divider(),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Are you sure you want to Archive this data?',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFd41111).withOpacity(0.9),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
                 final url = Uri.parse(
-                    'https://lpg-api-06n8.onrender.com/api/v1/transactions/$id');
+                    'https://lpg-api-06n8.onrender.com/api/v1/faqs/$id');
                 final response = await http.delete(url);
 
                 if (response.statusCode == 200) {
@@ -166,13 +302,22 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                         .removeWhere((data) => data['_id'] == id);
                   });
 
+                  fetchData();
                   Navigator.pop(context);
                 } else {
                   print(
-                      'Failed to Archive the data. Status code: ${response.statusCode}');
+                      'Failed to archive the data. Status code: ${response.statusCode}');
                 }
               },
-              child: const Text('Archive'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFd41111).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Archive',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -183,182 +328,286 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: RefreshIndicator(
-          onRefresh: () => fetchData(),
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: loadingData
+          ? Center(
+              child: LoadingAnimationWidget.flickr(
+                leftDotColor: const Color(0xFF050404).withOpacity(0.8),
+                rightDotColor: const Color(0xFFd41111).withOpacity(0.8),
+                size: 40,
+              ),
+            )
+          : RefreshIndicator(
+              color: const Color(0xFF050404),
+              strokeWidth: 2.5,
+              onRefresh: () async {
+                await fetchData();
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: IntrinsicWidth(
-                          child: TextField(
-                            controller: searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Search',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              isDense: true,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(horizontal: 10),
-                              suffixIcon: InkWell(
-                                onTap: () {
-                                  search(searchController.text);
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: IntrinsicWidth(
+                              child: TextField(
+                                controller: searchController,
+                                onChanged: (query) {
+                                  search(query);
                                 },
-                                child: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  child: const Icon(
-                                    Icons.search,
-                                    color: Colors.black,
+                                decoration: InputDecoration(
+                                  hintText: 'Search',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFF050404)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFF050404)),
+                                  ),
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  suffixIcon: InkWell(
+                                    onTap: () {
+                                      search(searchController.text);
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      child: const Icon(
+                                        Icons.search,
+                                        color: Color(0xFF050404),
+                                      ),
+                                    ),
                                   ),
                                 ),
+                                cursorColor: const Color(0xFF050404),
                               ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: transactionDataList.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final userData = transactionDataList[index];
-                    final id = userData['_id'];
+                    const SizedBox(height: 10),
+                    if (transactionDataList.isEmpty && !loadingData)
+                      const Center(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              SizedBox(height: 40),
+                              Text(
+                                'No transactions to display.',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 30),
+                            ],
+                          ),
+                        ),
+                      ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: transactionDataList.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                final userData = transactionDataList[index];
+                                final id = userData['_id'];
 
-                    return FutureBuilder<Map<String, dynamic>>(
-                      future: fetchCustomer(userData['to']),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Container();
-                        } else if (snapshot.hasError) {
-                          return const Text('Error fetching customer data');
-                        } else {
-                          final customerData = snapshot.data!;
+                                // return FutureBuilder<Map<String, dynamic>>(
+                                //   future: fetchCustomer(userData['to']),
+                                //   builder: (context, snapshot) {
+                                //     if (snapshot.connectionState ==
+                                //         ConnectionState.waiting) {
+                                //       return Container();
+                                //     } else if (snapshot.hasError) {
+                                //       return Container();
+                                //       // const Text('Error fetching customer data');
+                                //     } else {
+                                //       final customerData = snapshot.data!;
 
-                          return GestureDetector(
-                            onTap: () {
-                              _showCustomerDetailsModal(userData);
-                            },
-                            child: Card(
-                              elevation: 4,
-                              child: ListTile(
-                                title: TitleMediumText(
-                                  text: 'Status: ${userData['status']}',
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Divider(),
-                                    BodyMediumText(
-                                      text:
-                                          'Ordered by: ${customerData['name']}',
+                                // return FutureBuilder<Map<String, dynamic>>(
+                                //   future: fetchRider(userData['rider']),
+                                //   builder: (context, snapshot) {
+                                //     if (snapshot.connectionState ==
+                                //         ConnectionState.waiting) {
+                                //       return Container();
+                                //     } else if (snapshot.hasError) {
+                                //       return Container();
+                                //       // const Text('Error fetching customer data');
+                                //     } else {
+                                //       final riderData = snapshot.data!;
+
+                                return GestureDetector(
+                                  onTap: () {
+                                    showCustomerDetailsModal(userData);
+                                  },
+                                  child: Card(
+                                    elevation: 4,
+                                    child: ListTile(
+                                      title: TitleMediumOver(
+                                        text:
+                                            'Transaction ID: ${userData['_id']}',
+                                      ),
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Divider(),
+                                          // BodyMediumOver(
+                                          //   text:
+                                          //       'Date Ordered: ${DateFormat('MMM d, y - h:mm').format(DateTime.parse(userData['createdAt']))}',
+                                          // ),
+                                          const BodyMediumText(
+                                            text: 'Date Ordered:',
+                                          ),
+                                          Center(
+                                            child: Column(
+                                              children: [
+                                                Text(
+                                                  DateFormat(
+                                                          'MMMM d, y - h:mm a')
+                                                      .format(DateTime.parse(
+                                                          userData[
+                                                                  'createdAt'] ??
+                                                              '')),
+                                                ),
+                                                Text(
+                                                  '(${DateFormat('yyyy-dd-MM - hh:mm').format(DateTime.parse(userData['createdAt'] ?? ''))})',
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 5),
+                                          BodyMediumText(
+                                            // text:
+                                            //     'Payment: ${userData['paymentMethod'] == 'COD' ? 'Cash on Delivery' : (userData['paymentMethod'] == 'GCASH' ? 'GCash' : '')}',
+                                            text:
+                                                'Payment Method: ${userData['paymentMethod']}',
+                                          ),
+                                          BodyMediumText(
+                                            text:
+                                                'Discounted: ${userData['discountIdImage'] != null ? 'Yes' : 'No'}',
+                                          ),
+                                          BodyMediumOver(
+                                            text:
+                                                'Items: ${userData['items']!.map((item) {
+                                              if (item
+                                                      is Map<String, dynamic> &&
+                                                  item.containsKey('name') &&
+                                                  item.containsKey(
+                                                      'quantity') &&
+                                                  item.containsKey(
+                                                      'customerPrice')) {
+                                                final itemName = item['name'];
+                                                final quantity =
+                                                    item['quantity'];
+                                                final price = NumberFormat
+                                                        .decimalPattern()
+                                                    .format(double.parse(
+                                                        (item['customerPrice'])
+                                                            .toStringAsFixed(
+                                                                2)));
+
+                                                return '$itemName (₱$price x $quantity)';
+                                              }
+                                            }).join(', ')}',
+                                          ),
+                                          BodyMediumText(
+                                            text:
+                                                'Total: ₱${NumberFormat.decimalPattern().format(double.parse((userData['total']).toStringAsFixed(2)))}',
+                                          ),
+                                          const Divider(),
+                                          BodyMediumOver(
+                                            text:
+                                                'Delivery Driver: ${userData['rider'] is String ? userData['rider'] : userData['rider']['name']}',
+                                          ),
+                                          const Divider(),                                   
+                                          BodyMediumOver(
+                                            text:
+                                                'Delivery Driver: ${userData['rider']}',
+                                          ),
+                                        ],
+                                      ),
+                                      trailing: SizedBox(
+                                        width: 25,
+                                        child: IconButton(
+                                          icon: Icon(
+                                            Icons.archive,
+                                            color: const Color(0xFF050404)
+                                                .withOpacity(0.9),
+                                          ),
+                                          onPressed: () => archiveData(id),
+                                        ),
+                                      ),
                                     ),
-                                    BodyMediumText(
-                                      text:
-                                          'Contact #: ${customerData['contactNumber'] ?? ''}',
+                                  ),
+                                );
+                                // ===
+                                //     }
+                                //   },
+                                // );
+                                // ====
+                              },
+                            ),
+                            const SizedBox(height: 5),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                if (currentPage > 1)
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      fetchData(page: currentPage - 1);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF050404)
+                                          .withOpacity(0.9),
                                     ),
-                                    BodyMediumText(
-                                      text:
-                                          'Date Ordered: ${DateFormat('MMM d, y - h:mm a ').format(DateTime.parse(userData['createdAt']))}',
+                                    child: const Text(
+                                      'Previous',
+                                      style: TextStyle(color: Colors.white),
                                     ),
-                                    BodyMediumText(
-                                      text:
-                                          'Applying for Discount: ${userData['discountIdImage'] != null ? 'Yes' : 'No'}',
-                                    ),
-                                    const Divider(),
-                                    BodyMediumText(
-                                      text:
-                                          'Receiver Name: ${userData['name']}',
-                                    ),
-                                    BodyMediumText(
-                                      text:
-                                          'Receiver Contact #: ${userData['contactNumber'] ?? ''}',
-                                    ),
-                                    BodyMediumText(
-                                      text:
-                                          'Payment: ${userData['paymentMethod'] == 'COD' ? 'Cash on Delivery' : (userData['paymentMethod'] == 'GCASH' ? 'GCash' : '')}',
-                                    ),
-                                  ],
-                                ),
-                                trailing: SizedBox(
-                                  width: 20,
-                                  child: IconButton(
-                                    icon: const Icon(Icons.archive),
-                                    onPressed: () => archiveData(id),
+                                  ),
+                                const SizedBox(width: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    fetchData(page: currentPage + 1);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF050404)
+                                        .withOpacity(0.9),
+                                  ),
+                                  child: const Text(
+                                    'Next',
+                                    style: TextStyle(color: Colors.white),
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
-                          );
-                        }
-                      },
-                    );
-                  },
-                ),
-                const SizedBox(height: 5),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (currentPage > 1)
-                      ElevatedButton(
-                        onPressed: () {
-                          fetchData(page: currentPage - 1);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF232937),
+                            const SizedBox(height: 10),
+                          ],
                         ),
-                        child: const Text(
-                          'Previous',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-                      onPressed: () {
-                        fetchData(page: currentPage + 1);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF232937),
-                      ),
-                      child: const Text(
-                        'Next',
-                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 
-  void _showCustomerDetailsModal(Map<String, dynamic> userData) {
+  void showCustomerDetailsModal(Map<String, dynamic> userData) {
     fetchCustomer(userData['to']).then((customerData) async {
-      dynamic riderData;
-      if (userData['rider'] != null) {
-        try {
-          riderData = await fetchRider(userData['rider']);
-        } catch (error) {
-          print('Error fetching rider data: $error');
-        }
-      }
-
       showModalBottomSheet(
         isScrollControlled: true,
         context: context,
@@ -414,20 +663,18 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                         'Date Ordered: ${DateFormat('MMM d, y - h:mm a ').format(DateTime.parse(userData['createdAt']))}',
                   ),
                   const Divider(),
-                  if (riderData != null) ...[
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        BodyMediumOver(
-                          text: 'Delivery Driver: ${riderData['name']}',
-                        ),
-                        BodyMediumOver(
-                          text: 'Contact Number: ${riderData['contactNumber']}',
-                        ),
-                        const Divider(),
-                      ],
-                    ),
-                  ],
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      BodyMediumOver(
+                        text: 'Delivery Driver: ${userData['name']}',
+                      ),
+                      BodyMediumOver(
+                        text: 'Contact Number: ${userData['contactNumber']}',
+                      ),
+                      const Divider(),
+                    ],
+                  ),
                   BodyMediumText(
                     text: 'Payment Method: ${userData['paymentMethod']}',
                   ),
@@ -458,7 +705,7 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                         padding: const EdgeInsets.all(8.0),
                         child: Container(
                           width: double.infinity,
-                          height: 100, // Change the size
+                          height: 100,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
@@ -475,11 +722,16 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                       ),
                     ),
                   BodyMediumOver(
-                    text: 'Item: ${userData['items']!.map((item) {
+                    text: 'Items: ${userData['items']!.map((item) {
                       if (item is Map<String, dynamic> &&
                           item.containsKey('name') &&
-                          item.containsKey('quantity')) {
-                        return '${item['name']} (${item['quantity']})';
+                          item.containsKey('quantity') &&
+                          item.containsKey('customerPrice')) {
+                        final itemName = item['name'];
+                        final quantity = item['quantity'];
+                        final price = item['customerPrice'];
+
+                        return '$quantity x $itemName ₱$price';
                       }
                     }).join(', ')}',
                   ),
@@ -513,6 +765,7 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                                   Image.network(
                                     userData['pickupImages'],
                                     height: 100,
+                                    width: 100,
                                     fit: BoxFit.cover,
                                   ),
                                 ],
@@ -537,29 +790,7 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                                   Image.network(
                                     userData['completionImages'],
                                     height: 100,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          if (userData['cancellationImages'] != "")
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (context) => FullScreenImageView(
-                                      imageUrl: userData['cancellationImages'],
-                                      onClose: () =>
-                                          Navigator.of(context).pop()),
-                                ));
-                              },
-                              child: Column(
-                                children: [
-                                  const BodyMediumText(
-                                    text: 'Cancellation Image: ',
-                                  ),
-                                  Image.network(
-                                    userData['cancellationImages'],
-                                    height: 100,
+                                    width: 100,
                                     fit: BoxFit.cover,
                                   ),
                                 ],

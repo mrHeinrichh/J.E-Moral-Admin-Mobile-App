@@ -57,7 +57,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
       "items": itemsList,
       "discounted": isDiscounted,
       "completed": "true",
-      "type": "Walkin",
+      "type": "Transactions",
       "priceType": "Customer",
     };
 
@@ -284,17 +284,17 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                     ],
-                    // validator: (value) {
-                    //   if (value!.isEmpty) {
-                    //     return "Please Enter the Mobile Number";
-                    //   } else if (value.length != 11) {
-                    //     return "Please Enter the Correct Mobile Number";
-                    //   } else if (!value.startsWith('09')) {
-                    //     return "Please Enter the Correct Mobile Number";
-                    //   } else {
-                    //     return null;
-                    //   }
-                    // },
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please Enter the Mobile Number";
+                      } else if (value.length != 11) {
+                        return "Please Enter the Correct Mobile Number";
+                      } else if (!value.startsWith('09')) {
+                        return "Please Enter the Correct Mobile Number";
+                      } else {
+                        return null;
+                      }
+                    },
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
