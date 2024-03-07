@@ -47,8 +47,8 @@ class _NewCustomersState extends State<NewCustomers> {
 
             setState(() {
               users = List<Map<String, dynamic>>.from(customerData);
+              loadingData = false;
             });
-            loadingData = false;
           } else {}
         } else {
           print("Error: ${response.statusCode}");
