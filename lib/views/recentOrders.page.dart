@@ -281,6 +281,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                     final transaction = transactions[index];
 
                     return Card(
+                      color: Colors.white,
                       elevation: 2,
                       child: Padding(
                         padding: const EdgeInsets.all(25.0),
