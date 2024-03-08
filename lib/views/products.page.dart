@@ -389,16 +389,17 @@ class _ProductsPageState extends State<ProductsPage> {
                     controller: weightController,
                     labelText: 'Weight (in kg.)',
                     hintText: 'Enter the Weight (in kg.)',
+                    keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please Enter the Product Weight (in kg.)';
                       }
+                      final RegExp numberRegex = RegExp(r'^\d+(\.\d+)?$');
+                      if (!numberRegex.hasMatch(value)) {
+                        return 'Please Enter a Valid Product Weight (in kg.)';
+                      }
                       return null;
                     },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
                   ),
                   EditTextField(
                     controller: stockController,
@@ -689,16 +690,17 @@ class _ProductsPageState extends State<ProductsPage> {
                     controller: weightController,
                     labelText: 'Weight (in kg.)',
                     hintText: 'Enter the Weight (in kg.)',
+                    keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value!.isEmpty) {
                         return 'Please Enter the Product Weight (in kg.)';
                       }
+                      final RegExp numberRegex = RegExp(r'^\d+(\.\d+)?$');
+                      if (!numberRegex.hasMatch(value)) {
+                        return 'Please Enter a Valid Product Weight (in kg.)';
+                      }
                       return null;
                     },
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
                   ),
                 ],
               ),
