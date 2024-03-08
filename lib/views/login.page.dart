@@ -90,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
                   children: <Widget>[
                     const SizedBox(height: 60.0),
                     Image.network(
-                      "https://res.cloudinary.com/dzcjbziwt/image/upload/v1708533697/images/hefwwla0ozppgz5itlkt.png",
+                      'https://raw.githubusercontent.com/mrHeinrichh/J.E-Moral-cdn/main/assets/png/logo-main.png',
                       width: 550.0,
                       height: null,
                     ),

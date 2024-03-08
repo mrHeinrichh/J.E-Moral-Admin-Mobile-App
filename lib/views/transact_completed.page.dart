@@ -19,9 +19,11 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
 
   TextEditingController searchController = TextEditingController();
   bool loadingData = false;
+  bool _mounted = true;
 
   @override
   void dispose() {
+    _mounted = false;
     super.dispose();
   }
 
@@ -36,51 +38,33 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
   int limit = 20;
 
   Future<void> fetchData({int page = 1}) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"status":"Completed","__t":"Delivery"}&page=$page&limit=$limit'));
+    try {
+      final response = await http.get(Uri.parse(
+          'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"status":"Completed","__t":"Delivery"}&page=$page&limit=$limit'));
+      if (_mounted) {
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = json.decode(response.body);
+          final List<Map<String, dynamic>> transactionData = (data['data']
+                  as List)
+              .where(
+                  (transactionData) => transactionData is Map<String, dynamic>)
+              .map((transactionData) => transactionData as Map<String, dynamic>)
+              .toList();
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<Map<String, dynamic>> transactionData = (data['data'] as List)
-          .where((transactionData) => transactionData is Map<String, dynamic>)
-          .map((transactionData) => transactionData as Map<String, dynamic>)
-          .toList();
-
-      setState(() {
-        transactionDataList.clear();
-        transactionDataList.addAll(transactionData);
-        currentPage = page;
-        loadingData = false;
-      });
-    } else {
-      throw Exception('Failed to load data from the API');
+          setState(() {
+            transactionDataList.clear();
+            transactionDataList.addAll(transactionData);
+            currentPage = page;
+            loadingData = false;
+          });
+        } else {}
+      }
+    } catch (e) {
+      if (_mounted) {
+        print("Error: $e");
+      }
     }
   }
-
-  // Future<void> fetchData({int page = 1}) async {
-  //   final response = await http.get(Uri.parse(
-  //       'https://lpg-api-06n8.onrender.com/api/v1/transactions/&page=$page&limit=$limit'));
-
-  //   if (response.statusCode == 200) {
-  //     final Map<String, dynamic> data = json.decode(response.body);
-  //     final List<Map<String, dynamic>> transactionData = (data['data'] as List)
-  //         .where((transactionData) =>
-  //             transactionData is Map<String, dynamic> &&
-  //             transactionData['__t'] == 'Delivery' &&
-  //             transactionData['status'] == 'Completed')
-  //         .map((transactionData) => transactionData as Map<String, dynamic>)
-  //         .toList();
-
-  //     setState(() {
-  //       transactionDataList.clear();
-  //       transactionDataList.addAll(transactionData);
-  //       currentPage = page;
-  //       loadingData = false;
-  //     });
-  //   } else {
-  //     throw Exception('Failed to load data from the API');
-  //   }
-  // }
 
   Future<void> search(String query) async {
     final response = await http.get(
@@ -532,11 +516,11 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                                             text:
                                                 'Delivery Driver: ${userData['rider'] is String ? userData['rider'] : userData['rider']['name']}',
                                           ),
-                                          const Divider(),                                   
-                                          BodyMediumOver(
-                                            text:
-                                                'Delivery Driver: ${userData['rider']}',
-                                          ),
+                                          const Divider(),
+                                          // BodyMediumOver(
+                                          //   text:
+                                          //       'Delivery Driver: ${userData['rider']}',
+                                          // ),
                                         ],
                                       ),
                                       trailing: SizedBox(
@@ -731,7 +715,7 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                         final quantity = item['quantity'];
                         final price = item['customerPrice'];
 
-                        return '$quantity x $itemName ₱$price';
+                        return '$itemName (₱${NumberFormat.decimalPattern().format(price)} x $quantity)';
                       }
                     }).join(', ')}',
                   ),

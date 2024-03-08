@@ -15,6 +15,13 @@ class _TransactionWalkinPageState extends State<TransactionWalkinPage> {
   List<Map<String, dynamic>> transactionDataList = [];
   TextEditingController searchController = TextEditingController();
   bool loadingData = false;
+  bool _mounted = true;
+
+  @override
+  void dispose() {
+    _mounted = false;
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -27,24 +34,36 @@ class _TransactionWalkinPageState extends State<TransactionWalkinPage> {
   int limit = 10;
 
   Future<void> fetchData({int page = 1}) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"__t":null}&page=$page&limit=$limit'));
+    try {
+      final response = await http.get(Uri.parse(
+          'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"__t":null}&page=$page&limit=$limit'));
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<Map<String, dynamic>> transactionData = (data['data'] as List)
-          .where((transactionData) => transactionData is Map<String, dynamic>)
-          .map((transactionData) => transactionData as Map<String, dynamic>)
-          .toList();
+      if (_mounted) {
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = json.decode(response.body);
+          final List<Map<String, dynamic>> transactionData = (data['data']
+                  as List)
+              .where(
+                  (transactionData) => transactionData is Map<String, dynamic>)
+              .map((transactionData) => transactionData as Map<String, dynamic>)
+              .toList();
 
-      setState(() {
-        transactionDataList.clear();
-        transactionDataList.addAll(transactionData);
-        currentPage = page;
-        loadingData = false;
-      });
-    } else {
-      throw Exception('Failed to load data from the API');
+          setState(() {
+            transactionDataList.clear();
+            transactionDataList.addAll(transactionData);
+            currentPage = page;
+            loadingData = false;
+          });
+        } else {
+          throw Exception('Failed to load data from the API');
+        }
+      } else {
+        print("Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      if (_mounted) {
+        print("Error: $e");
+      }
     }
   }
 

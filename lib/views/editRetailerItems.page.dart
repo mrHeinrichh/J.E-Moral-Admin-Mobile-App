@@ -19,10 +19,12 @@ class __EditPricesForRetailersPageStateState
   TextEditingController searchController = TextEditingController();
 
   bool loadingData = false;
+  bool _mounted = true;
   final formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
+    _mounted = false;
     super.dispose();
   }
 
@@ -37,23 +39,32 @@ class __EditPricesForRetailersPageStateState
   int limit = 20;
 
   Future<void> fetchData({int page = 1}) async {
-    final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/items/?page=$page&limit=$limit'));
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<Map<String, dynamic>> itemData = (data['data'] as List)
-          .where((itemData) => itemData is Map<String, dynamic>)
-          .map((itemData) => itemData as Map<String, dynamic>)
-          .toList();
+    try {
+      final response = await http.get(Uri.parse(
+          'https://lpg-api-06n8.onrender.com/api/v1/items/?page=$page&limit=$limit'));
 
-      setState(() {
-        itemDataList.clear();
-        itemDataList.addAll(itemData);
-        currentPage = page;
-        loadingData = false;
-      });
-    } else {
-      throw Exception('Failed to load data from the API');
+      if (_mounted) {
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = json.decode(response.body);
+          final List<Map<String, dynamic>> itemData = (data['data'] as List)
+              .where((itemData) => itemData is Map<String, dynamic>)
+              .map((itemData) => itemData as Map<String, dynamic>)
+              .toList();
+
+          setState(() {
+            itemDataList.clear();
+            itemDataList.addAll(itemData);
+            currentPage = page;
+            loadingData = false;
+          });
+        } else {
+          throw Exception('Failed to load data from the API');
+        }
+      }
+    } catch (e) {
+      if (_mounted) {
+        print("Error: $e");
+      }
     }
   }
 
