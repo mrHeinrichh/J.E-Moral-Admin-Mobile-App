@@ -47,7 +47,6 @@ class _RecentOrdersState extends State<RecentOrders> {
 
             setState(() {
               transactions = List<Map<String, dynamic>>.from(transactionData);
-              loadingData = false;
             });
           } else {}
         } else {
@@ -58,6 +57,8 @@ class _RecentOrdersState extends State<RecentOrders> {
       if (_mounted) {
         print("Error: $e");
       }
+    } finally {
+      loadingData = false;
     }
   }
 

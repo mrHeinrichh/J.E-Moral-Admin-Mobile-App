@@ -66,7 +66,7 @@ class BottomNavBar extends StatelessWidget {
 Future<int> fetchCustomers() async {
   final response = await http.get(
     Uri.parse(
-      'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t": {"in": ["Customer", "Retailer"]}, "verified": false}&page=1&limit=300',
+      'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t":{"\$in":["Customer","Retailer"]},"verified":false}&limit=300',
     ),
   );
   if (response.statusCode == 200) {
@@ -81,7 +81,7 @@ Future<int> fetchCustomers() async {
 
 Future<int> fetchOrders() async {
   final response = await http.get(Uri.parse(
-      'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"status": "Pending","__t": "Delivery"}&limit=300'));
+      'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"status":"Pending","__t":"Delivery"}&limit=300'));
 
   if (response.statusCode == 200) {
     final Map<String, dynamic> data = json.decode(response.body);
@@ -95,7 +95,7 @@ Future<int> fetchOrders() async {
 
 Future<int> fetchOngoingOrders() async {
   final response = await http.get(Uri.parse(
-      'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"status": "On Going","__t": "Delivery"}&limit=300'));
+      'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"status":"On Going","__t":"Delivery"}&limit=300'));
 
   if (response.statusCode == 200) {
     final Map<String, dynamic> data = json.decode(response.body);
@@ -137,7 +137,7 @@ class PendingCustomer extends StatelessWidget {
           children: [
             Stack(
               children: [
-                if (customerCount <= 9 && customerCount > 0)
+                if (customerCount <= 9 && customerCount >= 0)
                   const Padding(
                     padding: EdgeInsets.all(12),
                     child: Icon(Icons.person_add_alt_1_sharp, size: 30),
@@ -225,7 +225,7 @@ class PendingOrder extends StatelessWidget {
           children: [
             Stack(
               children: [
-                if (orderCount <= 9 && orderCount > 0)
+                if (orderCount <= 9 && orderCount >= 0)
                   const Padding(
                     padding: EdgeInsets.all(12),
                     child: Icon(Icons.pending_actions_rounded, size: 30),
@@ -313,7 +313,7 @@ class OngoingOrder extends StatelessWidget {
           children: [
             Stack(
               children: [
-                if (orderCount <= 9 && orderCount > 0)
+                if (orderCount <= 9 && orderCount >= 0)
                   const Padding(
                     padding: EdgeInsets.all(12),
                     child: Icon(Icons.location_history, size: 30),

@@ -27,7 +27,7 @@ class _HomePageState extends State<HomePage> {
     fetchData();
   }
 
-  int targetStock = 10;
+  int targetStock = 7;
   int outOfStock = 0;
 
   Future<int> fetchStock() async {
@@ -53,7 +53,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<int> fetchAppointment() async {
     final response = await http.get(Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t": "Customer","appointmentStatus": "Pending"}'));
+        'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t":"Customer","appointmentStatus":"Pending"}'));
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
       final List<Map<String, dynamic>> customerData = (data['data'] as List)

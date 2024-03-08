@@ -14,7 +14,7 @@ class NewCustomers extends StatefulWidget {
 }
 
 class _NewCustomersState extends State<NewCustomers> {
-  List<Map<String, dynamic>> users = [];
+  List<Map<String, dynamic>> userDataList = [];
   bool _mounted = true;
   bool loadingData = false;
 
@@ -35,7 +35,7 @@ class _NewCustomersState extends State<NewCustomers> {
     try {
       final response = await http.get(
         Uri.parse(
-          'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t": {"in": ["Customer", "Retailer"]}}&page=1&limit=300',
+          'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"__t":{"\$in":["Customer","Retailer"]}}&limit=300',
         ),
       );
 
@@ -43,11 +43,10 @@ class _NewCustomersState extends State<NewCustomers> {
         if (response.statusCode == 200) {
           final Map<String, dynamic> data = json.decode(response.body);
           if (data.containsKey("data")) {
-            final List<dynamic> customerData = data["data"];
+            final List<dynamic> userData = data["data"];
 
             setState(() {
-              users = List<Map<String, dynamic>>.from(customerData);
-              loadingData = false;
+              userDataList = List<Map<String, dynamic>>.from(userData);
             });
           } else {}
         } else {
@@ -58,6 +57,8 @@ class _NewCustomersState extends State<NewCustomers> {
       if (_mounted) {
         print("Error: $e");
       }
+    } finally {
+      loadingData = false;
     }
   }
 
@@ -148,7 +149,7 @@ class _NewCustomersState extends State<NewCustomers> {
   @override
   Widget build(BuildContext context) {
     List<Map<String, dynamic>> unverifiedUsers =
-        users.where((user) => user['verified'] == false).toList();
+        userDataList.where((user) => user['verified'] == false).toList();
 
     return Scaffold(
       appBar: AppBar(
