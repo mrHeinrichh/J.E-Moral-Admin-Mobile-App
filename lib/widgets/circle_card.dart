@@ -219,7 +219,7 @@ class StocksIcon extends StatelessWidget {
                     child: Icon(Icons.inventory_rounded, size: 30),
                   ),
                 ),
-                if (lowStockCount > 0)
+                if (lowStockCount <= 9 && lowStockCount > 0)
                   Positioned(
                     top: 0,
                     right: 0,
@@ -234,6 +234,26 @@ class StocksIcon extends StatelessWidget {
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (lowStockCount >= 10)
+                  Positioned(
+                    top: 3.8,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(1.4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFd41111).withOpacity(0.8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        lowStockCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
                       ),
                     ),
@@ -285,40 +305,6 @@ class TransactionsIcon extends StatelessWidget {
   }
 }
 
-// class AppointmentIcon extends StatelessWidget {
-//   final VoidCallback onTap;
-
-//   AppointmentIcon({required this.onTap});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Padding(
-//       padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
-//       child: Column(
-//         children: [
-//           GestureDetector(
-//             onTap: onTap,
-//             child: Card(
-//               shape: RoundedRectangleBorder(
-//                 borderRadius: BorderRadius.circular(25.0),
-//               ),
-//               elevation: 4,
-//               child: const Padding(
-//                 padding: EdgeInsets.all(10.0),
-//                 child: Icon(Icons.edit_calendar_rounded, size: 30),
-//               ),
-//             ),
-//           ),
-//           const Text(
-//             "Appointments",
-//             style: TextStyle(fontSize: 13),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
 class AppointmentIcon extends StatelessWidget {
   final Future<int> Function() fetchAppointments;
 
@@ -366,7 +352,7 @@ class AppointmentIcon extends StatelessWidget {
                     child: Icon(Icons.edit_calendar_rounded, size: 30),
                   ),
                 ),
-                if (appointmentCount > 0)
+                if (appointmentCount <= 9 && appointmentCount > 0)
                   Positioned(
                     top: 0,
                     right: 0,
@@ -381,6 +367,26 @@ class AppointmentIcon extends StatelessWidget {
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (appointmentCount >= 10)
+                  Positioned(
+                    top: 3.8,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(1.4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFd41111).withOpacity(0.8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        appointmentCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
                       ),
                     ),

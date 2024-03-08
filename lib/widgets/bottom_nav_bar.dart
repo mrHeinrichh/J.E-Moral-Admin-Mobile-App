@@ -137,11 +137,12 @@ class PendingCustomer extends StatelessWidget {
           children: [
             Stack(
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Icon(Icons.person_add_alt_1_sharp, size: 30),
-                ),
-                if (customerCount > 0)
+                if (customerCount <= 9 && customerCount > 0)
+                  const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Icon(Icons.person_add_alt_1_sharp, size: 30),
+                  ),
+                if (customerCount <= 9 && customerCount > 0)
                   Positioned(
                     top: 0,
                     right: 0,
@@ -156,6 +157,31 @@ class PendingCustomer extends StatelessWidget {
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (customerCount >= 10)
+                  const Padding(
+                    padding: EdgeInsets.all(8.5),
+                    child: Icon(Icons.pending_actions_rounded, size: 30),
+                  ),
+                if (customerCount >= 10)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFd41111).withOpacity(0.8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        customerCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
                       ),
                     ),
@@ -199,11 +225,12 @@ class PendingOrder extends StatelessWidget {
           children: [
             Stack(
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Icon(Icons.pending_actions_rounded, size: 30),
-                ),
-                if (orderCount > 0)
+                if (orderCount <= 9 && orderCount > 0)
+                  const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Icon(Icons.pending_actions_rounded, size: 30),
+                  ),
+                if (orderCount <= 9 && orderCount > 0)
                   Positioned(
                     top: 0,
                     right: 0,
@@ -218,6 +245,31 @@ class PendingOrder extends StatelessWidget {
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (orderCount >= 10)
+                  const Padding(
+                    padding: EdgeInsets.all(8.5),
+                    child: Icon(Icons.pending_actions_rounded, size: 30),
+                  ),
+                if (orderCount >= 10)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFd41111).withOpacity(0.8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        orderCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
                       ),
                     ),
@@ -261,11 +313,12 @@ class OngoingOrder extends StatelessWidget {
           children: [
             Stack(
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Icon(Icons.location_history, size: 30),
-                ),
-                if (orderCount > 0)
+                if (orderCount <= 9 && orderCount > 0)
+                  const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Icon(Icons.location_history, size: 30),
+                  ),
+                if (orderCount <= 9 && orderCount > 0)
                   Positioned(
                     top: 0,
                     right: 0,
@@ -280,6 +333,31 @@ class OngoingOrder extends StatelessWidget {
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (orderCount >= 10)
+                  const Padding(
+                    padding: EdgeInsets.all(8.5),
+                    child: Icon(Icons.pending_actions_rounded, size: 30),
+                  ),
+                if (orderCount >= 10)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFd41111).withOpacity(0.8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        orderCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
                       ),
                     ),
