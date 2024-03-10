@@ -105,6 +105,7 @@ class _ActiveOrdersState extends State<ActiveOrders> {
             itemBuilder: (context, index) {
               final transaction = transactions[index];
               return Card(
+                color: Colors.white,
                 elevation: 2,
                 child: Padding(
                   padding: const EdgeInsets.all(25.0),

@@ -208,6 +208,7 @@ class _NewCustomersState extends State<NewCustomers> {
                               showCustomerDetailsModal(user);
                             },
                             child: Card(
+                              color: Colors.white,
                               elevation: 2,
                               child: Padding(
                                 padding: const EdgeInsets.all(20.0),
@@ -317,6 +318,7 @@ class _NewCustomersState extends State<NewCustomers> {
                               showCustomerDetailsModal(user);
                             },
                             child: Card(
+                              color: Colors.white,
                               elevation: 2,
                               child: Padding(
                                 padding: const EdgeInsets.all(20.0),

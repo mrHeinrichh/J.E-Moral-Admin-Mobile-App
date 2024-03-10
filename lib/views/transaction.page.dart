@@ -84,7 +84,7 @@ class _TransactionPageState extends State<TransactionPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.close_rounded,
                 color: const Color(0xFF050404).withOpacity(0.9)),
-            label: 'Cancelled',
+            label: 'Failed',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.directions_walk,

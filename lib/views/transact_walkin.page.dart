@@ -33,10 +33,44 @@ class _TransactionWalkinPageState extends State<TransactionWalkinPage> {
   int currentPage = 1;
   int limit = 10;
 
+  // Future<void> fetchData({int page = 1}) async {
+  //   try {
+  //     final response = await http.get(Uri.parse(
+  //         'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"__t":null}&page=$page&limit=$limit'));
+
+  //     if (_mounted) {
+  //       if (response.statusCode == 200) {
+  //         final Map<String, dynamic> data = json.decode(response.body);
+  //         final List<Map<String, dynamic>> transactionData = (data['data']
+  //                 as List)
+  //             .where(
+  //                 (transactionData) => transactionData is Map<String, dynamic>)
+  //             .map((transactionData) => transactionData as Map<String, dynamic>)
+  //             .toList();
+
+  //         setState(() {
+  //           transactionDataList.clear();
+  //           transactionDataList.addAll(transactionData);
+  //           currentPage = page;
+  //           loadingData = false;
+  //         });
+  //       } else {
+  //         throw Exception('Failed to load data from the API');
+  //       }
+  //     } else {
+  //       print("Error: ${response.statusCode}");
+  //     }
+  //   } catch (e) {
+  //     if (_mounted) {
+  //       print("Error: $e");
+  //     }
+  //   }
+  // }
+
   Future<void> fetchData({int page = 1}) async {
     try {
       final response = await http.get(Uri.parse(
-          'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"__t":null}&page=$page&limit=$limit'));
+          'https://lpg-api-06n8.onrender.com/api/v1/transactions/?page=$page&limit=$limit'));
 
       if (_mounted) {
         if (response.statusCode == 200) {
@@ -45,6 +79,7 @@ class _TransactionWalkinPageState extends State<TransactionWalkinPage> {
                   as List)
               .where(
                   (transactionData) => transactionData is Map<String, dynamic>)
+              .where((transactionData) => !transactionData.containsKey('__t'))
               .map((transactionData) => transactionData as Map<String, dynamic>)
               .toList();
 
@@ -79,7 +114,7 @@ class _TransactionWalkinPageState extends State<TransactionWalkinPage> {
       final List<Map<String, dynamic>> filteredData = (data['data'] as List)
           .where((transactionData) =>
               transactionData is Map<String, dynamic> &&
-              transactionData['__t'] == null &&
+              transactionData.containsKey('__t') &&
               (transactionData['_id']
                       .toString()
                       .toLowerCase()
@@ -260,7 +295,7 @@ class _TransactionWalkinPageState extends State<TransactionWalkinPage> {
                                   color: Colors.white,
                                   elevation: 4,
                                   child: ListTile(
-                                    title: TitleMediumOver(
+                                    title: BodyMediumOver(
                                       text:
                                           'Transaction ID: ${userData['_id']}',
                                     ),
@@ -294,7 +329,7 @@ class _TransactionWalkinPageState extends State<TransactionWalkinPage> {
                                               final price =
                                                   item['customerPrice'];
 
-                                              return '$itemName (₱${NumberFormat.decimalPattern().format(price)} x $quantity)';
+                                              return '$itemName ₱${NumberFormat.decimalPattern().format(price)} (x$quantity)';
                                             }
                                           }).join(', ')}',
                                         ),

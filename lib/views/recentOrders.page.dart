@@ -190,7 +190,7 @@ class _RecentOrdersState extends State<RecentOrders> {
             TextButton(
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
-                  transactionToEdit['status'] = "Cancelled";
+                  transactionToEdit['status'] = "Declined";
                   transactionToEdit['cancelReason'] =
                       cancelReasonController.text;
                   transactionToEdit['__t'] = "Delivery";
@@ -346,7 +346,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                                             (item['customerPrice'])
                                                 .toStringAsFixed(2)));
 
-                                    return '$itemName (₱$price x $quantity)';
+                                    return '$itemName ₱$price (x$quantity)';
                                   }
                                 }).join(', ')}',
                               ),
@@ -366,7 +366,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                                             (item['retailerPrice'])
                                                 .toStringAsFixed(2)));
 
-                                    return '$itemName (₱$price x $quantity)';
+                                    return '$itemName ₱$price (x$quantity)';
                                   }
                                 }).join(', ')}',
                               ),

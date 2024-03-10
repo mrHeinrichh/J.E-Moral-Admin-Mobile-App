@@ -17,7 +17,7 @@ class RectangleCard extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.rectangle,
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15.0), // Make the card circular
+        borderRadius: BorderRadius.circular(15.0),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.5),
@@ -36,7 +36,7 @@ class RectangleCard extends StatelessWidget {
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
-            textAlign: TextAlign.center, // Center align text
+            textAlign: TextAlign.center,
           ),
           Text(
             value,

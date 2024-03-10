@@ -15,6 +15,7 @@ class WalkInIcon extends StatelessWidget {
           GestureDetector(
             onTap: onTap,
             child: Card(
+              color: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25.0),
               ),
@@ -49,6 +50,7 @@ class CustomerIcon extends StatelessWidget {
           GestureDetector(
             onTap: onTap,
             child: Card(
+              color: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25.0),
               ),
@@ -84,6 +86,7 @@ class RiderIcon extends StatelessWidget {
           GestureDetector(
             onTap: onTap,
             child: Card(
+              color: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25.0),
               ),
@@ -118,6 +121,7 @@ class ProductsIcon extends StatelessWidget {
           GestureDetector(
             onTap: onTap,
             child: Card(
+              color: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25.0),
               ),
@@ -152,6 +156,7 @@ class AccessoriesIcon extends StatelessWidget {
           GestureDetector(
             onTap: onTap,
             child: Card(
+              color: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25.0),
               ),
@@ -210,6 +215,7 @@ class StocksIcon extends StatelessWidget {
             Stack(
               children: [
                 Card(
+                  color: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25.0),
                   ),
@@ -285,6 +291,7 @@ class TransactionsIcon extends StatelessWidget {
           GestureDetector(
             onTap: onTap,
             child: Card(
+              color: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25.0),
               ),
@@ -343,6 +350,7 @@ class AppointmentIcon extends StatelessWidget {
             Stack(
               children: [
                 Card(
+                  color: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25.0),
                   ),
@@ -418,11 +426,11 @@ class FeedbackIcon extends StatelessWidget {
           GestureDetector(
             onTap: onTap,
             child: Card(
+              color: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(25.0), // Make the card circular
+                borderRadius: BorderRadius.circular(25.0),
               ),
-              elevation: 4, // Add a shadow to the card
+              elevation: 4,
               child: const Padding(
                 padding: EdgeInsets.all(10.0),
                 child: Icon(Icons.message_outlined, size: 30),
@@ -453,11 +461,11 @@ class AnnouncementIcon extends StatelessWidget {
           GestureDetector(
             onTap: onTap,
             child: Card(
+              color: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(25.0), // Make the card circular
+                borderRadius: BorderRadius.circular(25.0),
               ),
-              elevation: 4, // Add a shadow to the card
+              elevation: 4,
               child: const Padding(
                 padding: EdgeInsets.all(10.0),
                 child: Icon(Icons.announcement_outlined, size: 30),
@@ -488,6 +496,7 @@ class UpdatePriceIcon extends StatelessWidget {
           GestureDetector(
             onTap: onTap,
             child: Card(
+              color: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25.0),
               ),
@@ -522,11 +531,11 @@ class FaqIcon extends StatelessWidget {
           GestureDetector(
             onTap: onTap,
             child: Card(
+              color: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(25.0), // Make the card circular
+                borderRadius: BorderRadius.circular(25.0),
               ),
-              elevation: 4, // Add a shadow to the card
+              elevation: 4,
               child: const Padding(
                 padding: EdgeInsets.all(10.0),
                 child: Icon(Icons.question_answer_sharp, size: 30),

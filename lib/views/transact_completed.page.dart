@@ -89,6 +89,20 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                       .toLowerCase()
                       .contains(query.toLowerCase()) ||
                   _isMonthQuery(query, transactionData['createdAt']) ||
+                  transactionData['deliveryDate']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  _isMonthQuery(query, transactionData['deliveryDate']) ||
+                  transactionData['updatedAt']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  _isMonthQuery(query, transactionData['updatedAt']) ||
+                  transactionData['paymentMethod']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
                   transactionData['paymentMethod']
                       .toString()
                       .toLowerCase()
@@ -103,6 +117,10 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                       .toLowerCase()
                       .contains(query.toLowerCase()) ||
                   transactionData['total']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  transactionData['rider']
                       .toString()
                       .toLowerCase()
                       .contains(query.toLowerCase())))
@@ -387,7 +405,7 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                             children: [
                               SizedBox(height: 40),
                               Text(
-                                'No transactions to display.',
+                                'No transactions completed to display.',
                                 style: TextStyle(
                                     fontSize: 18, fontWeight: FontWeight.bold),
                               ),
@@ -420,127 +438,211 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                                 //     } else {
                                 //       final customerData = snapshot.data!;
 
-                                // return FutureBuilder<Map<String, dynamic>>(
-                                //   future: fetchRider(userData['rider']),
-                                //   builder: (context, snapshot) {
-                                //     if (snapshot.connectionState ==
-                                //         ConnectionState.waiting) {
-                                //       return Container();
-                                //     } else if (snapshot.hasError) {
-                                //       return Container();
-                                //       // const Text('Error fetching customer data');
-                                //     } else {
-                                //       final riderData = snapshot.data!;
+                                return FutureBuilder<Map<String, dynamic>>(
+                                  future: fetchRider(userData['rider']),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return Container();
+                                    } else if (snapshot.hasError) {
+                                      return Container();
+                                    } else {
+                                      final riderData = snapshot.data!;
 
-                                return GestureDetector(
-                                  onTap: () {
-                                    showCustomerDetailsModal(userData);
-                                  },
-                                  child: Card(
-                                    elevation: 4,
-                                    child: ListTile(
-                                      title: TitleMediumOver(
-                                        text:
-                                            'Transaction ID: ${userData['_id']}',
-                                      ),
-                                      subtitle: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          const Divider(),
-                                          // BodyMediumOver(
-                                          //   text:
-                                          //       'Date Ordered: ${DateFormat('MMM d, y - h:mm').format(DateTime.parse(userData['createdAt']))}',
-                                          // ),
-                                          const BodyMediumText(
-                                            text: 'Date Ordered:',
-                                          ),
-                                          Center(
-                                            child: Column(
+                                      return GestureDetector(
+                                        onTap: () {
+                                          showCustomerDetailsModal(userData);
+                                        },
+                                        child: Card(
+                                          color: Colors.white,
+                                          elevation: 2,
+                                          child: ListTile(
+                                            title: BodyMediumOver(
+                                              text:
+                                                  'Transaction ID: ${userData['_id']}',
+                                            ),
+                                            subtitle: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
-                                                Text(
-                                                  DateFormat(
-                                                          'MMMM d, y - h:mm a')
-                                                      .format(DateTime.parse(
-                                                          userData[
-                                                                  'createdAt'] ??
-                                                              '')),
+                                                const Divider(),
+                                                // const BodyMediumText(
+                                                //   text: 'Date Ordered:',
+                                                // ),
+                                                // Center(
+                                                //   child: Column(
+                                                //     children: [
+                                                //       Text(
+                                                //         DateFormat(
+                                                //                 'MMMM d, y - h:mm a')
+                                                //             .format(DateTime
+                                                //                 .parse(userData[
+                                                //                         'createdAt'] ??
+                                                //                     '')),
+                                                //       ),
+                                                //       Text(
+                                                //         '(${DateFormat('yyyy-dd-MM - hh:mm').format(DateTime.parse(userData['createdAt'] ?? ''))})',
+                                                //       ),
+                                                //     ],
+                                                //   ),
+                                                // ),
+                                                // const SizedBox(height: 5),
+                                                // const BodyMediumText(
+                                                //   text: 'Delivery Date:',
+                                                // ),
+                                                // Center(
+                                                //   child: Column(
+                                                //     children: [
+                                                //       Text(
+                                                //         DateFormat(
+                                                //                 'MMMM d, y - h:mm a')
+                                                //             .format(DateTime
+                                                //                 .parse(userData[
+                                                //                         'deliveryDate'] ??
+                                                //                     '')),
+                                                //       ),
+                                                //       Text(
+                                                //         '(${DateFormat('yyyy-dd-MM - hh:mm').format(DateTime.parse(userData['deliveryDate'] ?? ''))})',
+                                                //       ),
+                                                //     ],
+                                                //   ),
+                                                // ),
+                                                // const SizedBox(height: 5),
+                                                const BodyMediumText(
+                                                  text: 'Date Delivered:',
                                                 ),
-                                                Text(
-                                                  '(${DateFormat('yyyy-dd-MM - hh:mm').format(DateTime.parse(userData['createdAt'] ?? ''))})',
+                                                Center(
+                                                  child: Column(
+                                                    children: [
+                                                      Text(
+                                                        DateFormat(
+                                                                'MMMM d, y - h:mm a')
+                                                            .format(DateTime
+                                                                .parse(userData[
+                                                                        'updatedAt'] ??
+                                                                    '')),
+                                                      ),
+                                                      Text(
+                                                        '(${DateFormat('yyyy-dd-MM - hh:mm').format(DateTime.parse(userData['updatedAt'] ?? ''))})',
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+
+                                                const SizedBox(height: 5),
+                                                const Divider(),
+                                                BodyMediumText(
+                                                  text:
+                                                      'Payment Method: ${userData['paymentMethod']}',
+                                                ),
+                                                if (!userData.containsKey(
+                                                        'discountIdImage') &&
+                                                    userData['discounted'] ==
+                                                        false)
+                                                  const Center(
+                                                    child: BodyMedium(
+                                                      text:
+                                                          'Ordered by Retailer',
+                                                    ),
+                                                  ),
+                                                if (userData.containsKey(
+                                                    'discountIdImage'))
+                                                  BodyMediumText(
+                                                    text:
+                                                        'Discounted: ${userData['discountIdImage'] != "" && userData['discountIdImage'] != null ? 'Yes' : 'No'}',
+                                                  ),
+                                                if (userData.containsKey(
+                                                    'discountIdImage'))
+                                                  BodyMediumOver(
+                                                    text:
+                                                        'Items: ${userData['items']!.map((item) {
+                                                      if (item is Map<String,
+                                                              dynamic> &&
+                                                          item.containsKey(
+                                                              'name') &&
+                                                          item.containsKey(
+                                                              'quantity') &&
+                                                          item.containsKey(
+                                                              'customerPrice')) {
+                                                        final itemName =
+                                                            item['name'];
+                                                        final quantity =
+                                                            item['quantity'];
+                                                        final price = NumberFormat
+                                                                .decimalPattern()
+                                                            .format(double.parse(
+                                                                (item['customerPrice'])
+                                                                    .toStringAsFixed(
+                                                                        2)));
+
+                                                        return '$itemName ₱$price (x$quantity)';
+                                                      }
+                                                    }).join(', ')}',
+                                                  ),
+                                                if (!userData.containsKey(
+                                                        'discountIdImage') &&
+                                                    userData['discounted'] ==
+                                                        false)
+                                                  BodyMediumOver(
+                                                    text:
+                                                        'Items: ${userData['items']!.map((item) {
+                                                      if (item is Map<String,
+                                                              dynamic> &&
+                                                          item.containsKey(
+                                                              'name') &&
+                                                          item.containsKey(
+                                                              'quantity') &&
+                                                          item.containsKey(
+                                                              'retailerPrice')) {
+                                                        final itemName =
+                                                            item['name'];
+                                                        final quantity =
+                                                            item['quantity'];
+                                                        final price = NumberFormat
+                                                                .decimalPattern()
+                                                            .format(double.parse(
+                                                                (item['retailerPrice'])
+                                                                    .toStringAsFixed(
+                                                                        2)));
+
+                                                        return '$itemName ₱$price (x$quantity)';
+                                                      }
+                                                    }).join(', ')}',
+                                                  ),
+                                                BodyMediumText(
+                                                  text:
+                                                      'Total: ₱${NumberFormat.decimalPattern().format(double.parse((userData['total']).toStringAsFixed(2)))}',
+                                                ),
+                                                const Divider(),
+                                                BodyMediumOver(
+                                                  text:
+                                                      'Delivery Driver: ${riderData['name']}',
+                                                ),
+                                                BodyMediumOver(
+                                                  text:
+                                                      'Mobile Number: ${riderData['contactNumber']}',
                                                 ),
                                               ],
                                             ),
+                                            trailing: SizedBox(
+                                              width: 25,
+                                              child: IconButton(
+                                                icon: Icon(
+                                                  Icons.archive,
+                                                  color: const Color(0xFF050404)
+                                                      .withOpacity(0.9),
+                                                ),
+                                                onPressed: () =>
+                                                    archiveData(id),
+                                              ),
+                                            ),
                                           ),
-                                          const SizedBox(height: 5),
-                                          BodyMediumText(
-                                            // text:
-                                            //     'Payment: ${userData['paymentMethod'] == 'COD' ? 'Cash on Delivery' : (userData['paymentMethod'] == 'GCASH' ? 'GCash' : '')}',
-                                            text:
-                                                'Payment Method: ${userData['paymentMethod']}',
-                                          ),
-                                          BodyMediumText(
-                                            text:
-                                                'Discounted: ${userData['discountIdImage'] != null ? 'Yes' : 'No'}',
-                                          ),
-                                          BodyMediumOver(
-                                            text:
-                                                'Items: ${userData['items']!.map((item) {
-                                              if (item
-                                                      is Map<String, dynamic> &&
-                                                  item.containsKey('name') &&
-                                                  item.containsKey(
-                                                      'quantity') &&
-                                                  item.containsKey(
-                                                      'customerPrice')) {
-                                                final itemName = item['name'];
-                                                final quantity =
-                                                    item['quantity'];
-                                                final price = NumberFormat
-                                                        .decimalPattern()
-                                                    .format(double.parse(
-                                                        (item['customerPrice'])
-                                                            .toStringAsFixed(
-                                                                2)));
-
-                                                return '$itemName (₱$price x $quantity)';
-                                              }
-                                            }).join(', ')}',
-                                          ),
-                                          BodyMediumText(
-                                            text:
-                                                'Total: ₱${NumberFormat.decimalPattern().format(double.parse((userData['total']).toStringAsFixed(2)))}',
-                                          ),
-                                          const Divider(),
-                                          BodyMediumOver(
-                                            text:
-                                                'Delivery Driver: ${userData['rider'] is String ? userData['rider'] : userData['rider']['name']}',
-                                          ),
-                                          const Divider(),
-                                          // BodyMediumOver(
-                                          //   text:
-                                          //       'Delivery Driver: ${userData['rider']}',
-                                          // ),
-                                        ],
-                                      ),
-                                      trailing: SizedBox(
-                                        width: 25,
-                                        child: IconButton(
-                                          icon: Icon(
-                                            Icons.archive,
-                                            color: const Color(0xFF050404)
-                                                .withOpacity(0.9),
-                                          ),
-                                          onPressed: () => archiveData(id),
                                         ),
-                                      ),
-                                    ),
-                                  ),
+                                      );
+                                      // ===
+                                    }
+                                  },
                                 );
-                                // ===
-                                //     }
-                                //   },
-                                // );
                                 // ====
                               },
                             ),
@@ -592,6 +694,14 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
 
   void showCustomerDetailsModal(Map<String, dynamic> userData) {
     fetchCustomer(userData['to']).then((customerData) async {
+      dynamic riderData;
+      if (userData['rider'] != null) {
+        try {
+          riderData = await fetchRider(userData['rider']);
+        } catch (error) {
+          print('Error fetching rider data: $error');
+        }
+      }
       showModalBottomSheet(
         isScrollControlled: true,
         context: context,
@@ -634,6 +744,11 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                   BodyMediumOver(
                     text: 'Barangay: ${userData['barangay']}',
                   ),
+                  const SizedBox(height: 5),
+                  BodyMediumOver(
+                    text:
+                        'Delivery Date: ${userData['deliveryDate'] != null && userData['deliveryDate'] != "" ? DateFormat('MMMM d, y - h:mm a ').format(DateTime.parse(userData['deliveryDate'])) : ""}',
+                  ),
                   const Divider(),
                   BodyMediumOver(
                     text: 'Ordered by: ${customerData['name']}',
@@ -642,19 +757,24 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                     text: 'Contact Number: ${customerData['contactNumber']}',
                   ),
                   const SizedBox(height: 5),
-                  BodyMediumText(
+                  BodyMediumOver(
                     text:
-                        'Date Ordered: ${DateFormat('MMM d, y - h:mm a ').format(DateTime.parse(userData['createdAt']))}',
+                        'Date Ordered: ${DateFormat('MMMM d, y - h:mm a ').format(DateTime.parse(userData['createdAt']))}',
                   ),
                   const Divider(),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       BodyMediumOver(
-                        text: 'Delivery Driver: ${userData['name']}',
+                        text: 'Delivery Driver: ${riderData['name']}',
                       ),
                       BodyMediumOver(
-                        text: 'Contact Number: ${userData['contactNumber']}',
+                        text: 'Contact Number: ${riderData['contactNumber']}',
+                      ),
+                      const SizedBox(height: 5),
+                      BodyMediumOver(
+                        text:
+                            'Date Delivered: ${DateFormat('MMMM d, y - h:mm a ').format(DateTime.parse(userData['updatedAt']))}',
                       ),
                       const Divider(),
                     ],
@@ -664,19 +784,15 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                   ),
                   BodyMediumText(
                     text:
-                        'Delivery Date: ${userData['deliveryDate'] != null && userData['deliveryDate'] != "" ? DateFormat('MMM d, y - h:mm a ').format(DateTime.parse(userData['deliveryDate'])) : ""}',
-                  ),
-                  const SizedBox(height: 5),
-                  BodyMediumText(
-                    text:
                         'Need to be Assembled: ${userData['assembly'] != null ? 'Yes' : 'No'}',
                   ),
                   BodyMediumText(
                     text:
-                        'Applying for Discount: ${userData['discountIdImage'] != null ? 'Yes' : 'No'}',
+                        'Applying for Discount: ${userData['discountIdImage'] != null && userData['discountIdImage'] != "" ? 'Yes' : 'No'}',
                   ),
                   const SizedBox(height: 5),
-                  if (userData['discountIdImage'] != null)
+                  if (userData['discountIdImage'] != null &&
+                      userData['discountIdImage'] != "")
                     GestureDetector(
                       onTap: () {
                         Navigator.of(context).push(MaterialPageRoute(

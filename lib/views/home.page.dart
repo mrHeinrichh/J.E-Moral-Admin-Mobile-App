@@ -355,6 +355,11 @@ class _HomePageState extends State<HomePage> {
                             Navigator.pushNamed(context, editItemsPage);
                           },
                         ),
+                        TransactionsIcon(
+                          onTap: () {
+                            Navigator.pushNamed(context, transactionRoute);
+                          },
+                        ),
                         CustomerIcon(
                           onTap: () {
                             Navigator.pushNamed(context, customerRoute);
@@ -390,11 +395,6 @@ class _HomePageState extends State<HomePage> {
                         //     // Action to perform when the card is clicked
                         //   },
                         // ),
-                        TransactionsIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, transactionRoute);
-                          },
-                        ),
                       ],
                     ),
                   ),
