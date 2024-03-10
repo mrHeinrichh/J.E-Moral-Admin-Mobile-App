@@ -394,7 +394,7 @@ class RiderDetails extends StatelessWidget {
                 ),
                 const SizedBox(height: 8.0),
                 Text('Name: ${userData['name']}'),
-                Text('Contact Number: ${userData['contactNumber']}'),
+                Text('Mobile Number: ${userData['contactNumber']}'),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [

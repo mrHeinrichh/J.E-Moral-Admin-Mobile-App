@@ -312,6 +312,41 @@ class TransactionsIcon extends StatelessWidget {
   }
 }
 
+class FailedTransactionsIcon extends StatelessWidget {
+  final VoidCallback onTap;
+
+  FailedTransactionsIcon({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: onTap,
+            child: Card(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25.0),
+              ),
+              elevation: 4,
+              child: const Padding(
+                padding: EdgeInsets.all(10.0),
+                child: Icon(Icons.error_outline, size: 30),
+              ),
+            ),
+          ),
+          const Text(
+            "Failed Transactions",
+            style: TextStyle(fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class AppointmentIcon extends StatelessWidget {
   final Future<int> Function() fetchAppointments;
 
@@ -407,41 +442,6 @@ class AppointmentIcon extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class FeedbackIcon extends StatelessWidget {
-  final VoidCallback onTap;
-
-  FeedbackIcon({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: onTap,
-            child: Card(
-              color: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25.0),
-              ),
-              elevation: 4,
-              child: const Padding(
-                padding: EdgeInsets.all(10.0),
-                child: Icon(Icons.message_outlined, size: 30),
-              ),
-            ),
-          ),
-          const Text(
-            "Feedback",
-            style: TextStyle(fontSize: 13),
-          ),
-        ],
       ),
     );
   }

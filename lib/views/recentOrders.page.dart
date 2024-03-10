@@ -332,9 +332,8 @@ class _RecentOrdersState extends State<RecentOrders> {
                                   'Delivery Date and Time: ${DateFormat('MMMM d, y - h:mm a').format(DateTime.parse(transaction['deliveryDate']))}',
                             ),
                             if (transaction.containsKey('discountIdImage'))
-                              BodyMediumOver(
-                                text:
-                                    'Items: ${transaction['items']!.map((item) {
+                              Text(
+                                'Items: ${transaction['items']!.map((item) {
                                   if (item is Map<String, dynamic> &&
                                       item.containsKey('name') &&
                                       item.containsKey('quantity') &&
@@ -352,9 +351,8 @@ class _RecentOrdersState extends State<RecentOrders> {
                               ),
                             if (!transaction.containsKey('discountIdImage') &&
                                 transaction['discounted'] == false)
-                              BodyMediumOver(
-                                text:
-                                    'Items: ${transaction['items']!.map((item) {
+                              Text(
+                                'Items: ${transaction['items']!.map((item) {
                                   if (item is Map<String, dynamic> &&
                                       item.containsKey('name') &&
                                       item.containsKey('quantity') &&

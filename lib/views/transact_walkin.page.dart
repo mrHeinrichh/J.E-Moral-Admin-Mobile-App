@@ -6,12 +6,12 @@ import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
-class TransactionWalkinPage extends StatefulWidget {
+class Transaction_WalkinPage extends StatefulWidget {
   @override
-  _TransactionWalkinPageState createState() => _TransactionWalkinPageState();
+  _Transaction_WalkinPageState createState() => _Transaction_WalkinPageState();
 }
 
-class _TransactionWalkinPageState extends State<TransactionWalkinPage> {
+class _Transaction_WalkinPageState extends State<Transaction_WalkinPage> {
   List<Map<String, dynamic>> transactionDataList = [];
   TextEditingController searchController = TextEditingController();
   bool loadingData = false;
@@ -33,40 +33,6 @@ class _TransactionWalkinPageState extends State<TransactionWalkinPage> {
   int currentPage = 1;
   int limit = 10;
 
-  // Future<void> fetchData({int page = 1}) async {
-  //   try {
-  //     final response = await http.get(Uri.parse(
-  //         'https://lpg-api-06n8.onrender.com/api/v1/transactions/?filter={"__t":null}&page=$page&limit=$limit'));
-
-  //     if (_mounted) {
-  //       if (response.statusCode == 200) {
-  //         final Map<String, dynamic> data = json.decode(response.body);
-  //         final List<Map<String, dynamic>> transactionData = (data['data']
-  //                 as List)
-  //             .where(
-  //                 (transactionData) => transactionData is Map<String, dynamic>)
-  //             .map((transactionData) => transactionData as Map<String, dynamic>)
-  //             .toList();
-
-  //         setState(() {
-  //           transactionDataList.clear();
-  //           transactionDataList.addAll(transactionData);
-  //           currentPage = page;
-  //           loadingData = false;
-  //         });
-  //       } else {
-  //         throw Exception('Failed to load data from the API');
-  //       }
-  //     } else {
-  //       print("Error: ${response.statusCode}");
-  //     }
-  //   } catch (e) {
-  //     if (_mounted) {
-  //       print("Error: $e");
-  //     }
-  //   }
-  // }
-
   Future<void> fetchData({int page = 1}) async {
     try {
       final response = await http.get(Uri.parse(
@@ -79,7 +45,7 @@ class _TransactionWalkinPageState extends State<TransactionWalkinPage> {
                   as List)
               .where(
                   (transactionData) => transactionData is Map<String, dynamic>)
-              .where((transactionData) => !transactionData.containsKey('__t'))
+              .where((transactionData) => transactionData['__t'] != 'Delivery')
               .map((transactionData) => transactionData as Map<String, dynamic>)
               .toList();
 
@@ -153,23 +119,87 @@ class _TransactionWalkinPageState extends State<TransactionWalkinPage> {
   }
 
   void archiveData(String id) async {
+    Map<String, dynamic> transactionToEdit =
+        transactionDataList.firstWhere((data) => data['_id'] == id);
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Archive Data'),
-          content: const Text('Are you sure you want to Archive this data?'),
+          title: const Text(
+            'Archive Data',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  BodyMediumOver(
+                    text: 'Transaction ID: ${transactionToEdit['_id']}',
+                  ),
+                  const Divider(),
+                  BodyMediumOver(
+                    text:
+                        'Date Ordered: ${DateFormat('MMMM d, y - h:mm a ').format(DateTime.parse(transactionToEdit['createdAt']))}',
+                  ),
+                  BodyMediumText(
+                    text:
+                        'Discounted: ${transactionToEdit['discountIdImage'] != null ? 'Yes' : 'No'}',
+                  ),
+                  BodyMediumOver(
+                    text: 'Items: ${transactionToEdit['items']!.map((item) {
+                      if (item is Map<String, dynamic> &&
+                          item.containsKey('name') &&
+                          item.containsKey('quantity') &&
+                          item.containsKey('customerPrice')) {
+                        final itemName = item['name'];
+                        final quantity = item['quantity'];
+                        final price = NumberFormat.decimalPattern().format(
+                            double.parse(
+                                (item['customerPrice']).toStringAsFixed(2)));
+
+                        return '$itemName (₱$price x $quantity)';
+                      }
+                    }).join(', ')}',
+                  ),
+                  BodyMediumText(
+                    text:
+                        'Total: ₱${NumberFormat.decimalPattern().format(double.parse((transactionToEdit['total']).toStringAsFixed(2)))}',
+                  ),
+                  const Divider(),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Are you sure you want to Archive this data?',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFd41111).withOpacity(0.9),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
               },
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF050404).withOpacity(0.8),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
                 final url = Uri.parse(
-                    'https://lpg-api-06n8.onrender.com/api/v1/transactions/$id');
+                    'https://lpg-api-06n8.onrender.com/api/v1/faqs/$id');
                 final response = await http.delete(url);
 
                 if (response.statusCode == 200) {
@@ -178,13 +208,22 @@ class _TransactionWalkinPageState extends State<TransactionWalkinPage> {
                         .removeWhere((data) => data['_id'] == id);
                   });
 
+                  fetchData();
                   Navigator.pop(context);
                 } else {
                   print(
-                      'Failed to Archive the data. Status code: ${response.statusCode}');
+                      'Failed to archive the data. Status code: ${response.statusCode}');
                 }
               },
-              child: const Text('Archive'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFd41111).withOpacity(0.9),
+              ),
+              child: const Text(
+                'Archive',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );

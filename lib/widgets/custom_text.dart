@@ -20,6 +20,41 @@ class BodyMedium extends StatelessWidget {
   }
 }
 
+class PlainBodyMedium extends StatelessWidget {
+  final String text;
+
+  const PlainBodyMedium({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+            color: const Color(0xFF050404).withOpacity(0.9),
+          ),
+    );
+  }
+}
+
+class DataCellMedium extends StatelessWidget {
+  final String text;
+
+  const DataCellMedium({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+              color: const Color(0xFF050404).withOpacity(0.9),
+            ),
+      ),
+    );
+  }
+}
+
 class BodyMediumText extends StatelessWidget {
   final String text;
 

@@ -1820,25 +1820,58 @@ class _DriversPageState extends State<DriversPage> {
                                         //   ),
                                         // ),
                                         ListTile(
-                                          title: TitleMedium(
-                                              text: '${userData['name']}'),
+                                          title: Row(
+                                            children: [
+                                              Flexible(
+                                                child: TitleMedium(
+                                                  text: '${userData['name']}',
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: Icon(
+                                                  Icons.content_copy,
+                                                  color: const Color(0xFF050404)
+                                                      .withOpacity(0.9),
+                                                ),
+                                                onPressed: () {
+                                                  Clipboard.setData(
+                                                          ClipboardData(
+                                                              text: id))
+                                                      .then((_) {
+                                                    // ScaffoldMessenger.of(
+                                                    //         context)
+                                                    //     .showSnackBar(
+                                                    //   const SnackBar(
+                                                    //     content: Text(
+                                                    //         'Rider ID copied to clipboard'),
+                                                    //   ),
+                                                    // );
+                                                  });
+                                                },
+                                              ),
+                                            ],
+                                          ),
                                           subtitle: Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
                                               const Divider(),
                                               BodyMediumText(
-                                                  text:
-                                                      'Mobile no.: ${userData['contactNumber']}'),
+                                                text:
+                                                    'Mobile no.: ${userData['contactNumber']}',
+                                              ),
                                               BodyMediumText(
-                                                  text:
-                                                      'GCash no.: ${userData['contactNumber']}'),
+                                                text:
+                                                    'GCash no.: ${userData['contactNumber']}',
+                                              ),
                                               BodyMediumText(
-                                                  text:
-                                                      'Email: ${userData['email']}'),
+                                                text:
+                                                    'Email: ${userData['email']}',
+                                              ),
                                               BodyMediumText(
-                                                  text:
-                                                      'Address: ${userData['address']}'),
+                                                text:
+                                                    'Address: ${userData['address']}',
+                                              ),
                                             ],
                                           ),
                                           trailing: Row(

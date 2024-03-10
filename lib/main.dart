@@ -13,7 +13,8 @@ import 'package:admin_app/views/products.page.dart';
 import 'package:admin_app/views/login.page.dart';
 import 'package:admin_app/views/set_delivery.page.dart';
 import 'package:admin_app/views/stock.page.dart';
-import 'package:admin_app/views/transaction.page.dart';
+import 'package:admin_app/views/transactionCompleted.page.dart';
+import 'package:admin_app/views/transactionCancelled.page.dart';
 import 'package:admin_app/views/user_provider.dart';
 import 'package:admin_app/views/walkin.page.dart';
 import 'package:admin_app/views/announcement.page.dart';
@@ -55,7 +56,8 @@ class MyApp extends StatelessWidget {
         cartRoute: (context) => CartView.CartPage(),
         setDeliveryPage: (context) => SetDeliveryPage(),
         editItemsPage: (context) => EditItemsPage(),
-        transactionRoute: (context) => TransactionPage(),
+        transactionCompletedRoute: (context) => TransactionCompletedPage(),
+        transactionCancelledRoute: (context) => TransactionCancelledPage(),
         appointmentRoute: (context) => AppointmentPage(),
         newCustomerRoute: (context) => NewCustomers(),
         activeOrdersRoute: (context) => ActiveOrders(),

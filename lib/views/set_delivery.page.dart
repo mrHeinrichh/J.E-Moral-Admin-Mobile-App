@@ -94,7 +94,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Name: ${nameController.text}'),
-              Text('Contact Number: ${contactNumberController.text}'),
+              Text('Mobile Number: ${contactNumberController.text}'),
             ],
           ),
           actions: [

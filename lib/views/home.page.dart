@@ -1,12 +1,14 @@
 import 'package:admin_app/routes/app_routes.dart';
 import 'package:admin_app/widgets/circle_card.dart';
 import 'package:admin_app/widgets/custom_card.dart';
+import 'package:admin_app/widgets/custom_text.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-
 import 'dart:convert';
+
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -16,7 +18,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> transactions = [];
   String selectedRange = 'Today';
-
+  bool loadingData = false;
   List<Map<String, dynamic>> selectedTransactions = [];
   int currentPage = 1;
   int transactionsPerPage = 10;
@@ -24,7 +26,12 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    loadingData = true;
     fetchData();
+    totalRevenueToday();
+    numberofTransactionsToday();
+    fetchStock();
+    fetchAppointment();
   }
 
   int targetStock = 7;
@@ -69,102 +76,87 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> fetchData() async {
-    if (!mounted) {
-      return;
-    }
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'https://lpg-api-06n8.onrender.com/api/v1/transactions?limit=10000'),
+      );
 
-    final response = await http.get(
-      Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/transactions'),
-    );
+      if (mounted) {
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = json.decode(response.body);
+          final List<Map<String, dynamic>> transactionData = (data['data']
+                  as List)
+              .where(
+                  (transactionData) => transactionData is Map<String, dynamic>)
+              .map((transactionData) => transactionData as Map<String, dynamic>)
+              .toList();
 
-    if (!mounted) {
-      return;
-    }
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body)['data'];
-      setState(() {
-        transactions = List<Map<String, dynamic>>.from(
-          data.where((item) => item['__t'] == 'Delivery'),
-        );
-      });
+          setState(() {
+            transactions.clear();
+            transactions.addAll(transactionData);
+          });
+        } else {}
+      }
+    } catch (e) {
+      if (mounted) {
+        print("Error: $e");
+      }
+    } finally {
+      loadingData = false;
     }
   }
 
-//TODAY
-  double calculateTotalSumToday() {
+  double totalRevenueToday() {
     DateTime now = DateTime.now();
     DateTime today = DateTime(now.year, now.month, now.day);
 
-    double sum = 0.0;
+    double total = 0;
     for (var transaction in transactions) {
-      DateTime transactionDate = DateTime.parse(transaction['createdAt']);
+      try {
+        DateTime transactionDate = DateTime.parse(transaction['updatedAt']);
+        String? transactionType = transaction['__t'];
 
-      // Check if the transaction is on the current day and is approved
-      if (transactionDate.year == today.year &&
-          transactionDate.month == today.month &&
-          transactionDate.day == today.day &&
-          transaction['status'] == "Completed" &&
-          transaction['__t'] == "Delivery" &&
-          transaction['__t'] == "Transactions" &&
-          transaction['completed'] == true) {
-        sum += (transaction['total'] ?? 0.0);
-      }
+        if ((!transaction.containsKey('__t') &&
+                    transaction['completed'] == true ||
+                transactionType == "Delivery" &&
+                    transaction['status'] == 'Completed' &&
+                    transaction['completed'] == true) &&
+            transactionDate.year == today.year &&
+            transactionDate.month == today.month &&
+            transactionDate.day == today.day) {
+          total += transaction['total'];
+        }
+      } catch (e) {}
     }
-    return sum;
+    return total;
   }
 
-//THIS MONTH
-  int calculateTotalOnlineTransactionsNotApproved() {
-    int count = 0;
-    for (var transaction in transactions) {
-      // Check if the transaction is of type "Online" and is not approved
-      if (transaction['__t'] == "Delivery" &&
-          transaction['status'] == "Pending") {
-        count++;
-      }
-    }
-    return count;
-  }
-
-//NUMBER OF TOTAL ONLINE TRANSACTIONS
-  int calculateNumberOfOnlineTransactions() {
+  int numberofTransactionsToday() {
     DateTime now = DateTime.now();
     DateTime today = DateTime(now.year, now.month, now.day);
 
-    int onlineTransactionCount = 0;
+    int transactionCount = 0;
     for (var transaction in transactions) {
-      // Check if the transaction has type "Online"
-      if (transaction['__t'] == 'Delivery') {
-        onlineTransactionCount++;
-      }
+      try {
+        DateTime transactionDate = DateTime.parse(transaction['updatedAt']);
+        String? transactionType = transaction['__t'];
+
+        if ((!transaction.containsKey('__t') &&
+                    transaction['completed'] == true ||
+                transactionType == "Delivery" &&
+                    transaction['status'] == 'Completed' &&
+                    transaction['completed'] == true) &&
+            transactionDate.year == today.year &&
+            transactionDate.month == today.month &&
+            transactionDate.day == today.day) {
+          transactionCount++;
+        }
+      } catch (e) {}
     }
-    return onlineTransactionCount;
+    return transactionCount;
   }
 
-  int calculateNumberOfOnlineTransactionsToday() {
-    DateTime now = DateTime.now();
-    DateTime today = DateTime(now.year, now.month, now.day);
-
-    int onlineTransactionCount = 0;
-    for (var transaction in transactions) {
-      DateTime transactionDate = DateTime.parse(transaction['createdAt']);
-
-      // Check if the transaction has type "Online"
-      if (transaction['__t'] == "Delivery" &&
-          transaction['__t'] == "Transactions" &&
-          transaction['status'] == "Completed" &&
-          transaction['completed'] == true &&
-          transactionDate.year == today.year &&
-          transactionDate.month == today.month &&
-          transactionDate.day == today.day) {
-        onlineTransactionCount++;
-      }
-    }
-    return onlineTransactionCount;
-  }
-
-//DATATABLE TODAY
   List<Map<String, dynamic>> filterTransactionsForPeriod(
       List<Map<String, dynamic>> transactions, int periodInDays) {
     DateTime now = DateTime.now();
@@ -172,47 +164,59 @@ class _HomePageState extends State<HomePage> {
 
     List<Map<String, dynamic>> filteredTransactions =
         transactions.where((transaction) {
-      DateTime transactionDate = DateTime.parse(transaction['createdAt']);
-      return transactionDate.isAfter(cutoffDate) &&
-              transactionDate.year == now.year &&
-              transaction['__t'] == 'Delivery' ||
-          transaction['__t'] == 'Transactions' &&
-              transaction['status'] == 'Completed';
+      DateTime transactionDate = DateTime.parse(transaction['updatedAt']);
+      String? transactionType = transaction['__t'];
+
+      bool isTodayTransaction = transactionDate.year == now.year &&
+          transactionDate.month == now.month &&
+          transactionDate.day == now.day;
+
+      return isTodayTransaction &&
+          (!transaction.containsKey('__t') &&
+                  transaction['completed'] == true ||
+              transactionType == "Delivery" &&
+                  transaction['status'] == 'Completed' &&
+                  transaction['completed'] == true);
     }).toList();
 
-    // Sort the filtered transactions in descending order based on createdAt
     filteredTransactions.sort((a, b) {
-      DateTime dateA = DateTime.parse(a['createdAt']);
-      DateTime dateB = DateTime.parse(b['createdAt']);
+      DateTime dateA = DateTime.parse(a['updatedAt']);
+      DateTime dateB = DateTime.parse(b['updatedAt']);
       return dateB.compareTo(dateA);
     });
 
     return filteredTransactions;
   }
 
-//DATATABLE MONTH
   List<Map<String, dynamic>> filterTransactionsForCurrentMonth(
       List<Map<String, dynamic>> transactions) {
     DateTime now = DateTime.now();
 
     List<Map<String, dynamic>> filteredTransactions =
         transactions.where((transaction) {
-      DateTime transactionDate = DateTime.parse(transaction['createdAt']);
-      return transactionDate.month == now.month &&
+      DateTime transactionDate = DateTime.parse(transaction['updatedAt']);
+      String? transactionType = transaction['__t'];
+
+      bool isCurrentMonthTransaction = transactionDate.month == now.month &&
           transactionDate.year == now.year;
+
+      return isCurrentMonthTransaction &&
+          (!transaction.containsKey('__t') &&
+                  transaction['completed'] == true ||
+              transactionType == "Delivery" &&
+                  transaction['status'] == 'Completed' &&
+                  transaction['completed'] == true);
     }).toList();
 
-    // Sort the filtered transactions in descending order based on createdAt
     filteredTransactions.sort((a, b) {
-      DateTime dateA = DateTime.parse(a['createdAt']);
-      DateTime dateB = DateTime.parse(b['createdAt']);
+      DateTime dateA = DateTime.parse(a['updatedAt']);
+      DateTime dateB = DateTime.parse(b['updatedAt']);
       return dateB.compareTo(dateA);
     });
 
     return filteredTransactions;
   }
 
-//DATATABLE YEAR
   List<Map<String, dynamic>> filterTransactionsForThisYear(
       List<Map<String, dynamic>> transactions) {
     DateTime now = DateTime.now();
@@ -220,14 +224,22 @@ class _HomePageState extends State<HomePage> {
 
     List<Map<String, dynamic>> filteredTransactions =
         transactions.where((transaction) {
-      DateTime transactionDate = DateTime.parse(transaction['createdAt']);
-      return transactionDate.year == currentYear;
+      DateTime transactionDate = DateTime.parse(transaction['updatedAt']);
+      String? transactionType = transaction['__t'];
+
+      bool isCurrentYearTransaction = transactionDate.year == currentYear;
+
+      return isCurrentYearTransaction &&
+          (!transaction.containsKey('__t') &&
+                  transaction['completed'] == true ||
+              transactionType == "Delivery" &&
+                  transaction['status'] == 'Completed' &&
+                  transaction['completed'] == true);
     }).toList();
 
-    // Sort the filtered transactions in descending order based on createdAt
     filteredTransactions.sort((a, b) {
-      DateTime dateA = DateTime.parse(a['createdAt']);
-      DateTime dateB = DateTime.parse(b['createdAt']);
+      DateTime dateA = DateTime.parse(a['updatedAt']);
+      DateTime dateB = DateTime.parse(b['updatedAt']);
       return dateB.compareTo(dateA);
     });
 
@@ -237,7 +249,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     List<Map<String, dynamic>> selectedTransactions = [];
-    List<Map<String, dynamic>> chartData = [];
 
     if (selectedRange == 'Today') {
       selectedTransactions = filterTransactionsForPeriod(transactions, 1);
@@ -246,24 +257,47 @@ class _HomePageState extends State<HomePage> {
     } else if (selectedRange == 'This Year') {
       selectedTransactions = filterTransactionsForThisYear(transactions);
     }
-    //TOTAL UNDER DATATABLE
+
     double calculateTotalRevenueForToday() {
       DateTime now = DateTime.now();
-      DateTime today = DateTime(now.year, now.month, now.day);
+      DateTime pickedDate = DateTime(now.year, now.month, now.day);
+
+      if (selectedRange == 'This Month') {
+        pickedDate = DateTime(now.year, now.month, 1);
+      } else if (selectedRange == 'This Year') {
+        pickedDate = DateTime(now.year, 1, 1);
+      }
 
       double totalRevenue = 0.0;
 
-      for (var transaction in selectedTransactions) {
-        DateTime transactionDate = DateTime.parse(transaction['createdAt']);
+      for (var transaction in transactions) {
+        try {
+          DateTime transactionDate = DateTime.parse(transaction['updatedAt']);
 
-        // Check if the transaction is on the current day and is approved
-        if (transaction['__t'] == "Delivery" &&
-            transaction['status'] != "Declined" &&
-            transaction['status'] != "Cancelled" &&
-            transaction['status'] != "On Going" &&
-            transaction['status'] != "Pending" &&
-            transaction['completed'] == true) {
-          totalRevenue += (transaction['total'] ?? 0.0);
+          String? transactionType = transaction['__t'];
+
+          bool isPickedYearTransaction =
+              transactionDate.year == pickedDate.year;
+          bool isPickedMonthTransaction =
+              transactionDate.month == pickedDate.month &&
+                  transactionDate.year == pickedDate.year;
+          bool isPickedDayTransaction =
+              transactionDate.year == pickedDate.year &&
+                  transactionDate.month == pickedDate.month &&
+                  transactionDate.day == pickedDate.day;
+
+          if ((!transaction.containsKey('__t') &&
+                      transaction['completed'] == true ||
+                  transactionType == "Delivery" &&
+                      transaction['status'] == 'Completed' &&
+                      transaction['completed'] == true) &&
+              (selectedRange == 'Today' && isPickedDayTransaction ||
+                  selectedRange == 'This Month' && isPickedMonthTransaction ||
+                  selectedRange == 'This Year' && isPickedYearTransaction)) {
+            totalRevenue += transaction['total'];
+          }
+        } catch (e) {
+          print('Error processing transaction: $e');
         }
       }
 
@@ -298,240 +332,347 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       backgroundColor: Colors.white,
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await fetchData();
-        },
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, walkinRoute);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF050404).withOpacity(0.9),
-                    elevation: 4,
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+      body: loadingData
+          ? Center(
+              child: LoadingAnimationWidget.flickr(
+                leftDotColor: const Color(0xFF050404).withOpacity(0.8),
+                rightDotColor: const Color(0xFFd41111).withOpacity(0.8),
+                size: 40,
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: () async {
+                await fetchData();
+                totalRevenueToday();
+                numberofTransactionsToday();
+                await fetchStock();
+                await fetchAppointment();
+              },
+              color: const Color(0xFF050404),
+              strokeWidth: 2.5,
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
                     children: [
-                      Icon(
-                        Icons.directions_walk,
-                        color: Colors.white,
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, walkinRoute);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              const Color(0xFF050404).withOpacity(0.9),
+                          elevation: 4,
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.directions_walk,
+                              color: Colors.white,
+                            ),
+                            SizedBox(width: 5),
+                            Text(
+                              'Walk-Ins',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      SizedBox(width: 5),
-                      Text(
-                        'Walk-Ins',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              StocksIcon(
+                                fetchLowStockCount: fetchStock,
+                              ),
+                              AppointmentIcon(
+                                fetchAppointments: fetchAppointment,
+                              ),
+                              UpdatePriceIcon(
+                                onTap: () {
+                                  Navigator.pushNamed(context, editItemsPage);
+                                },
+                              ),
+                              CustomerIcon(
+                                onTap: () {
+                                  Navigator.pushNamed(context, customerRoute);
+                                },
+                              ),
+                              RiderIcon(
+                                onTap: () {
+                                  Navigator.pushNamed(context, driversRoute);
+                                },
+                              ),
+                              ProductsIcon(
+                                onTap: () {
+                                  Navigator.pushNamed(context, productsRoute);
+                                },
+                              ),
+                              AccessoriesIcon(
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                      context, accessoriesRoute);
+                                },
+                              ),
+                              AnnouncementIcon(
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                      context, announcementRoute);
+                                },
+                              ),
+                              FaqIcon(
+                                onTap: () {
+                                  Navigator.pushNamed(context, faqRoute);
+                                },
+                              ),
+                              TransactionsIcon(
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                      context, transactionCompletedRoute);
+                                },
+                              ),
+                              FailedTransactionsIcon(
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                      context, transactionCancelledRoute);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          RectangleCard(
+                            title: 'Today\'s Revenue',
+                            value:
+                                '₱${NumberFormat.decimalPattern().format(double.parse((totalRevenueToday()).toStringAsFixed(2)))}',
+                          ),
+                          RectangleCard(
+                            title: 'Completed Today',
+                            value: '${numberofTransactionsToday()}',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          DropdownButton<String>(
+                            value: selectedRange,
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                selectedRange = newValue!;
+                              });
+                            },
+                            items: ['Today', 'This Month', 'This Year']
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                          ),
+                          SizedBox(
+                            height: 300,
+                            child: PieChart(
+                              PieChartData(
+                                sections: selectedSections,
+                                borderData: FlBorderData(show: false),
+                                centerSpaceRadius: 40,
+                                sectionsSpace: 0,
+                                startDegreeOffset: -90,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: SizedBox(
+                          child: DataTable(
+                            dataRowMaxHeight: double.infinity,
+                            columns: const [
+                              DataColumn(label: Text('Ordered by')),
+                              DataColumn(label: Text('Type')),
+                              DataColumn(label: Text('Item/s')),
+                              DataColumn(label: Text('Discount')),
+                              DataColumn(label: Text('Total')),
+                              DataColumn(label: Text('Date Delivered')),
+                            ],
+                            rows: [
+                              ...selectedTransactions
+                                  .where((transaction) => (!transaction
+                                              .containsKey('__t') &&
+                                          transaction['completed'] == true ||
+                                      transaction['__t'] == "Delivery" &&
+                                          transaction['status'] ==
+                                              'Completed' &&
+                                          transaction['completed'] == true))
+                                  .map((transaction) {
+                                return DataRow(
+                                  cells: [
+                                    DataCell(
+                                      !transaction.containsKey('__t')
+                                          ? const BodyMedium(text: "Customer")
+                                          : (!transaction.containsKey(
+                                                      'discountIdImage') &&
+                                                  transaction['discounted'] ==
+                                                      false)
+                                              ? const BodyMedium(
+                                                  text: "Retailer")
+                                              : const BodyMedium(
+                                                  text: "Customer"),
+                                    ),
+                                    DataCell(
+                                      !transaction.containsKey('__t')
+                                          ? const BodyMedium(text: "Walkins")
+                                          : const BodyMedium(text: "Delivery"),
+                                    ),
+                                    DataCell(
+                                      transaction.containsKey(
+                                                  'discountIdImage') ||
+                                              !transaction.containsKey('__t')
+                                          ? DataCellMedium(
+                                              text: '${transaction['items']!.map((item) {
+                                                    if (item is Map<String,
+                                                            dynamic> &&
+                                                        item.containsKey(
+                                                            'name') &&
+                                                        item.containsKey(
+                                                            'quantity') &&
+                                                        item.containsKey(
+                                                            'customerPrice')) {
+                                                      final itemName =
+                                                          item['name'];
+                                                      final quantity =
+                                                          item['quantity'];
+                                                      final price = NumberFormat
+                                                              .decimalPattern()
+                                                          .format(double.parse(
+                                                              (item['customerPrice'])
+                                                                  .toStringAsFixed(
+                                                                      2)));
+
+                                                      return '$itemName ₱$price (x$quantity)';
+                                                    }
+                                                  }).join(', ').replaceAll(', ', ',\n')}',
+                                            )
+                                          : (!transaction.containsKey(
+                                                      'discountIdImage') &&
+                                                  transaction['discounted'] ==
+                                                      false)
+                                              ? DataCellMedium(
+                                                  text: '${transaction['items']!.map((item) {
+                                                        if (item is Map<String,
+                                                                dynamic> &&
+                                                            item.containsKey(
+                                                                'name') &&
+                                                            item.containsKey(
+                                                                'quantity') &&
+                                                            item.containsKey(
+                                                                'retailerPrice')) {
+                                                          final itemName =
+                                                              item['name'];
+                                                          final quantity =
+                                                              item['quantity'];
+                                                          final price = NumberFormat
+                                                                  .decimalPattern()
+                                                              .format(double
+                                                                  .parse((item[
+                                                                          'retailerPrice'])
+                                                                      .toStringAsFixed(
+                                                                          2)));
+
+                                                          return '$itemName ₱$price (x$quantity)';
+                                                        }
+                                                      }).join(', ').replaceAll(', ', ',\n')}',
+                                                )
+                                              : const SizedBox.shrink(),
+                                    ),
+                                    DataCell(
+                                      (transaction.containsKey(
+                                                  'discountIdImage') ||
+                                              !transaction.containsKey('__t'))
+                                          ? (!transaction.containsKey('__t')
+                                              ? PlainBodyMedium(
+                                                  text: transaction[
+                                                              'discounted'] ==
+                                                          true
+                                                      ? 'Discounted'
+                                                      : 'Not Discounted')
+                                              : PlainBodyMedium(
+                                                  text: transaction[
+                                                                  'discountIdImage'] !=
+                                                              null ||
+                                                          transaction[
+                                                                  'discountIdImage'] !=
+                                                              ""
+                                                      ? 'Discounted'
+                                                      : 'Not Discounted'))
+                                          : ((!transaction.containsKey(
+                                                      'discountIdImage')) &&
+                                                  (transaction['discounted'] ==
+                                                      false)
+                                              ? const SizedBox.shrink()
+                                              : const SizedBox.shrink()),
+                                    ),
+                                    DataCell(
+                                      PlainBodyMedium(
+                                          text:
+                                              '₱${NumberFormat.decimalPattern().format(double.parse((transaction['total'] ?? 0.0).toStringAsFixed(2)))}'),
+                                    ),
+                                    DataCell(
+                                      PlainBodyMedium(
+                                        text: DateFormat('MMMM d, y').format(
+                                            DateTime.parse(
+                                                transaction['updatedAt'])),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }),
+                              DataRow(
+                                cells: [
+                                  const DataCell(Text('')),
+                                  const DataCell(Text('')),
+                                  const DataCell(Text('')),
+                                  const DataCell(
+                                    BodyMedium(
+                                      text: 'Total:',
+                                    ),
+                                  ),
+                                  DataCell(
+                                    BodyMedium(
+                                      text:
+                                          '₱${NumberFormat.decimalPattern().format(double.parse((calculateTotalRevenueForToday()).toStringAsFixed(2)))}',
+                                    ),
+                                  ),
+                                  const DataCell(Text('')),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        StocksIcon(
-                          fetchLowStockCount: fetchStock,
-                        ),
-                        AppointmentIcon(
-                          fetchAppointments: fetchAppointment,
-                        ),
-                        UpdatePriceIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, editItemsPage);
-                          },
-                        ),
-                        TransactionsIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, transactionRoute);
-                          },
-                        ),
-                        CustomerIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, customerRoute);
-                          },
-                        ),
-                        RiderIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, driversRoute);
-                          },
-                        ),
-                        ProductsIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, productsRoute);
-                          },
-                        ),
-                        AccessoriesIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, accessoriesRoute);
-                          },
-                        ),
-                        AnnouncementIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, announcementRoute);
-                          },
-                        ),
-                        FaqIcon(
-                          onTap: () {
-                            Navigator.pushNamed(context, faqRoute);
-                          },
-                        ),
-                        // FeedbackIcon(
-                        //   onTap: () {
-                        //     // Action to perform when the card is clicked
-                        //   },
-                        // ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    RectangleCard(
-                      title: 'Today Revenue',
-                      value: '\₱${calculateTotalSumToday().toStringAsFixed(2)}',
-                    ),
-                    // RectangleCard(
-                    //   title: 'Pending Online Orders',
-                    //   value: '${calculateTotalOnlineTransactionsNotApproved()}',
-                    // ),
-                    RectangleCard(
-                      title: 'Completed Online Today',
-                      value: '${calculateNumberOfOnlineTransactionsToday()}',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 5),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    DropdownButton<String>(
-                      value: selectedRange,
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedRange = newValue!;
-                        });
-                      },
-                      items: ['Today', 'This Month', 'This Year']
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                    SizedBox(
-                      height: 300,
-                      child: PieChart(
-                        PieChartData(
-                          sections: selectedSections,
-                          borderData: FlBorderData(show: false),
-                          centerSpaceRadius: 40,
-                          sectionsSpace: 0,
-                          startDegreeOffset: -90,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    // height: 400,
-                    child: DataTable(
-                      columns: const [
-                        DataColumn(label: Text('Name')),
-                        DataColumn(label: Text('Status')),
-                        DataColumn(label: Text('Barangay')),
-                        DataColumn(label: Text('Total')),
-                        DataColumn(label: Text('Type')),
-                        DataColumn(label: Text('Date')),
-                      ],
-                      rows: [
-                        ...selectedTransactions
-                            .where((transaction) =>
-                                transaction['__t'] == "Delivery" &&
-                                transaction['completed'] == true)
-                            .map((transaction) {
-                          return DataRow(
-                            cells: [
-                              DataCell(
-                                Text(
-                                  transaction['name'].length > 10
-                                      ? '${transaction['name'].substring(0, 10)}...'
-                                      : transaction['name'],
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              DataCell(
-                                Text(
-                                  transaction['status'].length > 10
-                                      ? '${transaction['status'].substring(0, 10)}...'
-                                      : transaction['status'],
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              DataCell(
-                                Text(
-                                  transaction['barangay'].length > 10
-                                      ? '${transaction['barangay'].substring(0, 10)}...'
-                                      : transaction['barangay'],
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              DataCell(Text(
-                                  '\₱${(transaction['total'] ?? 0.0).toStringAsFixed(2)}')),
-                              DataCell(Text(transaction['__t'])),
-                              DataCell(
-                                Text(
-                                  DateFormat('MMM d, y - h:mm a').format(
-                                      DateTime.parse(transaction['updatedAt'])),
-                                ),
-                              ),
-                            ],
-                          );
-                        }),
-                        DataRow(
-                          cells: [
-                            DataCell(Text(
-                              'Total',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            )),
-                            DataCell(Text(
-                              '\₱${calculateTotalRevenueForToday().toStringAsFixed(2)}',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            )),
-                            DataCell(Text('')),
-                            DataCell(Text('')),
-                            DataCell(Text('')),
-                            DataCell(Text('')),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -560,31 +701,30 @@ class _HomePageState extends State<HomePage> {
     double totalWalkinCount = walkinTransactions.length.toDouble();
     double totalTransactionCount = totalDeliveryCount + totalWalkinCount;
 
-    // Handle division by zero
     if (totalTransactionCount == 0) {
       return [];
     }
 
     return [
       PieChartSectionData(
-        color: Colors.lime,
+        color: const Color(0xFF050404).withOpacity(0.8),
         value: totalDeliveryCount / totalTransactionCount * 100,
         title:
             'Delivery: ${totalDeliveryCount.toInt()} \n ${(totalDeliveryCount / totalTransactionCount * 100).toStringAsFixed(2)}%',
-        radius: 80,
-        titleStyle: TextStyle(
-          color: Colors.black,
+        radius: 110,
+        titleStyle: const TextStyle(
+          color: Colors.white,
           fontWeight: FontWeight.bold,
         ),
       ),
       PieChartSectionData(
-        color: Colors.grey,
+        color: const Color(0xFFA81616).withOpacity(0.8),
         value: totalWalkinCount / totalTransactionCount * 100,
         title:
             'Walkin: ${totalWalkinCount.toInt()} \n ${(totalWalkinCount / totalTransactionCount * 100).toStringAsFixed(2)}%',
-        radius: 80,
-        titleStyle: TextStyle(
-          color: Colors.black,
+        radius: 110,
+        titleStyle: const TextStyle(
+          color: Colors.white,
           fontWeight: FontWeight.bold,
         ),
       ),

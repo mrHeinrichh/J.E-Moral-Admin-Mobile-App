@@ -923,8 +923,37 @@ class _AccessoryPageState extends State<AccessoryPage> {
                                         ),
                                       ),
                                       ListTile(
-                                        title: TitleMedium(
-                                            text: '${accessoryData['name']}'),
+                                        title: Row(
+                                          children: [
+                                            Flexible(
+                                              child: TitleMedium(
+                                                text:
+                                                    '${accessoryData['name']}',
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: Icon(
+                                                Icons.content_copy,
+                                                color: const Color(0xFF050404)
+                                                    .withOpacity(0.9),
+                                              ),
+                                              onPressed: () {
+                                                Clipboard.setData(
+                                                        ClipboardData(text: id))
+                                                    .then((_) {
+                                                  // ScaffoldMessenger.of(
+                                                  //         context)
+                                                  //     .showSnackBar(
+                                                  //   const SnackBar(
+                                                  //     content: Text(
+                                                  //         'Rider ID copied to clipboard'),
+                                                  //   ),
+                                                  // );
+                                                });
+                                              },
+                                            ),
+                                          ],
+                                        ),
                                         subtitle: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,

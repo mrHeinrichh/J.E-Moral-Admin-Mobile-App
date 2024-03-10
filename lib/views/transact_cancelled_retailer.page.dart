@@ -7,15 +7,16 @@ import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
-class TransactionCancelledPage extends StatefulWidget {
+class TransactionCancelledRetailerPage extends StatefulWidget {
   @override
-  _TransactionCancelledPageState createState() =>
-      _TransactionCancelledPageState();
+  _TransactionCancelledRetailerPageState createState() =>
+      _TransactionCancelledRetailerPageState();
 }
 
-class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
+class _TransactionCancelledRetailerPageState
+    extends State<TransactionCancelledRetailerPage> {
   List<Map<String, dynamic>> transactionDataList = [];
-  List<Map<String, dynamic>> customerDataList = [];
+  List<Map<String, dynamic>> retailerDataList = [];
 
   TextEditingController searchController = TextEditingController();
   bool loadingData = false;
@@ -55,7 +56,6 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
             transactionDataList.clear();
             transactionDataList.addAll(transactionData);
             currentPage = page;
-            loadingData = false;
           });
         } else {}
       }
@@ -63,6 +63,8 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
       if (_mounted) {
         print("Error: $e");
       }
+    } finally {
+      loadingData = false;
     }
   }
 
@@ -79,7 +81,7 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
           .where((transactionData) =>
               transactionData is Map<String, dynamic> &&
               transactionData['__t'] == 'Delivery' &&
-              transactionData['status'] == 'Completed' &&
+              transactionData['status'] == 'Cancelled' &&
               (transactionData['_id']
                       .toString()
                       .toLowerCase()
@@ -89,11 +91,11 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
                       .toLowerCase()
                       .contains(query.toLowerCase()) ||
                   _isMonthQuery(query, transactionData['createdAt']) ||
-                  transactionData['deliveryDate']
-                      .toString()
-                      .toLowerCase()
-                      .contains(query.toLowerCase()) ||
-                  _isMonthQuery(query, transactionData['deliveryDate']) ||
+                  // transactionData['deliveryDate']
+                  //     .toString()
+                  //     .toLowerCase()
+                  //     .contains(query.toLowerCase()) ||
+                  // _isMonthQuery(query, transactionData['deliveryDate']) ||
                   transactionData['updatedAt']
                       .toString()
                       .toLowerCase()
@@ -117,6 +119,10 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
                       .toLowerCase()
                       .contains(query.toLowerCase()) ||
                   transactionData['total']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query.toLowerCase()) ||
+                  transactionData['to']
                       .toString()
                       .toLowerCase()
                       .contains(query.toLowerCase()) ||
@@ -174,20 +180,20 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
     return query.toLowerCase() == 'discounted';
   }
 
-  Future<Map<String, dynamic>> fetchCustomer(String customerId) async {
+  Future<Map<String, dynamic>> fetchRetailer(String retailerId) async {
     final response = await http.get(
       Uri.parse(
-        'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"_id":"$customerId","__t":"Customer"}',
+        'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"_id":"$retailerId","__t":"Retailer"}',
       ),
     );
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
       if (data['data'] != null && data['data'].isNotEmpty) {
-        final customerData = data['data'][0] as Map<String, dynamic>;
-        return customerData;
+        final retailerData = data['data'][0] as Map<String, dynamic>;
+        return retailerData;
       } else {
-        throw Exception('Customer not found');
+        throw Exception('Retailer not found');
       }
     } else {
       throw Exception('Failed to load data from the API');
@@ -252,12 +258,12 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
                       if (item is Map<String, dynamic> &&
                           item.containsKey('name') &&
                           item.containsKey('quantity') &&
-                          item.containsKey('customerPrice')) {
+                          item.containsKey('retailerPrice')) {
                         final itemName = item['name'];
                         final quantity = item['quantity'];
                         final price = NumberFormat.decimalPattern().format(
                             double.parse(
-                                (item['customerPrice']).toStringAsFixed(2)));
+                                (item['retailerPrice']).toStringAsFixed(2)));
 
                         return '$itemName (₱$price x $quantity)';
                       }
@@ -426,20 +432,8 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
                                 final userData = transactionDataList[index];
                                 final id = userData['_id'];
 
-                                // return FutureBuilder<Map<String, dynamic>>(
-                                //   future: fetchCustomer(userData['to']),
-                                //   builder: (context, snapshot) {
-                                //     if (snapshot.connectionState ==
-                                //         ConnectionState.waiting) {
-                                //       return Container();
-                                //     } else if (snapshot.hasError) {
-                                //       return Container();
-                                //       // const Text('Error fetching customer data');
-                                //     } else {
-                                //       final customerData = snapshot.data!;
-
                                 return FutureBuilder<Map<String, dynamic>>(
-                                  future: fetchRider(userData['rider']),
+                                  future: fetchRetailer(userData['to']),
                                   builder: (context, snapshot) {
                                     if (snapshot.connectionState ==
                                         ConnectionState.waiting) {
@@ -447,11 +441,11 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
                                     } else if (snapshot.hasError) {
                                       return Container();
                                     } else {
-                                      final riderData = snapshot.data!;
+                                      final retailerData = snapshot.data!;
 
                                       return FutureBuilder<
                                           Map<String, dynamic>>(
-                                        future: fetchCustomer(userData['to']),
+                                        future: fetchRider(userData['rider']),
                                         builder: (context, snapshot) {
                                           if (snapshot.connectionState ==
                                               ConnectionState.waiting) {
@@ -459,11 +453,11 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
                                           } else if (snapshot.hasError) {
                                             return Container();
                                           } else {
-                                            final customerData = snapshot.data!;
+                                            final riderData = snapshot.data!;
 
                                             return GestureDetector(
                                               onTap: () {
-                                                showCustomerDetailsModal(
+                                                showRetailerDetailsModal(
                                                     userData);
                                               },
                                               child: Card(
@@ -480,28 +474,27 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
                                                             .start,
                                                     children: [
                                                       const Divider(),
-
-                                                      // const BodyMediumText(
-                                                      //   text: 'Date Ordered:',
-                                                      // ),
-                                                      // Center(
-                                                      //   child: Column(
-                                                      //     children: [
-                                                      //       Text(
-                                                      //         DateFormat(
-                                                      //                 'MMMM d, y - h:mm a')
-                                                      //             .format(DateTime
-                                                      //                 .parse(userData[
-                                                      //                         'createdAt'] ??
-                                                      //                     '')),
-                                                      //       ),
-                                                      //       Text(
-                                                      //         '(${DateFormat('yyyy-dd-MM - hh:mm').format(DateTime.parse(userData['createdAt'] ?? ''))})',
-                                                      //       ),
-                                                      //     ],
-                                                      //   ),
-                                                      // ),
-                                                      // const SizedBox(height: 5),
+                                                      const BodyMediumText(
+                                                        text: 'Date Ordered:',
+                                                      ),
+                                                      Center(
+                                                        child: Column(
+                                                          children: [
+                                                            Text(
+                                                              DateFormat(
+                                                                      'MMMM d, y - h:mm a')
+                                                                  .format(DateTime
+                                                                      .parse(userData[
+                                                                              'createdAt'] ??
+                                                                          '')),
+                                                            ),
+                                                            Text(
+                                                              '(${DateFormat('yyyy-dd-MM - hh:mm').format(DateTime.parse(userData['createdAt'] ?? ''))})',
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 5),
                                                       // const BodyMediumText(
                                                       //   text: 'Delivery Date:',
                                                       // ),
@@ -543,103 +536,54 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
                                                           ],
                                                         ),
                                                       ),
-
                                                       const SizedBox(height: 5),
                                                       const Divider(),
                                                       BodyMediumOver(
                                                         text:
-                                                            'Ordered by: ${customerData['name']}',
+                                                            'Ordered by: ${retailerData['name']}',
                                                       ),
                                                       BodyMediumOver(
                                                         text:
-                                                            'Mobile Number: ${customerData['contactNumber']}',
+                                                            'Mobile Number: ${retailerData['contactNumber']}',
                                                       ),
                                                       const Divider(),
-
                                                       BodyMediumText(
                                                         text:
                                                             'Payment Method: ${userData['paymentMethod']}',
                                                       ),
-                                                      if (!userData.containsKey(
-                                                              'discountIdImage') &&
-                                                          userData[
-                                                                  'discounted'] ==
-                                                              false)
-                                                        const Center(
-                                                          child: BodyMedium(
-                                                            text:
-                                                                'Ordered by Retailer',
-                                                          ),
-                                                        ),
-                                                      if (userData.containsKey(
-                                                          'discountIdImage'))
-                                                        BodyMediumText(
-                                                          text:
-                                                              'Discounted: ${userData['discountIdImage'] != "" && userData['discountIdImage'] != null ? 'Yes' : 'No'}',
-                                                        ),
-                                                      if (userData.containsKey(
-                                                          'discountIdImage'))
-                                                        BodyMediumOver(
-                                                          text:
-                                                              'Items: ${userData['items']!.map((item) {
-                                                            if (item is Map<
-                                                                    String,
-                                                                    dynamic> &&
-                                                                item.containsKey(
-                                                                    'name') &&
-                                                                item.containsKey(
-                                                                    'quantity') &&
-                                                                item.containsKey(
-                                                                    'customerPrice')) {
-                                                              final itemName =
-                                                                  item['name'];
-                                                              final quantity =
-                                                                  item[
-                                                                      'quantity'];
-                                                              final price = NumberFormat
-                                                                      .decimalPattern()
-                                                                  .format(double.parse((item[
-                                                                          'customerPrice'])
-                                                                      .toStringAsFixed(
-                                                                          2)));
+                                                      BodyMediumText(
+                                                        text:
+                                                            'Discounted: ${userData['discountIdImage'] != "" && userData['discountIdImage'] != null ? 'Yes' : 'No'}',
+                                                      ),
+                                                      BodyMediumOver(
+                                                        text:
+                                                            'Items: ${userData['items']!.map((item) {
+                                                          if (item is Map<
+                                                                  String,
+                                                                  dynamic> &&
+                                                              item.containsKey(
+                                                                  'name') &&
+                                                              item.containsKey(
+                                                                  'quantity') &&
+                                                              item.containsKey(
+                                                                  'retailerPrice')) {
+                                                            final itemName =
+                                                                item['name'];
+                                                            final quantity =
+                                                                item[
+                                                                    'quantity'];
+                                                            final price = NumberFormat
+                                                                    .decimalPattern()
+                                                                .format(double
+                                                                    .parse((item[
+                                                                            'retailerPrice'])
+                                                                        .toStringAsFixed(
+                                                                            2)));
 
-                                                              return '$itemName ₱$price (x$quantity)';
-                                                            }
-                                                          }).join(', ')}',
-                                                        ),
-                                                      if (!userData.containsKey(
-                                                              'discountIdImage') &&
-                                                          userData[
-                                                                  'discounted'] ==
-                                                              false)
-                                                        BodyMediumOver(
-                                                          text:
-                                                              'Items: ${userData['items']!.map((item) {
-                                                            if (item is Map<
-                                                                    String,
-                                                                    dynamic> &&
-                                                                item.containsKey(
-                                                                    'name') &&
-                                                                item.containsKey(
-                                                                    'quantity') &&
-                                                                item.containsKey(
-                                                                    'retailerPrice')) {
-                                                              final itemName =
-                                                                  item['name'];
-                                                              final quantity =
-                                                                  item[
-                                                                      'quantity'];
-                                                              final price = NumberFormat
-                                                                      .decimalPattern()
-                                                                  .format(double.parse((item[
-                                                                          'retailerPrice'])
-                                                                      .toStringAsFixed(
-                                                                          2)));
-
-                                                              return '$itemName ₱$price (x$quantity)';
-                                                            }
-                                                          }).join(', ')}',
-                                                        ),
+                                                            return '$itemName ₱$price (x$quantity)';
+                                                          }
+                                                        }).join(', ')}',
+                                                      ),
                                                       BodyMediumText(
                                                         text:
                                                             'Total: ₱${NumberFormat.decimalPattern().format(double.parse((userData['total']).toStringAsFixed(2)))}',
@@ -653,6 +597,7 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
                                                         text:
                                                             'Mobile Number: ${riderData['contactNumber']}',
                                                       ),
+                                                      const SizedBox(height: 5),
                                                     ],
                                                   ),
                                                   trailing: SizedBox(
@@ -671,15 +616,12 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
                                                 ),
                                               ),
                                             );
-                                            // ===
                                           }
                                         },
                                       );
-                                      // ===
                                     }
                                   },
                                 );
-                                // ====
                               },
                             ),
                             const SizedBox(height: 5),
@@ -728,8 +670,8 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
     );
   }
 
-  void showCustomerDetailsModal(Map<String, dynamic> userData) {
-    fetchCustomer(userData['to']).then((customerData) async {
+  void showRetailerDetailsModal(Map<String, dynamic> userData) {
+    fetchRetailer(userData['to']).then((retailerData) async {
       dynamic riderData;
       if (userData['rider'] != null) {
         try {
@@ -762,22 +704,17 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
                   ),
                   const SizedBox(height: 10),
                   BodyMediumText(
-                    text: userData['status'] == 'Cancelled' &&
-                            userData['cancelReason'] != null &&
-                            userData['cancelReason'].isNotEmpty
-                        ? 'Status: Failed'
-                        : 'Status: ${userData['status']}',
-                  ),
-                  BodyMediumOver(
-                    text:
-                        'Delivery Driver Reason/s: ${userData['cancelReason']}',
+                    text: 'Status: ${userData['status']}',
                   ),
                   const Divider(),
-                  BodyMediumText(
-                    text: 'Receiver Name: ${userData['name']}',
+                  const Center(
+                    child: BodyMedium(text: "Receiver Information:"),
                   ),
                   BodyMediumText(
-                    text: 'Contact Number: ${userData['contactNumber']}',
+                    text: 'Name: ${userData['name']}',
+                  ),
+                  BodyMediumText(
+                    text: 'Mobile Number: ${userData['contactNumber']}',
                   ),
                   BodyMediumOver(
                     text: 'Pin Location: ${userData['deliveryLocation']}',
@@ -795,10 +732,10 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
                   ),
                   const Divider(),
                   BodyMediumOver(
-                    text: 'Ordered by: ${customerData['name']}',
+                    text: 'Ordered by: ${retailerData['name']}',
                   ),
                   BodyMediumOver(
-                    text: 'Contact Number: ${customerData['contactNumber']}',
+                    text: 'Mobile Number: ${retailerData['contactNumber']}',
                   ),
                   const SizedBox(height: 5),
                   BodyMediumOver(
@@ -813,7 +750,7 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
                         text: 'Delivery Driver: ${riderData['name']}',
                       ),
                       BodyMediumOver(
-                        text: 'Contact Number: ${riderData['contactNumber']}',
+                        text: 'Mobile Number: ${riderData['contactNumber']}',
                       ),
                       const SizedBox(height: 5),
                       BodyMediumOver(
@@ -870,12 +807,12 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
                       if (item is Map<String, dynamic> &&
                           item.containsKey('name') &&
                           item.containsKey('quantity') &&
-                          item.containsKey('customerPrice')) {
+                          item.containsKey('retailerPrice')) {
                         final itemName = item['name'];
                         final quantity = item['quantity'];
-                        final price = item['customerPrice'];
+                        final price = item['retailerPrice'];
 
-                        return '$itemName (₱${NumberFormat.decimalPattern().format(price)} x $quantity)';
+                        return '$itemName ₱${NumberFormat.decimalPattern().format(price)} (x$quantity)';
                       }
                     }).join(', ')}',
                   ),
@@ -944,6 +881,7 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 5),
                 ],
               ),
             ),
@@ -951,7 +889,7 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
         },
       );
     }).catchError((error) {
-      print('Error fetching customer data: $error');
+      print('Error fetching retailer data: $error');
     });
   }
 }

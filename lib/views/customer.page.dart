@@ -1047,8 +1047,37 @@ class _CustomerPageState extends State<CustomerPage> {
                                         //   ),
                                         // ),
                                         ListTile(
-                                          title: TitleMedium(
-                                              text: '${userData['name']}'),
+                                          title: Row(
+                                            children: [
+                                              Flexible(
+                                                child: TitleMedium(
+                                                  text: '${userData['name']}',
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: Icon(
+                                                  Icons.content_copy,
+                                                  color: const Color(0xFF050404)
+                                                      .withOpacity(0.9),
+                                                ),
+                                                onPressed: () {
+                                                  Clipboard.setData(
+                                                          ClipboardData(
+                                                              text: id))
+                                                      .then((_) {
+                                                    // ScaffoldMessenger.of(
+                                                    //         context)
+                                                    //     .showSnackBar(
+                                                    //   const SnackBar(
+                                                    //     content: Text(
+                                                    //         'Rider ID copied to clipboard'),
+                                                    //   ),
+                                                    // );
+                                                  });
+                                                },
+                                              ),
+                                            ],
+                                          ),
                                           subtitle: Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,

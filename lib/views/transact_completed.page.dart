@@ -7,13 +7,12 @@ import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
-class TransactionCompletedPage extends StatefulWidget {
+class Transaction_CompletedPage extends StatefulWidget {
   @override
-  _TransactionCompletedPageState createState() =>
-      _TransactionCompletedPageState();
+  _Transaction_CompletedPage createState() => _Transaction_CompletedPage();
 }
 
-class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
+class _Transaction_CompletedPage extends State<Transaction_CompletedPage> {
   List<Map<String, dynamic>> transactionDataList = [];
   List<Map<String, dynamic>> customerDataList = [];
 
@@ -55,7 +54,6 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
             transactionDataList.clear();
             transactionDataList.addAll(transactionData);
             currentPage = page;
-            loadingData = false;
           });
         } else {}
       }
@@ -63,6 +61,8 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
       if (_mounted) {
         print("Error: $e");
       }
+    } finally {
+      loadingData = false;
     }
   }
 
@@ -89,11 +89,11 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                       .toLowerCase()
                       .contains(query.toLowerCase()) ||
                   _isMonthQuery(query, transactionData['createdAt']) ||
-                  transactionData['deliveryDate']
-                      .toString()
-                      .toLowerCase()
-                      .contains(query.toLowerCase()) ||
-                  _isMonthQuery(query, transactionData['deliveryDate']) ||
+                  // transactionData['deliveryDate']
+                  //     .toString()
+                  //     .toLowerCase()
+                  //     .contains(query.toLowerCase()) ||
+                  // _isMonthQuery(query, transactionData['deliveryDate']) ||
                   transactionData['updatedAt']
                       .toString()
                       .toLowerCase()
@@ -194,6 +194,26 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
     }
   }
 
+  Future<Map<String, dynamic>> fetchRetailer(String retailerId) async {
+    final response = await http.get(
+      Uri.parse(
+        'https://lpg-api-06n8.onrender.com/api/v1/users/?filter={"_id":"$retailerId","__t":"Retailer"}',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      if (data['data'] != null && data['data'].isNotEmpty) {
+        final retailerData = data['data'][0] as Map<String, dynamic>;
+        return retailerData;
+      } else {
+        throw Exception('Retailer not found');
+      }
+    } else {
+      throw Exception('Failed to load data from the API');
+    }
+  }
+
   Future<Map<String, dynamic>> fetchRider(String riderId) async {
     final response = await http.get(
       Uri.parse(
@@ -241,7 +261,7 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                   const Divider(),
                   BodyMediumOver(
                     text:
-                        'Date Ordered: ${DateFormat('MMM d, y - h:mm a ').format(DateTime.parse(transactionToEdit['createdAt']))}',
+                        'Date Ordered: ${DateFormat('MMMM d, y - h:mm a ').format(DateTime.parse(transactionToEdit['createdAt']))}',
                   ),
                   BodyMediumText(
                     text:
@@ -434,7 +454,6 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                                 //       return Container();
                                 //     } else if (snapshot.hasError) {
                                 //       return Container();
-                                //       // const Text('Error fetching customer data');
                                 //     } else {
                                 //       final customerData = snapshot.data!;
 
@@ -466,27 +485,27 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                                                   CrossAxisAlignment.start,
                                               children: [
                                                 const Divider(),
-                                                // const BodyMediumText(
-                                                //   text: 'Date Ordered:',
-                                                // ),
-                                                // Center(
-                                                //   child: Column(
-                                                //     children: [
-                                                //       Text(
-                                                //         DateFormat(
-                                                //                 'MMMM d, y - h:mm a')
-                                                //             .format(DateTime
-                                                //                 .parse(userData[
-                                                //                         'createdAt'] ??
-                                                //                     '')),
-                                                //       ),
-                                                //       Text(
-                                                //         '(${DateFormat('yyyy-dd-MM - hh:mm').format(DateTime.parse(userData['createdAt'] ?? ''))})',
-                                                //       ),
-                                                //     ],
-                                                //   ),
-                                                // ),
-                                                // const SizedBox(height: 5),
+                                                const BodyMediumText(
+                                                  text: 'Date Ordered:',
+                                                ),
+                                                Center(
+                                                  child: Column(
+                                                    children: [
+                                                      Text(
+                                                        DateFormat(
+                                                                'MMMM d, y - h:mm a')
+                                                            .format(DateTime
+                                                                .parse(userData[
+                                                                        'createdAt'] ??
+                                                                    '')),
+                                                      ),
+                                                      Text(
+                                                        '(${DateFormat('yyyy-dd-MM - hh:mm').format(DateTime.parse(userData['createdAt'] ?? ''))})',
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 5),
                                                 // const BodyMediumText(
                                                 //   text: 'Delivery Date:',
                                                 // ),
@@ -528,7 +547,6 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                                                     ],
                                                   ),
                                                 ),
-
                                                 const SizedBox(height: 5),
                                                 const Divider(),
                                                 BodyMediumText(
@@ -539,11 +557,9 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                                                         'discountIdImage') &&
                                                     userData['discounted'] ==
                                                         false)
-                                                  const Center(
-                                                    child: BodyMedium(
-                                                      text:
-                                                          'Ordered by Retailer',
-                                                    ),
+                                                  const BodyMediumText(
+                                                    text:
+                                                        'Ordered by: Retailer',
                                                   ),
                                                 if (userData.containsKey(
                                                     'discountIdImage'))
@@ -618,10 +634,10 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
                                                   text:
                                                       'Delivery Driver: ${riderData['name']}',
                                                 ),
-                                                BodyMediumOver(
-                                                  text:
-                                                      'Mobile Number: ${riderData['contactNumber']}',
-                                                ),
+                                                // BodyMediumOver(
+                                                //   text:
+                                                //       'Mobile Number: ${riderData['contactNumber']}',
+                                                // ),
                                               ],
                                             ),
                                             trailing: SizedBox(
@@ -693,226 +709,451 @@ class _TransactionCompletedPageState extends State<TransactionCompletedPage> {
   }
 
   void showCustomerDetailsModal(Map<String, dynamic> userData) {
-    fetchCustomer(userData['to']).then((customerData) async {
-      dynamic riderData;
-      if (userData['rider'] != null) {
-        try {
-          riderData = await fetchRider(userData['rider']);
-        } catch (error) {
-          print('Error fetching rider data: $error');
+    if (userData.containsKey('discountIdImage')) {
+      fetchCustomer(userData['to']).then((customerData) async {
+        dynamic riderData;
+        if (userData['rider'] != null) {
+          try {
+            riderData = await fetchRider(userData['rider']);
+          } catch (error) {
+            print('Error fetching rider data: $error');
+          }
         }
-      }
-      showModalBottomSheet(
-        isScrollControlled: true,
-        context: context,
-        builder: (BuildContext context) {
-          return Container(
-            height: MediaQuery.of(context).size.height * 3 / 4,
-            width: MediaQuery.of(context).size.width,
-            padding: const EdgeInsets.all(16.0),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Center(
-                    child: Text(
-                      'Transaction Details',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+        showModalBottomSheet(
+          isScrollControlled: true,
+          context: context,
+          builder: (BuildContext context) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 3 / 4,
+              width: MediaQuery.of(context).size.width,
+              padding: const EdgeInsets.all(16.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Center(
+                      child: Text(
+                        'Transaction Details',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  BodyMediumText(
-                    text: 'Status: ${userData['status']}',
-                  ),
-                  const Divider(),
-                  BodyMediumText(
-                    text: 'Receiver Name: ${userData['name']}',
-                  ),
-                  BodyMediumText(
-                    text: 'Contact Number: ${userData['contactNumber']}',
-                  ),
-                  BodyMediumOver(
-                    text: 'Pin Location: ${userData['deliveryLocation']}',
-                  ),
-                  BodyMediumOver(
-                    text: 'House #: ${userData['houseLotBlk']}',
-                  ),
-                  BodyMediumOver(
-                    text: 'Barangay: ${userData['barangay']}',
-                  ),
-                  const SizedBox(height: 5),
-                  BodyMediumOver(
-                    text:
-                        'Delivery Date: ${userData['deliveryDate'] != null && userData['deliveryDate'] != "" ? DateFormat('MMMM d, y - h:mm a ').format(DateTime.parse(userData['deliveryDate'])) : ""}',
-                  ),
-                  const Divider(),
-                  BodyMediumOver(
-                    text: 'Ordered by: ${customerData['name']}',
-                  ),
-                  BodyMediumOver(
-                    text: 'Contact Number: ${customerData['contactNumber']}',
-                  ),
-                  const SizedBox(height: 5),
-                  BodyMediumOver(
-                    text:
-                        'Date Ordered: ${DateFormat('MMMM d, y - h:mm a ').format(DateTime.parse(userData['createdAt']))}',
-                  ),
-                  const Divider(),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      BodyMediumOver(
-                        text: 'Delivery Driver: ${riderData['name']}',
-                      ),
-                      BodyMediumOver(
-                        text: 'Contact Number: ${riderData['contactNumber']}',
-                      ),
-                      const SizedBox(height: 5),
-                      BodyMediumOver(
-                        text:
-                            'Date Delivered: ${DateFormat('MMMM d, y - h:mm a ').format(DateTime.parse(userData['updatedAt']))}',
-                      ),
-                      const Divider(),
-                    ],
-                  ),
-                  BodyMediumText(
-                    text: 'Payment Method: ${userData['paymentMethod']}',
-                  ),
-                  BodyMediumText(
-                    text:
-                        'Need to be Assembled: ${userData['assembly'] != null ? 'Yes' : 'No'}',
-                  ),
-                  BodyMediumText(
-                    text:
-                        'Applying for Discount: ${userData['discountIdImage'] != null && userData['discountIdImage'] != "" ? 'Yes' : 'No'}',
-                  ),
-                  const SizedBox(height: 5),
-                  if (userData['discountIdImage'] != null &&
-                      userData['discountIdImage'] != "")
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => FullScreenImageView(
-                              imageUrl: userData['discountIdImage'],
-                              onClose: () => Navigator.of(context).pop()),
-                        ));
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Container(
-                          width: double.infinity,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: Colors.black,
-                              width: 1,
-                            ),
-                            image: DecorationImage(
-                              image: NetworkImage(
-                                  userData['discountIdImage'] ?? ''),
-                              fit: BoxFit.cover,
+                    const SizedBox(height: 10),
+                    BodyMediumText(
+                      text: 'Status: ${userData['status']}',
+                    ),
+                    const Divider(),
+                    const Center(
+                      child: BodyMedium(text: "Receiver Information:"),
+                    ),
+                    BodyMediumText(
+                      text: 'Name: ${userData['name']}',
+                    ),
+                    BodyMediumText(
+                      text: 'Mobile Number: ${userData['contactNumber']}',
+                    ),
+                    BodyMediumOver(
+                      text: 'Pin Location: ${userData['deliveryLocation']}',
+                    ),
+                    BodyMediumOver(
+                      text: 'House #: ${userData['houseLotBlk']}',
+                    ),
+                    BodyMediumOver(
+                      text: 'Barangay: ${userData['barangay']}',
+                    ),
+                    const SizedBox(height: 5),
+                    BodyMediumOver(
+                      text:
+                          'Delivery Date: ${userData['deliveryDate'] != null && userData['deliveryDate'] != "" ? DateFormat('MMMM d, y - h:mm a ').format(DateTime.parse(userData['deliveryDate'])) : ""}',
+                    ),
+                    const Divider(),
+                    BodyMediumOver(
+                      text: 'Ordered by: ${customerData['name']}',
+                    ),
+                    BodyMediumOver(
+                      text: 'Mobile Number: ${customerData['contactNumber']}',
+                    ),
+                    const SizedBox(height: 5),
+                    BodyMediumOver(
+                      text:
+                          'Date Ordered: ${DateFormat('MMMM d, y - h:mm a ').format(DateTime.parse(userData['createdAt']))}',
+                    ),
+                    const Divider(),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        BodyMediumOver(
+                          text: 'Delivery Driver: ${riderData['name']}',
+                        ),
+                        BodyMediumOver(
+                          text: 'Mobile Number: ${riderData['contactNumber']}',
+                        ),
+                        const SizedBox(height: 5),
+                        BodyMediumOver(
+                          text:
+                              'Date Delivered: ${DateFormat('MMMM d, y - h:mm a ').format(DateTime.parse(userData['updatedAt']))}',
+                        ),
+                        const Divider(),
+                      ],
+                    ),
+                    BodyMediumText(
+                      text: 'Payment Method: ${userData['paymentMethod']}',
+                    ),
+                    BodyMediumText(
+                      text:
+                          'Need to be Assembled: ${userData['assembly'] != null ? 'Yes' : 'No'}',
+                    ),
+                    BodyMediumText(
+                      text:
+                          'Applying for Discount: ${userData['discountIdImage'] != null && userData['discountIdImage'] != "" ? 'Yes' : 'No'}',
+                    ),
+                    const SizedBox(height: 5),
+                    if (userData['discountIdImage'] != null &&
+                        userData['discountIdImage'] != "")
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => FullScreenImageView(
+                                imageUrl: userData['discountIdImage'],
+                                onClose: () => Navigator.of(context).pop()),
+                          ));
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            width: double.infinity,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: Colors.black,
+                                width: 1,
+                              ),
+                              image: DecorationImage(
+                                image: NetworkImage(
+                                    userData['discountIdImage'] ?? ''),
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  BodyMediumOver(
-                    text: 'Items: ${userData['items']!.map((item) {
-                      if (item is Map<String, dynamic> &&
-                          item.containsKey('name') &&
-                          item.containsKey('quantity') &&
-                          item.containsKey('customerPrice')) {
-                        final itemName = item['name'];
-                        final quantity = item['quantity'];
-                        final price = item['customerPrice'];
+                    BodyMediumOver(
+                      text: 'Items: ${userData['items']!.map((item) {
+                        if (item is Map<String, dynamic> &&
+                            item.containsKey('name') &&
+                            item.containsKey('quantity') &&
+                            item.containsKey('customerPrice')) {
+                          final itemName = item['name'];
+                          final quantity = item['quantity'];
+                          final price = item['customerPrice'];
 
-                        return '$itemName (₱${NumberFormat.decimalPattern().format(price)} x $quantity)';
-                      }
-                    }).join(', ')}',
-                  ),
-                  BodyMediumText(
-                    text:
-                        'Total: ₱${NumberFormat.decimalPattern().format(userData['total'])}',
-                  ),
-                  const Divider(),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          if (userData['pickupImages'] != "" &&
-                              userData['cancellationImages'] == "")
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (context) => FullScreenImageView(
-                                      imageUrl: userData['pickupImages'],
-                                      onClose: () =>
-                                          Navigator.of(context).pop()),
-                                ));
-                              },
-                              child: Column(
-                                children: [
-                                  const BodyMediumText(
-                                    text: 'Pick-up Image: ',
-                                  ),
-                                  Image.network(
-                                    userData['pickupImages'],
-                                    height: 100,
-                                    width: 100,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          if (userData['completionImages'] != "" &&
-                              userData['cancellationImages'] == "")
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (context) => FullScreenImageView(
-                                      imageUrl: userData['completionImages'],
-                                      onClose: () =>
-                                          Navigator.of(context).pop()),
-                                ));
-                              },
-                              child: Column(
-                                children: [
-                                  const BodyMediumText(
-                                    text: 'Completion Image: ',
-                                  ),
-                                  Image.network(
-                                    userData['completionImages'],
-                                    height: 100,
-                                    width: 100,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 5),
-                  if (userData['cancellationImages'] != "")
-                    BodyMediumText(
-                      text: 'Cancel Reason: ${userData['cancelReason']}',
+                          return '$itemName ₱${NumberFormat.decimalPattern().format(price)} (x$quantity)';
+                        }
+                      }).join(', ')}',
                     ),
-                ],
+                    BodyMediumText(
+                      text:
+                          'Total: ₱${NumberFormat.decimalPattern().format(userData['total'])}',
+                    ),
+                    const Divider(),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            if (userData['pickupImages'] != "" &&
+                                userData['cancellationImages'] == "")
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => FullScreenImageView(
+                                        imageUrl: userData['pickupImages'],
+                                        onClose: () =>
+                                            Navigator.of(context).pop()),
+                                  ));
+                                },
+                                child: Column(
+                                  children: [
+                                    const BodyMediumText(
+                                      text: 'Pick-up Image: ',
+                                    ),
+                                    Image.network(
+                                      userData['pickupImages'],
+                                      height: 100,
+                                      width: 100,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (userData['completionImages'] != "" &&
+                                userData['cancellationImages'] == "")
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => FullScreenImageView(
+                                        imageUrl: userData['completionImages'],
+                                        onClose: () =>
+                                            Navigator.of(context).pop()),
+                                  ));
+                                },
+                                child: Column(
+                                  children: [
+                                    const BodyMediumText(
+                                      text: 'Completion Image: ',
+                                    ),
+                                    Image.network(
+                                      userData['completionImages'],
+                                      height: 100,
+                                      width: 100,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
-      );
-    }).catchError((error) {
-      print('Error fetching customer data: $error');
-    });
+            );
+          },
+        );
+      }).catchError((error) {
+        print('Error fetching customer data: $error');
+      });
+    }
+
+    if (!userData.containsKey('discountIdImage') &&
+        userData['discounted'] == false) {
+      fetchRetailer(userData['to']).then((retailerData) async {
+        dynamic riderData;
+        if (userData['rider'] != null) {
+          try {
+            riderData = await fetchRider(userData['rider']);
+          } catch (error) {
+            print('Error fetching rider data: $error');
+          }
+        }
+        showModalBottomSheet(
+          isScrollControlled: true,
+          context: context,
+          builder: (BuildContext context) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 3 / 4,
+              width: MediaQuery.of(context).size.width,
+              padding: const EdgeInsets.all(16.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Center(
+                      child: Text(
+                        'Transaction Details',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    BodyMediumText(
+                      text: 'Status: ${userData['status']}',
+                    ),
+                    const Divider(),
+                    const Center(
+                      child: BodyMedium(text: "Receiver Information:"),
+                    ),
+                    BodyMediumText(
+                      text: 'Name: ${userData['name']}',
+                    ),
+                    BodyMediumText(
+                      text: 'Mobile Number: ${userData['contactNumber']}',
+                    ),
+                    BodyMediumOver(
+                      text: 'Pin Location: ${userData['deliveryLocation']}',
+                    ),
+                    BodyMediumOver(
+                      text: 'House #: ${userData['houseLotBlk']}',
+                    ),
+                    BodyMediumOver(
+                      text: 'Barangay: ${userData['barangay']}',
+                    ),
+                    const SizedBox(height: 5),
+                    BodyMediumOver(
+                      text:
+                          'Delivery Date: ${userData['deliveryDate'] != null && userData['deliveryDate'] != "" ? DateFormat('MMMM d, y - h:mm a ').format(DateTime.parse(userData['deliveryDate'])) : ""}',
+                    ),
+                    const Divider(),
+                    BodyMediumOver(
+                      text: 'Ordered by: ${retailerData['name']}',
+                    ),
+                    BodyMediumOver(
+                      text: 'Mobile Number: ${retailerData['contactNumber']}',
+                    ),
+                    const SizedBox(height: 5),
+                    BodyMediumOver(
+                      text:
+                          'Date Ordered: ${DateFormat('MMMM d, y - h:mm a ').format(DateTime.parse(userData['createdAt']))}',
+                    ),
+                    const Divider(),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        BodyMediumOver(
+                          text: 'Delivery Driver: ${riderData['name']}',
+                        ),
+                        BodyMediumOver(
+                          text: 'Mobile Number: ${riderData['contactNumber']}',
+                        ),
+                        const SizedBox(height: 5),
+                        BodyMediumOver(
+                          text:
+                              'Date Delivered: ${DateFormat('MMMM d, y - h:mm a ').format(DateTime.parse(userData['updatedAt']))}',
+                        ),
+                        const Divider(),
+                      ],
+                    ),
+                    BodyMediumText(
+                      text: 'Payment Method: ${userData['paymentMethod']}',
+                    ),
+                    BodyMediumText(
+                      text:
+                          'Need to be Assembled: ${userData['assembly'] != null ? 'Yes' : 'No'}',
+                    ),
+                    BodyMediumText(
+                      text:
+                          'Applying for Discount: ${userData['discountIdImage'] != null && userData['discountIdImage'] != "" ? 'Yes' : 'No'}',
+                    ),
+                    const SizedBox(height: 5),
+                    if (userData['discountIdImage'] != null &&
+                        userData['discountIdImage'] != "")
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => FullScreenImageView(
+                                imageUrl: userData['discountIdImage'],
+                                onClose: () => Navigator.of(context).pop()),
+                          ));
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            width: double.infinity,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: Colors.black,
+                                width: 1,
+                              ),
+                              image: DecorationImage(
+                                image: NetworkImage(
+                                    userData['discountIdImage'] ?? ''),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    BodyMediumOver(
+                      text: 'Items: ${userData['items']!.map((item) {
+                        if (item is Map<String, dynamic> &&
+                            item.containsKey('name') &&
+                            item.containsKey('quantity') &&
+                            item.containsKey('retailerPrice')) {
+                          final itemName = item['name'];
+                          final quantity = item['quantity'];
+                          final price = item['retailerPrice'];
+
+                          return '$itemName ₱${NumberFormat.decimalPattern().format(price)} (x$quantity)';
+                        }
+                      }).join(', ')}',
+                    ),
+                    BodyMediumText(
+                      text:
+                          'Total: ₱${NumberFormat.decimalPattern().format(userData['total'])}',
+                    ),
+                    const Divider(),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            if (userData['pickupImages'] != "" &&
+                                userData['cancellationImages'] == "")
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => FullScreenImageView(
+                                        imageUrl: userData['pickupImages'],
+                                        onClose: () =>
+                                            Navigator.of(context).pop()),
+                                  ));
+                                },
+                                child: Column(
+                                  children: [
+                                    const BodyMediumText(
+                                      text: 'Pick-up Image: ',
+                                    ),
+                                    Image.network(
+                                      userData['pickupImages'],
+                                      height: 100,
+                                      width: 100,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (userData['completionImages'] != "" &&
+                                userData['cancellationImages'] == "")
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => FullScreenImageView(
+                                        imageUrl: userData['completionImages'],
+                                        onClose: () =>
+                                            Navigator.of(context).pop()),
+                                  ));
+                                },
+                                child: Column(
+                                  children: [
+                                    const BodyMediumText(
+                                      text: 'Completion Image: ',
+                                    ),
+                                    Image.network(
+                                      userData['completionImages'],
+                                      height: 100,
+                                      width: 100,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      }).catchError((error) {
+        print('Error fetching retailer data: $error');
+      });
+    }
   }
 }

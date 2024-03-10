@@ -1,6 +1,5 @@
-import 'package:admin_app/views/transact_completed.page.dart';
-import 'package:admin_app/views/transact_cancelled.page.dart';
-import 'package:admin_app/views/transact_walkin.page.dart';
+import 'package:admin_app/views/transact_cancelled_customer.page.dart';
+import 'package:admin_app/views/transact_cancelled_retailer.page.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -12,17 +11,18 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: TransactionPage(),
+      home: TransactionCancelledPage(),
     );
   }
 }
 
-class TransactionPage extends StatefulWidget {
+class TransactionCancelledPage extends StatefulWidget {
   @override
-  _TransactionPageState createState() => _TransactionPageState();
+  _TransactionCancelledPageState createState() =>
+      _TransactionCancelledPageState();
 }
 
-class _TransactionPageState extends State<TransactionPage> {
+class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
   int _selectedIndex = 0;
 
   void _onItemTapped(int index) {
@@ -33,27 +33,12 @@ class _TransactionPageState extends State<TransactionPage> {
 
   @override
   Widget build(BuildContext context) {
-    Widget selectedWidget;
-    switch (_selectedIndex) {
-      case 0:
-        selectedWidget = TransactionCompletedPage();
-        break;
-      case 1:
-        selectedWidget = TransactionCancelledPage();
-        break;
-      case 2:
-        selectedWidget = TransactionWalkinPage();
-        break;
-      default:
-        selectedWidget = TransactionCompletedPage();
-    }
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 1,
         title: Text(
-          'Transaction List',
+          'Failed Transactions',
           style: TextStyle(
             color: const Color(0xFF050404).withOpacity(0.9),
             fontSize: 22,
@@ -73,23 +58,20 @@ class _TransactionPageState extends State<TransactionPage> {
         ),
       ),
       backgroundColor: Colors.white,
-      body: selectedWidget,
+      body: _selectedIndex == 0
+          ? TransactionCancelledCustomerPage()
+          : TransactionCancelledRetailerPage(),
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.done_all_rounded,
+            icon: Icon(Icons.supervised_user_circle_rounded,
                 color: const Color(0xFF050404).withOpacity(0.9)),
-            label: 'Completed',
+            label: 'Customer',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.close_rounded,
+            icon: Icon(Icons.supervisor_account_rounded,
                 color: const Color(0xFF050404).withOpacity(0.9)),
-            label: 'Failed',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.directions_walk,
-                color: const Color(0xFF050404).withOpacity(0.9)),
-            label: 'Walk-ins',
+            label: 'Retailer',
           ),
         ],
         currentIndex: _selectedIndex,
