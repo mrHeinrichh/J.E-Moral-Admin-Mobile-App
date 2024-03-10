@@ -228,6 +228,7 @@ class _TransactionCancelledRetailerPageState
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Archive Data',
             style: TextStyle(

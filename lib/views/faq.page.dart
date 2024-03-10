@@ -231,6 +231,7 @@ class _FaqPageState extends State<FaqPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Add New FAQ',
             style: TextStyle(
@@ -375,6 +376,7 @@ class _FaqPageState extends State<FaqPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text('Edit Data'),
           content: Form(
             key: formKey,
@@ -533,6 +535,7 @@ class _FaqPageState extends State<FaqPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Archive Data',
             style: TextStyle(

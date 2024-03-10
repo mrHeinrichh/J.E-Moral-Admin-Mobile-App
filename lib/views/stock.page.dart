@@ -102,6 +102,7 @@ class _StocksPageState extends State<StocksPage> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return AlertDialog(
+              backgroundColor: Colors.white,
               title: const Text(
                 'Update Stock',
                 style: TextStyle(
@@ -692,7 +693,8 @@ class _StocksPageState extends State<StocksPage> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Column(
+              backgroundColor: Colors.white,
+              title: const Column(
                 children: [
                   Text(
                     'Stock Status',
@@ -720,7 +722,7 @@ class _StocksPageState extends State<StocksPage> {
                   style: TextButton.styleFrom(
                     foregroundColor: const Color(0xFF050404).withOpacity(0.9),
                   ),
-                  child: Text(
+                  child: const Text(
                     'OK',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,

@@ -596,6 +596,7 @@ class _DriversPageState extends State<DriversPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Add New Delivery Driver',
             style: TextStyle(
@@ -1026,6 +1027,7 @@ class _DriversPageState extends State<DriversPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Edit Delivery Driver',
             style: TextStyle(
@@ -1448,6 +1450,7 @@ class _DriversPageState extends State<DriversPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Change Password',
             style: TextStyle(
@@ -1559,6 +1562,7 @@ class _DriversPageState extends State<DriversPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Archive Data',
             style: TextStyle(

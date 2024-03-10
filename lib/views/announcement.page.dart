@@ -297,6 +297,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Add New Announcement',
             style: TextStyle(
@@ -497,6 +498,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Edit Announcement',
             style: TextStyle(
@@ -684,6 +686,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Archive Data',
             style: TextStyle(

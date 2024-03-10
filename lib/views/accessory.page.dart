@@ -240,6 +240,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Add New Accessory',
             style: TextStyle(
@@ -484,6 +485,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Edit Accessory',
             style: TextStyle(
@@ -655,6 +657,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Archive Data',
             style: TextStyle(

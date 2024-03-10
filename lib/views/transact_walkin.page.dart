@@ -126,6 +126,7 @@ class _Transaction_WalkinPageState extends State<Transaction_WalkinPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Archive Data',
             style: TextStyle(

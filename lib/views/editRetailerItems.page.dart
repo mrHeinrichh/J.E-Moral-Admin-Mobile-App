@@ -116,6 +116,7 @@ class __EditPricesForRetailersPageStateState
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Edit Price for Retailer',
             style: TextStyle(

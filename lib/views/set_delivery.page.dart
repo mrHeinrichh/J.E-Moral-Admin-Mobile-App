@@ -88,6 +88,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text('Confirmation'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -128,6 +129,7 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Center(
             child: Text(
               'Confirmation',

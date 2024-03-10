@@ -250,6 +250,7 @@ class _ProductsPageState extends State<ProductsPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Add New Product',
             style: TextStyle(
@@ -554,6 +555,7 @@ class _ProductsPageState extends State<ProductsPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Edit Product',
             style: TextStyle(
@@ -777,6 +779,7 @@ class _ProductsPageState extends State<ProductsPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Archive Data',
             style: TextStyle(

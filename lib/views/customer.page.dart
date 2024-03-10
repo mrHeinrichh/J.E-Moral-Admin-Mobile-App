@@ -252,6 +252,7 @@ class _CustomerPageState extends State<CustomerPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Add New Customer',
             style: TextStyle(
@@ -483,6 +484,7 @@ class _CustomerPageState extends State<CustomerPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Edit Customer',
             style: TextStyle(
@@ -683,6 +685,7 @@ class _CustomerPageState extends State<CustomerPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Change Password',
             style: TextStyle(
@@ -791,6 +794,7 @@ class _CustomerPageState extends State<CustomerPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Archive Data',
             style: TextStyle(

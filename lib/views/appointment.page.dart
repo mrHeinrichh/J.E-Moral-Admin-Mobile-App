@@ -338,6 +338,8 @@ class _AppointmentPageState extends State<AppointmentPage> {
                                                   builder:
                                                       (BuildContext context) {
                                                     return AlertDialog(
+                                                      backgroundColor:
+                                                          Colors.white,
                                                       title: const Text(
                                                         'Confirmation',
                                                         style: TextStyle(

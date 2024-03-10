@@ -243,6 +243,7 @@ class _NewCustomersState extends State<NewCustomers> {
                                             context: context,
                                             builder: (BuildContext context) {
                                               return AlertDialog(
+                                                backgroundColor: Colors.white,
                                                 title: const Text(
                                                   'Approve Confirmation',
                                                   style: TextStyle(
@@ -353,6 +354,7 @@ class _NewCustomersState extends State<NewCustomers> {
                                             context: context,
                                             builder: (BuildContext context) {
                                               return AlertDialog(
+                                                backgroundColor: Colors.white,
                                                 title: const Text(
                                                   'Approve Confirmation',
                                                   style: TextStyle(

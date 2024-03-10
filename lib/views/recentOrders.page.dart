@@ -67,6 +67,7 @@ class _RecentOrdersState extends State<RecentOrders> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Approve Confirmation',
             style: TextStyle(
@@ -140,6 +141,7 @@ class _RecentOrdersState extends State<RecentOrders> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text(
             'Decline Confirmation',
             style: TextStyle(
