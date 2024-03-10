@@ -195,6 +195,7 @@ class _NewCustomersState extends State<NewCustomers> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                 child: ListView.builder(
+                  reverse: false,
                   itemCount: unverifiedUsers.length,
                   itemBuilder: (context, index) {
                     final user = unverifiedUsers[index];

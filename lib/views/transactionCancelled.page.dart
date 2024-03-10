@@ -64,12 +64,12 @@ class _TransactionCancelledPageState extends State<TransactionCancelledPage> {
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.supervised_user_circle_rounded,
+            icon: Icon(Icons.supervisor_account_rounded,
                 color: const Color(0xFF050404).withOpacity(0.9)),
             label: 'Customer',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.supervisor_account_rounded,
+            icon: Icon(Icons.supervised_user_circle_rounded,
                 color: const Color(0xFF050404).withOpacity(0.9)),
             label: 'Retailer',
           ),

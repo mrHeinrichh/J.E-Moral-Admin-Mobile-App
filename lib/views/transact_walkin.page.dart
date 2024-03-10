@@ -323,6 +323,7 @@ class _Transaction_WalkinPageState extends State<Transaction_WalkinPage> {
                         child: Column(
                           children: [
                             ListView.builder(
+                              reverse: true,
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: transactionDataList.length,

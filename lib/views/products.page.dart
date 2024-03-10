@@ -1015,6 +1015,7 @@ class _ProductsPageState extends State<ProductsPage> {
                         child: Column(
                           children: [
                             ListView.builder(
+                              reverse: true,
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: productDataList.length,

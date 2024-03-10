@@ -770,6 +770,7 @@ class _FaqPageState extends State<FaqPage> {
                         child: Column(
                           children: [
                             ListView.builder(
+                              reverse: true,
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: faqDataList.length,

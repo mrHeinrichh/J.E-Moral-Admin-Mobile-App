@@ -72,6 +72,41 @@ class CustomerIcon extends StatelessWidget {
   }
 }
 
+class RetailerIcon extends StatelessWidget {
+  final VoidCallback onTap;
+
+  RetailerIcon({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: onTap,
+            child: Card(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25.0),
+              ),
+              elevation: 4,
+              child: const Padding(
+                padding: EdgeInsets.all(10.0),
+                child: Icon(Icons.supervised_user_circle_rounded, size: 30),
+              ),
+            ),
+          ),
+          const Text(
+            "Retailers",
+            style: TextStyle(fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class RiderIcon extends StatelessWidget {
   final VoidCallback onTap;
 

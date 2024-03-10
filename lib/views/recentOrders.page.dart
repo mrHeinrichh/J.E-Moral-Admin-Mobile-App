@@ -276,6 +276,7 @@ class _RecentOrdersState extends State<RecentOrders> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                 child: ListView.builder(
+                  reverse: false,
                   itemCount: transactions.length,
                   itemBuilder: (context, index) {
                     final transaction = transactions[index];

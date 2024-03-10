@@ -384,6 +384,7 @@ class _StocksPageState extends State<StocksPage> {
                         child: Column(
                           children: [
                             ListView.builder(
+                              reverse: false,
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: stockDataList.length,

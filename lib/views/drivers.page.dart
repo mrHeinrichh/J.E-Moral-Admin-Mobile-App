@@ -1786,6 +1786,7 @@ class _DriversPageState extends State<DriversPage> {
                         child: Column(
                           children: [
                             ListView.builder(
+                              reverse: true,
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: riderDataList.length,

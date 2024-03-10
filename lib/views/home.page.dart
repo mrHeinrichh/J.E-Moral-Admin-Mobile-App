@@ -1,4 +1,5 @@
 import 'package:admin_app/routes/app_routes.dart';
+import 'package:admin_app/views/retailer.page.dart';
 import 'package:admin_app/widgets/circle_card.dart';
 import 'package:admin_app/widgets/custom_card.dart';
 import 'package:admin_app/widgets/custom_text.dart';
@@ -407,6 +408,11 @@ class _HomePageState extends State<HomePage> {
                               CustomerIcon(
                                 onTap: () {
                                   Navigator.pushNamed(context, customerRoute);
+                                },
+                              ),
+                              RetailerIcon(
+                                onTap: () {
+                                  Navigator.pushNamed(context, retailerRoute);
                                 },
                               ),
                               RiderIcon(

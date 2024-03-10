@@ -258,6 +258,7 @@ class _AppointmentPageState extends State<AppointmentPage> {
                         child: Column(
                           children: [
                             ListView.builder(
+                              reverse: false,
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: customerDataList.length,

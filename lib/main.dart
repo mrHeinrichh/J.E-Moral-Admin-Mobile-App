@@ -4,6 +4,7 @@ import 'package:admin_app/views/active_orders.page.dart';
 import 'package:admin_app/views/appointment.page.dart';
 import 'package:admin_app/views/chat.page.dart';
 import 'package:admin_app/views/customer.page.dart';
+import 'package:admin_app/views/retailer.page.dart';
 import 'package:admin_app/views/dashboard.page.dart';
 import 'package:admin_app/views/drivers.page.dart';
 import 'package:admin_app/views/editItems.page.dart';
@@ -48,6 +49,7 @@ class MyApp extends StatelessWidget {
         loginRoute: (context) => LoginPage(),
         dashboardRoute: (context) => DashboardPage(),
         customerRoute: (context) => CustomerPage(),
+        retailerRoute: (context) => RetailerPage(),
         driversRoute: (context) => DriversPage(),
         productsRoute: (context) => ProductsPage(),
         accessoriesRoute: (context) => AccessoryPage(),

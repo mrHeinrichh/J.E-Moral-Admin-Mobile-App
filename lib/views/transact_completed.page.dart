@@ -439,6 +439,7 @@ class _Transaction_CompletedPage extends State<Transaction_CompletedPage> {
                         child: Column(
                           children: [
                             ListView.builder(
+                              reverse: true,
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: transactionDataList.length,

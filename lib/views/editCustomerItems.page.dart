@@ -341,6 +341,7 @@ class __EditPricesForCustomersPageStateState
                         child: Column(
                           children: [
                             ListView.builder(
+                              reverse: false,
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: itemDataList.length,

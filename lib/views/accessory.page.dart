@@ -890,6 +890,7 @@ class _AccessoryPageState extends State<AccessoryPage> {
                         child: Column(
                           children: [
                             ListView.builder(
+                              reverse: true,
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: accessoryDataList.length,

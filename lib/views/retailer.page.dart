@@ -10,19 +10,19 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
-class CustomerPage extends StatefulWidget {
+class RetailerPage extends StatefulWidget {
   @override
-  _CustomerPageState createState() => _CustomerPageState();
+  _RetailerPageState createState() => _RetailerPageState();
 }
 
-class _CustomerPageState extends State<CustomerPage> {
+class _RetailerPageState extends State<RetailerPage> {
   File? _profileImage;
   final _profileImageStreamController = StreamController<File?>.broadcast();
 
   final formKey = GlobalKey<FormState>();
   bool loadingData = false;
 
-  List<Map<String, dynamic>> customerDataList = [];
+  List<Map<String, dynamic>> retailerDataList = [];
   TextEditingController searchController = TextEditingController();
 
   @override
@@ -48,17 +48,17 @@ class _CustomerPageState extends State<CustomerPage> {
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
 
-      final List<Map<String, dynamic>> customerData = (data['data'] as List)
+      final List<Map<String, dynamic>> retailerData = (data['data'] as List)
           .where((userData) =>
               userData is Map<String, dynamic> &&
-              userData['__t'] == 'Customer' &&
+              userData['__t'] == 'Retailer' &&
               userData['verified'] == true)
           .map((userData) => userData as Map<String, dynamic>)
           .toList();
 
       setState(() {
-        customerDataList.clear();
-        customerDataList.addAll(customerData);
+        retailerDataList.clear();
+        retailerDataList.addAll(retailerData);
         currentPage = page;
         loadingData = false;
       });
@@ -79,7 +79,7 @@ class _CustomerPageState extends State<CustomerPage> {
       final List<Map<String, dynamic>> filteredData = (data['data'] as List)
           .where((userData) =>
               userData is Map<String, dynamic> &&
-              userData['__t'] == "Customer" &&
+              userData['__t'] == "Retailer" &&
               (userData['name']
                       .toString()
                       .toLowerCase()
@@ -100,7 +100,7 @@ class _CustomerPageState extends State<CustomerPage> {
           .toList();
 
       setState(() {
-        customerDataList = filteredData;
+        retailerDataList = filteredData;
       });
     } else {}
   }
@@ -206,7 +206,7 @@ class _CustomerPageState extends State<CustomerPage> {
     }
   }
 
-  Future<void> addCustomerToAPI(Map<String, dynamic> newCustomer) async {
+  Future<void> addRetailerToAPI(Map<String, dynamic> newRetailer) async {
     final url = Uri.parse('https://lpg-api-06n8.onrender.com/api/v1/users');
     final headers = {'Content-Type': 'application/json'};
 
@@ -217,7 +217,7 @@ class _CustomerPageState extends State<CustomerPage> {
 
       if (profileUploadResponse != null) {
         print("Profile Image URL: ${profileUploadResponse["url"]}");
-        newCustomer["image"] = profileUploadResponse["url"];
+        newRetailer["image"] = profileUploadResponse["url"];
       } else {
         print("Profile Image upload failed");
         return;
@@ -227,7 +227,7 @@ class _CustomerPageState extends State<CustomerPage> {
     final response = await http.post(
       url,
       headers: headers,
-      body: jsonEncode(newCustomer),
+      body: jsonEncode(newRetailer),
     );
 
     if (response.statusCode == 201 || response.statusCode == 200) {
@@ -235,12 +235,12 @@ class _CustomerPageState extends State<CustomerPage> {
       Navigator.pop(context);
     } else {
       print(
-          'Failed to add or update the customer. Status code: ${response.statusCode}');
+          'Failed to add or update the retailer. Status code: ${response.statusCode}');
       print('Response body: ${response.body}');
     }
   }
 
-  void openAddCustomerDialog() {
+  void openAddRetailerDialog() {
     TextEditingController nameController = TextEditingController();
     TextEditingController contactNumberController = TextEditingController();
     TextEditingController addressController = TextEditingController();
@@ -253,7 +253,7 @@ class _CustomerPageState extends State<CustomerPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text(
-            'Add New Customer',
+            'Add New Retailer',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -398,17 +398,17 @@ class _CustomerPageState extends State<CustomerPage> {
                   showCustomOverlay(context, 'Please Upload a Profile Image');
                 } else {
                   if (formKey.currentState!.validate()) {
-                    Map<String, dynamic> newCustomer = {
+                    Map<String, dynamic> newRetailer = {
                       "name": nameController.text,
                       "contactNumber": contactNumberController.text,
                       "address": addressController.text,
                       "verified": "true",
-                      "__t": "Customer",
+                      "__t": "Retailer",
                       "email": emailController.text,
                       "password": passwordController.text,
                       "image": "",
                     };
-                    addCustomerToAPI(newCustomer);
+                    addRetailerToAPI(newRetailer);
                   }
                 }
               },
@@ -467,24 +467,24 @@ class _CustomerPageState extends State<CustomerPage> {
   }
 
   void updateData(String id) {
-    Map<String, dynamic> customerToEdit =
-        customerDataList.firstWhere((data) => data['_id'] == id);
+    Map<String, dynamic> retailerToEdit =
+        retailerDataList.firstWhere((data) => data['_id'] == id);
 
     TextEditingController nameController =
-        TextEditingController(text: customerToEdit['name'].toString());
+        TextEditingController(text: retailerToEdit['name'].toString());
     TextEditingController contactNumberController =
-        TextEditingController(text: customerToEdit['contactNumber'].toString());
+        TextEditingController(text: retailerToEdit['contactNumber'].toString());
     TextEditingController addressController =
-        TextEditingController(text: customerToEdit['address'].toString());
+        TextEditingController(text: retailerToEdit['address'].toString());
     TextEditingController emailController =
-        TextEditingController(text: customerToEdit['email']);
+        TextEditingController(text: retailerToEdit['email']);
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text(
-            'Edit Customer',
+            'Edit Retailer',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -511,14 +511,14 @@ class _CustomerPageState extends State<CustomerPage> {
                                         backgroundImage:
                                             FileImage(snapshot.data!),
                                       )
-                                    : (customerToEdit['image'] != null &&
-                                            customerToEdit['image']
+                                    : (retailerToEdit['image'] != null &&
+                                            retailerToEdit['image']
                                                 .toString()
                                                 .isNotEmpty)
                                         ? CircleAvatar(
                                             radius: 50,
                                             backgroundImage: NetworkImage(
-                                              customerToEdit['image']
+                                              retailerToEdit['image']
                                                   .toString(),
                                             ),
                                           )
@@ -618,18 +618,18 @@ class _CustomerPageState extends State<CustomerPage> {
             TextButton(
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
-                  customerToEdit['name'] = nameController.text;
-                  customerToEdit['contactNumber'] =
+                  retailerToEdit['name'] = nameController.text;
+                  retailerToEdit['contactNumber'] =
                       contactNumberController.text;
-                  customerToEdit['address'] = addressController.text;
-                  customerToEdit['email'] = emailController.text;
-                  customerToEdit['__t'] = "Customer";
+                  retailerToEdit['address'] = addressController.text;
+                  retailerToEdit['email'] = emailController.text;
+                  retailerToEdit['__t'] = "Retailer";
 
                   if (_profileImage != null) {
                     var editprofileUploadResponse =
                         await uploadProfileImageToServer(_profileImage!);
                     if (editprofileUploadResponse != null) {
-                      customerToEdit["image"] =
+                      retailerToEdit["image"] =
                           editprofileUploadResponse["url"];
                     }
                   }
@@ -641,7 +641,7 @@ class _CustomerPageState extends State<CustomerPage> {
                   final response = await http.patch(
                     url,
                     headers: headers,
-                    body: jsonEncode(customerToEdit),
+                    body: jsonEncode(retailerToEdit),
                   );
 
                   if (response.statusCode == 200) {
@@ -653,7 +653,7 @@ class _CustomerPageState extends State<CustomerPage> {
                     Navigator.pop(context);
                   } else {
                     print(
-                        'Failed to update the customer. Status code: ${response.statusCode}');
+                        'Failed to update the retailer. Status code: ${response.statusCode}');
                   }
                 }
               },
@@ -674,8 +674,8 @@ class _CustomerPageState extends State<CustomerPage> {
   }
 
   void changePassData(String id) async {
-    Map<String, dynamic> customerToEdit =
-        customerDataList.firstWhere((data) => data['_id'] == id);
+    Map<String, dynamic> retailerToEdit =
+        retailerDataList.firstWhere((data) => data['_id'] == id);
 
     TextEditingController passwordController = TextEditingController(text: "");
 
@@ -701,22 +701,22 @@ class _CustomerPageState extends State<CustomerPage> {
                     child: CircleAvatar(
                       radius: 50,
                       backgroundImage: NetworkImage(
-                        customerToEdit['image'].toString(),
+                        retailerToEdit['image'].toString(),
                       ),
                     ),
                   ),
                   const Divider(),
                   BodyMediumOver(
-                    text: 'Name: ${customerToEdit['name']}',
+                    text: 'Name: ${retailerToEdit['name']}',
                   ),
                   BodyMediumText(
-                    text: 'Mobile #: ${customerToEdit['contactNumber']}',
+                    text: 'Mobile #: ${retailerToEdit['contactNumber']}',
                   ),
                   BodyMediumOver(
-                    text: 'Address: ${customerToEdit['address']}',
+                    text: 'Address: ${retailerToEdit['address']}',
                   ),
                   BodyMediumOver(
-                    text: 'Email Address: ${customerToEdit['email']}',
+                    text: 'Email Address: ${retailerToEdit['email']}',
                   ),
                   EditTextField(
                     controller: passwordController,
@@ -747,7 +747,7 @@ class _CustomerPageState extends State<CustomerPage> {
             TextButton(
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
-                  customerToEdit['password'] = passwordController.text;
+                  retailerToEdit['password'] = passwordController.text;
 
                   final url = Uri.parse(
                       'https://lpg-api-06n8.onrender.com/api/v1/users/$id/password');
@@ -756,7 +756,7 @@ class _CustomerPageState extends State<CustomerPage> {
                   final response = await http.patch(
                     url,
                     headers: headers,
-                    body: jsonEncode(customerToEdit),
+                    body: jsonEncode(retailerToEdit),
                   );
 
                   if (response.statusCode == 200) {
@@ -764,7 +764,7 @@ class _CustomerPageState extends State<CustomerPage> {
                     Navigator.pop(context);
                   } else {
                     print(
-                        'Failed to update the customer. Status code: ${response.statusCode}');
+                        'Failed to update the retailer. Status code: ${response.statusCode}');
                   }
                 }
               },
@@ -785,8 +785,8 @@ class _CustomerPageState extends State<CustomerPage> {
   }
 
   void archiveData(String id) async {
-    Map<String, dynamic> customerToEdit =
-        customerDataList.firstWhere((data) => data['_id'] == id);
+    Map<String, dynamic> retailerToEdit =
+        retailerDataList.firstWhere((data) => data['_id'] == id);
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -809,22 +809,22 @@ class _CustomerPageState extends State<CustomerPage> {
                     child: CircleAvatar(
                       radius: 50,
                       backgroundImage: NetworkImage(
-                        customerToEdit['image'].toString(),
+                        retailerToEdit['image'].toString(),
                       ),
                     ),
                   ),
                   const Divider(),
                   BodyMediumOver(
-                    text: 'Name: ${customerToEdit['name']}',
+                    text: 'Name: ${retailerToEdit['name']}',
                   ),
                   BodyMediumText(
-                    text: 'Mobile #: ${customerToEdit['contactNumber']}',
+                    text: 'Mobile #: ${retailerToEdit['contactNumber']}',
                   ),
                   BodyMediumOver(
-                    text: 'Address: ${customerToEdit['address']}',
+                    text: 'Address: ${retailerToEdit['address']}',
                   ),
                   BodyMediumOver(
-                    text: 'Email Address: ${customerToEdit['email']}',
+                    text: 'Email Address: ${retailerToEdit['email']}',
                   ),
                   const Divider(),
                   const SizedBox(height: 10),
@@ -859,7 +859,7 @@ class _CustomerPageState extends State<CustomerPage> {
 
                 if (response.statusCode == 200) {
                   setState(() {
-                    customerDataList.removeWhere((data) => data['_id'] == id);
+                    retailerDataList.removeWhere((data) => data['_id'] == id);
                   });
 
                   fetchData();
@@ -892,7 +892,7 @@ class _CustomerPageState extends State<CustomerPage> {
         backgroundColor: Colors.white,
         elevation: 1,
         title: Text(
-          'Customer List',
+          'Retailer List',
           style: TextStyle(
             color: const Color(0xFF050404).withOpacity(0.9),
             fontSize: 22,
@@ -977,32 +977,16 @@ class _CustomerPageState extends State<CustomerPage> {
                             ),
                           ),
                         ),
-                        ElevatedButton(
-                          onPressed: () {
-                            openAddCustomerDialog();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color(0xFF050404).withOpacity(0.9),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: const Text(
-                            'Add Customer',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
-                    if (customerDataList.isEmpty && !loadingData)
+                    if (retailerDataList.isEmpty && !loadingData)
                       const Center(
                         child: Column(
                           children: [
                             SizedBox(height: 40),
                             Text(
-                              'No customers to display.',
+                              'No retailers to display.',
                               style: TextStyle(
                                   fontSize: 18, fontWeight: FontWeight.bold),
                             ),
@@ -1018,9 +1002,9 @@ class _CustomerPageState extends State<CustomerPage> {
                               reverse: true,
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
-                              itemCount: customerDataList.length,
+                              itemCount: retailerDataList.length,
                               itemBuilder: (BuildContext context, int index) {
-                                final userData = customerDataList[index];
+                                final userData = retailerDataList[index];
                                 final id = userData['_id'];
 
                                 return SizedBox(
