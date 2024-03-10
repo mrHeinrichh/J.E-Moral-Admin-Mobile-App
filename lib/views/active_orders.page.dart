@@ -1,9 +1,12 @@
 import 'package:admin_app/views/maps.page.dart';
+import 'package:admin_app/widgets/custom_text.dart';
+import 'package:admin_app/widgets/fullscreen_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:intl/intl.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class ActiveOrders extends StatefulWidget {
   @override
@@ -13,17 +16,19 @@ class ActiveOrders extends StatefulWidget {
 class _ActiveOrdersState extends State<ActiveOrders> {
   List<Map<String, dynamic>> transactions = [];
   bool _mounted = true;
-
-  @override
-  void initState() {
-    super.initState();
-    fetchData();
-  }
+  bool loadingData = false;
 
   @override
   void dispose() {
     _mounted = false;
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadingData = true;
+    fetchData();
   }
 
   Future<void> fetchData() async {
@@ -39,7 +44,6 @@ class _ActiveOrdersState extends State<ActiveOrders> {
           if (data.containsKey("data")) {
             final List<dynamic> transactionData = data["data"];
 
-            // Filter out transactions where "active" is false
             final List<Map<String, dynamic>> filteredTransactions =
                 List<Map<String, dynamic>>.from(transactionData)
                     .where((transaction) => transaction["status"] == 'On Going')
@@ -48,23 +52,18 @@ class _ActiveOrdersState extends State<ActiveOrders> {
             setState(() {
               transactions = filteredTransactions;
             });
-          } else {
-            // Handle data format issues if needed
-          }
+          } else {}
         } else {
           print("Error: ${response.statusCode}");
         }
       }
     } catch (e) {
-      // Handle network request errors
       if (_mounted) {
         print("Error: $e");
       }
+    } finally {
+      loadingData = false;
     }
-  }
-
-  Future<void> refreshData() async {
-    await fetchData();
   }
 
   @override
@@ -83,239 +82,239 @@ class _ActiveOrdersState extends State<ActiveOrders> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        elevation: 0,
         backgroundColor: Colors.white,
-        title: const Text(
+        elevation: 1,
+        title: Text(
           'Active Orders',
           style: TextStyle(
-            color: Color(0xFF232937),
-            fontSize: 20,
+            color: const Color(0xFF050404).withOpacity(0.9),
+            fontSize: 22,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
-      ),
-      body: RefreshIndicator(
-        onRefresh: refreshData,
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: ListView.builder(
-            reverse: false,
-            itemCount: transactions.length,
-            itemBuilder: (context, index) {
-              final transaction = transactions[index];
-              return Card(
-                color: Colors.white,
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(25.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "ID: ${transaction['_id']}",
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const Divider(),
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            const TextSpan(
-                              text: "Receiver Name: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextSpan(
-                              text: "${transaction['name']}",
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            const TextSpan(
-                              text: "Receiver Contact Number: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextSpan(
-                              text: "${transaction['contactNumber']}",
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            const TextSpan(
-                              text: "Pin Location: ",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextSpan(
-                              text: '${transaction['deliveryLocation']}',
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            const TextSpan(
-                              text: "Receiver House Number: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextSpan(
-                              text: "${transaction['houseLotBlk']}",
-                            ),
-                          ],
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          const Text(
-                            "Barangay: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            '${transaction['barangay']}',
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          const Text(
-                            "Payment Method: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            "${transaction['paymentMethod'] == 'COD' ? 'Cash on Delivery' : transaction['paymentMethod']}",
-                          ),
-                        ],
-                      ),
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Assemble Option: ',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextSpan(
-                              text: transaction['assembly'] ? 'Yes' : 'No',
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Delivery Date/Time: ',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextSpan(
-                              text: transaction['updatedAt'] != null
-                                  ? DateFormat('MMM d, y - h:mm a').format(
-                                      DateTime.parse(transaction['updatedAt']),
-                                    )
-                                  : 'null',
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: "Items: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (transaction['items'] != null)
-                              TextSpan(
-                                text:
-                                    (transaction['items'] as List).map((item) {
-                                  if (item is Map<String, dynamic> &&
-                                      item.containsKey('name') &&
-                                      item.containsKey('quantity')) {
-                                    return '${item['name']} (${item['quantity']})';
-                                  }
-                                  return '';
-                                }).join(', '),
-                              ),
-                          ],
-                        ),
-                      ),
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            const TextSpan(
-                              text: "Total Price: ",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextSpan(
-                              text: '₱${transaction['total']}',
-                            ),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => MapsPage(
-                                    transactionId: transaction['_id'],
-                                    deliveryLocation:
-                                        transaction['deliveryLocation'],
-                                  ),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF232937),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              textStyle: const TextStyle(fontSize: 18),
-                            ),
-                            child: const Text(
-                              'Track Order',
-                              style: TextStyle(
-                                color: Color.fromARGB(255, 255, 255, 255),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+        iconTheme: IconThemeData(
+          color: const Color(0xFF050404).withOpacity(0.8),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: Colors.black,
+            height: 0.2,
           ),
         ),
       ),
+      backgroundColor: Colors.white,
+      body: loadingData
+          ? Center(
+              child: LoadingAnimationWidget.flickr(
+                leftDotColor: const Color(0xFF050404).withOpacity(0.8),
+                rightDotColor: const Color(0xFFd41111).withOpacity(0.8),
+                size: 40,
+              ),
+            )
+          : RefreshIndicator(
+              color: const Color(0xFF050404),
+              strokeWidth: 2.5,
+              onRefresh: () async {
+                await fetchData();
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: ListView.builder(
+                  reverse: false,
+                  itemCount: transactions.length,
+                  itemBuilder: (context, index) {
+                    final transaction = transactions[index];
+                    return Card(
+                      color: Colors.white,
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(25.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+                              child: Column(
+                                children: [
+                                  const BodyMedium(
+                                    text: "Transaction ID:",
+                                  ),
+                                  BodyMedium(
+                                    text: transaction['_id'],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Divider(),
+                            const Center(
+                              child: BodyMedium(text: "Receiver Infomation"),
+                            ),
+                            const SizedBox(height: 5),
+                            BodyMediumText(
+                                text: "Name: ${transaction['name']}"),
+                            BodyMediumText(
+                                text:
+                                    "Mobile Number: ${transaction['contactNumber']}"),
+                            BodyMediumOver(
+                                text:
+                                    "House Number: ${transaction['houseLotBlk']}"),
+                            BodyMediumText(
+                                text: "Barangay: ${transaction['barangay']}"),
+                            BodyMediumOver(
+                                text:
+                                    "Delivery Location: ${transaction['deliveryLocation']}"),
+                            const Divider(),
+                            BodyMediumText(
+                                text:
+                                    'Payment Method: ${transaction['paymentMethod'] == 'COD' ? 'Cash on Delivery' : transaction['paymentMethod']}'),
+                            if (transaction.containsKey('discountIdImage'))
+                              BodyMediumText(
+                                text:
+                                    'Assemble Option: ${transaction['assembly'] ? 'Yes' : 'No'}',
+                              ),
+                            BodyMediumOver(
+                              text:
+                                  'Delivery Date and Time: ${DateFormat('MMMM d, y - h:mm a').format(DateTime.parse(transaction['deliveryDate']))}',
+                            ),
+                            if (transaction.containsKey('discountIdImage'))
+                              BodyMediumOver(
+                                text:
+                                    'Items: ${transaction['items']!.map((item) {
+                                  if (item is Map<String, dynamic> &&
+                                      item.containsKey('name') &&
+                                      item.containsKey('quantity') &&
+                                      item.containsKey('customerPrice')) {
+                                    final itemName = item['name'];
+                                    final quantity = item['quantity'];
+                                    final price = NumberFormat.decimalPattern()
+                                        .format(double.parse(
+                                            (item['customerPrice'])
+                                                .toStringAsFixed(2)));
+
+                                    return '$itemName ₱$price (x$quantity)';
+                                  }
+                                }).join(', ')}',
+                              ),
+                            if (!transaction.containsKey('discountIdImage') &&
+                                transaction['discounted'] == false)
+                              BodyMediumOver(
+                                text:
+                                    'Items: ${transaction['items']!.map((item) {
+                                  if (item is Map<String, dynamic> &&
+                                      item.containsKey('name') &&
+                                      item.containsKey('quantity') &&
+                                      item.containsKey('retailerPrice')) {
+                                    final itemName = item['name'];
+                                    final quantity = item['quantity'];
+                                    final price = NumberFormat.decimalPattern()
+                                        .format(double.parse(
+                                            (item['retailerPrice'])
+                                                .toStringAsFixed(2)));
+
+                                    return '$itemName ₱$price (x$quantity)';
+                                  }
+                                }).join(', ')}',
+                              ),
+                            BodyMediumText(
+                              text:
+                                  'Total: ₱${NumberFormat.decimalPattern().format(double.parse((transaction['total']).toStringAsFixed(2)))}',
+                            ),
+                            const Divider(),
+                            if (transaction.containsKey('discountIdImage'))
+                              Center(
+                                child: BodyMediumText(
+                                  text:
+                                      'Discount: ${transaction['discounted'] != false ? 'Applying for Discount' : 'Not Applying for Discount'}',
+                                ),
+                              ),
+                            if (!transaction.containsKey('discountIdImage') &&
+                                transaction['discounted'] == false)
+                              const Center(
+                                child: BodyMedium(
+                                  text: 'Ordered by Retailer',
+                                ),
+                              ),
+                            if (transaction['discountIdImage'] != null &&
+                                transaction['discountIdImage'] != "")
+                              Column(
+                                children: [
+                                  const SizedBox(height: 5),
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.of(context)
+                                          .push(MaterialPageRoute(
+                                        builder: (context) =>
+                                            FullScreenImageView(
+                                                imageUrl: transaction[
+                                                    'discountIdImage'],
+                                                onClose: () =>
+                                                    Navigator.of(context)
+                                                        .pop()),
+                                      ));
+                                    },
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Container(
+                                        width: 300,
+                                        height: 100,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.rectangle,
+                                          image: DecorationImage(
+                                            fit: BoxFit.cover,
+                                            image: NetworkImage(
+                                              transaction['discountIdImage'] ??
+                                                  '',
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            const SizedBox(height: 10),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => MapsPage(
+                                          transactionId: transaction['_id'],
+                                          deliveryLocation:
+                                              transaction['deliveryLocation'],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF050404)
+                                        .withOpacity(0.9),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
+                                    textStyle: const TextStyle(fontSize: 18),
+                                  ),
+                                  child: const Text(
+                                    'Track Order',
+                                    style: TextStyle(
+                                      color: Color.fromARGB(255, 255, 255, 255),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'dart:math' as math;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -12,7 +13,7 @@ class MapsPage extends StatefulWidget {
   final String deliveryLocation;
   MapsPage({
     required this.transactionId,
-    required this.deliveryLocation, // Add this line
+    required this.deliveryLocation,
   });
 
   @override
@@ -23,8 +24,8 @@ class _MapsPageState extends State<MapsPage> {
   late String deliveryLocation;
   List<LatLng> routePoints = [];
   bool isLoading = true;
-  late Timer timer; // Declare a Timer variable
-  Map<String, dynamic>? riderData; // Add this line to store rider data
+  late Timer timer;
+  Map<String, dynamic>? riderData;
 
   @override
   void initState() {
@@ -34,8 +35,8 @@ class _MapsPageState extends State<MapsPage> {
 
     deliveryLocation = widget.deliveryLocation;
 
-    timer = Timer.periodic(
-        Duration(seconds: 3), (Timer t) => fetchData(widget.transactionId));
+    timer = Timer.periodic(const Duration(seconds: 3),
+        (Timer t) => fetchData(widget.transactionId));
   }
 
   @override
@@ -48,20 +49,40 @@ class _MapsPageState extends State<MapsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 0,
         backgroundColor: Colors.white,
+        elevation: 1,
         title: Text(
           'In Transit',
-          style: TextStyle(color: Color(0xFF232937), fontSize: 24),
+          style: TextStyle(
+            color: const Color(0xFF050404).withOpacity(0.9),
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
+        iconTheme: IconThemeData(
+          color: const Color(0xFF050404).withOpacity(0.8),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            color: Colors.black,
+            height: 0.2,
+          ),
+        ),
       ),
       body: Stack(
         children: [
           Column(
             children: [
               if (isLoading)
-                Center(child: CircularProgressIndicator())
+                Center(
+                  child: LoadingAnimationWidget.flickr(
+                    leftDotColor: const Color(0xFF050404).withOpacity(0.8),
+                    rightDotColor: const Color(0xFFd41111).withOpacity(0.8),
+                    size: 40,
+                  ),
+                )
               else
                 buildMap(),
             ],
@@ -126,7 +147,7 @@ class _MapsPageState extends State<MapsPage> {
                 height: 40.0,
                 point: routePoints.isNotEmpty ? routePoints.last : LatLng(0, 0),
                 builder: (ctx) => Container(
-                  child: Icon(
+                  child: const Icon(
                     Icons.person_pin_circle,
                     color: Colors.green,
                     size: 40.0,
@@ -161,7 +182,6 @@ class _MapsPageState extends State<MapsPage> {
         print(
             'START LOCATION Latitude: $startLatitude, Longitude: $startLongitude');
 
-        // Call the method to convert the address to coordinates
         await getAddressCoordinates(
           deliveryLocation,
           startLatitude,
@@ -176,15 +196,11 @@ class _MapsPageState extends State<MapsPage> {
         });
       } else {
         print('Failed to load additional data: ${response.statusCode}');
-        // setState(() {
-        //   isLoading = false; // Set isLoading to false in case of an error
-        // });
       }
     } catch (e) {
       print('Error fetching additional data: $e');
-      setState(() {
-        isLoading = false; // Set isLoading to false in case of an error
-      });
+    } finally {
+      isLoading = false;
     }
   }
 
@@ -226,7 +242,6 @@ class _MapsPageState extends State<MapsPage> {
 
         print('END LOCATION Latitude: $latitude, Longitude: $longitude');
 
-        // Now, you can use the start and end coordinates to fetch routing information
         await getRoutingInformation(
             '$startLatitude,$startLongitude', '$latitude,$longitude');
       } else {
@@ -253,7 +268,6 @@ class _MapsPageState extends State<MapsPage> {
         final Map<String, dynamic> routingData = jsonDecode(response.body);
         print('Routing Information: $routingData');
 
-        // Try to parse waypoints
         parseWaypoints(routingData);
       } else {
         print('Failed to get routing information: ${response.statusCode}');
@@ -265,7 +279,7 @@ class _MapsPageState extends State<MapsPage> {
 
   void parseWaypoints(Map<String, dynamic> routingData) {
     try {
-      routePoints.clear(); // Clear existing points before adding new ones
+      routePoints.clear();
 
       List<dynamic>? segments =
           routingData['features']?[0]['geometry']['coordinates'];
@@ -284,7 +298,6 @@ class _MapsPageState extends State<MapsPage> {
         }
       }
 
-      // Only update the relevant parts of the UI
       setState(() {});
     } catch (e) {
       print('Error parsing waypoints: $e');
@@ -307,7 +320,7 @@ class CustomMarker extends StatelessWidget {
 
 double calculateZoom(
     double minLat, double maxLat, double minLng, double maxLng) {
-  const double paddingFactor = 1.1; // Adjust this to add padding around markers
+  const double paddingFactor = 1.1;
   double latRange = (maxLat - minLat) * paddingFactor;
   double lngRange = (maxLng - minLng) * paddingFactor;
 
@@ -316,20 +329,15 @@ double calculateZoom(
   print('Diagonal: $diagonal');
 
   if (diagonal != 0) {
-    // Perform division only if diagonal is not zero
     double zoom =
         (math.log(360.0 / 256.0 * (EarthRadius * math.pi) / diagonal) /
             math.ln2);
 
     print('Calculated Zoom: $zoom');
 
-    // Check for NaN or Infinity and return a default value if needed
-    return zoom.isFinite
-        ? zoom.floorToDouble()
-        : 10.0; // You can change 10.0 to your preferred default value
+    return zoom.isFinite ? zoom.floorToDouble() : 10.0;
   } else {
-    // Handle the case where diagonal is zero (avoid division by zero)
-    return 0.0; // or another appropriate value
+    return 0.0;
   }
 }
 
@@ -361,7 +369,7 @@ class RiderDetails extends StatelessWidget {
           child: Container(
             width: 375.0,
             height: 250.0,
-            padding: EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(20.0),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -369,14 +377,14 @@ class RiderDetails extends StatelessWidget {
                   color: Colors.grey.withOpacity(0.5),
                   spreadRadius: 2,
                   blurRadius: 5,
-                  offset: Offset(0, 3),
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
+                const Text(
                   'Rider Details',
                   style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
                 ),
@@ -384,7 +392,7 @@ class RiderDetails extends StatelessWidget {
                   backgroundImage: NetworkImage('${userData['image']}'),
                   radius: 40.0,
                 ),
-                SizedBox(height: 8.0),
+                const SizedBox(height: 8.0),
                 Text('Name: ${userData['name']}'),
                 Text('Contact Number: ${userData['contactNumber']}'),
                 Row(
@@ -394,7 +402,7 @@ class RiderDetails extends StatelessWidget {
                       onPressed: () {
                         _launchCaller(userData['contactNumber']);
                       },
-                      child: Text('Call Driver'),
+                      child: const Text('Call Driver'),
                     ),
                     ElevatedButton(
                       onPressed: () async {
@@ -402,14 +410,11 @@ class RiderDetails extends StatelessWidget {
                         if (await canLaunch('sms:$contactNumber')) {
                           await launch('sms:$contactNumber');
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Unable to launch messaging app'),
-                            ),
-                          );
+                          showCustomOverlay(
+                              context, 'Unable to launch messaging app');
                         }
                       },
-                      child: Text('Message'),
+                      child: const Text('Message'),
                     ),
                   ],
                 ),
@@ -426,7 +431,7 @@ class RiderDetails extends StatelessWidget {
           child: Container(
             width: 350.0,
             height: 200.0,
-            padding: EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(20.0),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -434,11 +439,11 @@ class RiderDetails extends StatelessWidget {
                   color: Colors.grey.withOpacity(0.5),
                   spreadRadius: 2,
                   blurRadius: 5,
-                  offset: Offset(0, 3),
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
-            child: Column(
+            child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -465,7 +470,6 @@ class LocationDestination extends StatelessWidget {
     if (text.length <= maxLength) {
       return text;
     } else {
-      // Add a newline character after the specified length
       return text.substring(0, maxLength) + '\n' + text.substring(maxLength);
     }
   }
@@ -480,9 +484,9 @@ class LocationDestination extends StatelessWidget {
         padding: const EdgeInsets.all(10.0),
         child: Center(
           child: Container(
-            width: 385.0, // Adjust the width as needed
-            height: 70.0, // Adjust the height as needed
-            padding: EdgeInsets.all(20.0),
+            width: 385.0,
+            height: 70.0,
+            padding: const EdgeInsets.all(20.0),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -490,7 +494,7 @@ class LocationDestination extends StatelessWidget {
                   color: Colors.grey.withOpacity(0.5),
                   spreadRadius: 2,
                   blurRadius: 5,
-                  offset: Offset(0, 3), // changes position of shadow
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
@@ -498,12 +502,12 @@ class LocationDestination extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(truncatedLocation,
-                    style:
-                        TextStyle(fontSize: 12.0, fontWeight: FontWeight.bold)),
+                    style: const TextStyle(
+                        fontSize: 12.0, fontWeight: FontWeight.bold)),
                 Image.network(
                   'https://raw.githubusercontent.com/mrHeinrichh/J.E-Moral-cdn/main/assets/png/location-arrow-circle-icon.png', // Replace with your image URL
-                  width: 30.0, // Adjust the width as needed
-                  height: 30.0, // Adjust the height as needed
+                  width: 30.0,
+                  height: 30.0,
                   fit: BoxFit.cover,
                 ),
               ],
@@ -513,4 +517,42 @@ class LocationDestination extends StatelessWidget {
       ),
     );
   }
+}
+
+void showCustomOverlay(BuildContext context, String message) {
+  final overlay = OverlayEntry(
+    builder: (context) => Positioned(
+      top: MediaQuery.of(context).size.height * 0.5,
+      left: 20,
+      right: 20,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          decoration: BoxDecoration(
+            color: const Color(0xFFd41111).withOpacity(0.7),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.5),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Text(
+            message,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    ),
+  );
+
+  Overlay.of(context)!.insert(overlay);
+
+  Future.delayed(const Duration(seconds: 2), () {
+    overlay.remove();
+  });
 }
