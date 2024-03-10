@@ -177,8 +177,9 @@ class _MapsPageState extends State<MapsPage> {
         final Map<String, dynamic> data = jsonDecode(response.body);
         print(response.body);
 
-        final String startLatitude = data['data']['lat'];
-        final String startLongitude = data['data']['long'];
+        final String startLatitude = data['lat'].toString();
+        final String startLongitude = data['long'].toString();
+
         print(
             'START LOCATION Latitude: $startLatitude, Longitude: $startLongitude');
 
