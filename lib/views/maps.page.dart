@@ -118,7 +118,7 @@ class _MapsPageState extends State<MapsPage> {
         children: [
           TileLayer(
             urlTemplate:
-                'https://maps.geoapify.com/v1/tile/klokantech-basic/{z}/{x}/{y}.png?apiKey=3e4c0fcabf244021845380f543236e29',
+                'https://maps.geoapify.com/v1/tile/klokantech-basic/{z}/{x}/{y}.png?&apiKey=3e4c0fcabf244021845380f543236e29',
           ),
           PolylineLayer(
             polylines: [
@@ -174,9 +174,12 @@ class _MapsPageState extends State<MapsPage> {
       );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
         print(response.body);
 
+        final Map<String, dynamic> data = responseData['data'];
+        final String riderId = data['rider'];
+        final String deliveryLocation = data['deliveryLocation'];
         final String startLatitude = data['lat'].toString();
         final String startLongitude = data['long'].toString();
 
@@ -189,7 +192,7 @@ class _MapsPageState extends State<MapsPage> {
           startLongitude,
         );
 
-        final String riderId = data['data']['rider'];
+        // final String riderId = data['data']['rider'];
         await fetchRiderDetails(riderId);
 
         setState(() {
@@ -280,25 +283,22 @@ class _MapsPageState extends State<MapsPage> {
 
   void parseWaypoints(Map<String, dynamic> routingData) {
     try {
-      routePoints.clear();
+      routePoints.clear(); // Clear existing points before adding new ones
 
-      List<dynamic>? segments =
-          routingData['features']?[0]['geometry']['coordinates'];
+      List<dynamic> segments =
+          routingData['features'][0]['geometry']['coordinates'];
 
-      if (segments != null) {
-        for (var segment in segments) {
-          List<LatLng> segmentPoints = [];
-          for (var coordinate in segment) {
-            if (coordinate.length >= 2) {
-              double latitude = coordinate[1]?.toDouble() ?? 0.0;
-              double longitude = coordinate[0]?.toDouble() ?? 0.0;
-              segmentPoints.add(LatLng(latitude, longitude));
-            }
-          }
-          routePoints.addAll(segmentPoints);
+      for (var segment in segments) {
+        List<LatLng> segmentPoints = [];
+        for (var coordinate in segment) {
+          double latitude = coordinate[1].toDouble();
+          double longitude = coordinate[0].toDouble();
+          segmentPoints.add(LatLng(latitude, longitude));
         }
+        routePoints.addAll(segmentPoints);
       }
 
+      // Only update the relevant parts of the UI
       setState(() {});
     } catch (e) {
       print('Error parsing waypoints: $e');
@@ -321,25 +321,18 @@ class CustomMarker extends StatelessWidget {
 
 double calculateZoom(
     double minLat, double maxLat, double minLng, double maxLng) {
-  const double paddingFactor = 1.1;
+  const double paddingFactor = 1.1; // Adjust this to add padding around markers
   double latRange = (maxLat - minLat) * paddingFactor;
   double lngRange = (maxLng - minLng) * paddingFactor;
 
   double diagonal = math.sqrt(latRange * latRange + lngRange * lngRange);
 
-  print('Diagonal: $diagonal');
+  // 256 is the default tile size
+  double zoom =
+      (math.log(360.0 / 256.0 * (EarthRadius * math.pi) / diagonal) / math.ln2)
+          .floorToDouble();
 
-  if (diagonal != 0) {
-    double zoom =
-        (math.log(360.0 / 256.0 * (EarthRadius * math.pi) / diagonal) /
-            math.ln2);
-
-    print('Calculated Zoom: $zoom');
-
-    return zoom.isFinite ? zoom.floorToDouble() : 10.0;
-  } else {
-    return 0.0;
-  }
+  return zoom;
 }
 
 const double EarthRadius = 150;

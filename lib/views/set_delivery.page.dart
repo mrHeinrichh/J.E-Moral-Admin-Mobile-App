@@ -81,49 +81,105 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
     }
   }
 
-  Future<void> showConfirmationDialog() async {
-    BuildContext currentContext = context;
+  // Future<void> showConfirmationDialog() async {
+  //   BuildContext currentContext = context;
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text('Confirmation'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Name: ${nameController.text}'),
-              Text('Mobile Number: ${contactNumberController.text}'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await sendTransactionData();
-                Provider.of<CartProvider>(currentContext, listen: false)
-                    .clearCart();
-                Navigator.pushNamed(currentContext, walkinRoute);
-              },
-              child: const Text('Confirm'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  //   // Calculate total amount
+  //   final CartProvider cartProvider =
+  //       Provider.of<CartProvider>(context, listen: false);
+  //   final List<CartItem> cartItems = cartProvider.cartItems;
+  //   double totalAmount = 0;
+  //   for (var cartItem in cartItems) {
+  //     if (cartItem.isSelected) {
+  //       totalAmount += cartItem.customerPrice * cartItem.quantity;
+  //     }
+  //   }
+
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) {
+  //       // Calculate discounted amount
+  //       final discountedAmount = isDiscounted ? totalAmount * 0.2 : 0;
+  //       // Calculate deducted amount from the total
+  //       final deductedAmount = totalAmount - discountedAmount;
+
+  //       return AlertDialog(
+  //         backgroundColor: Colors.white,
+  //         title: const Text('Confirmation'),
+  //         content: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: [
+  //             Text('Name: ${nameController.text}'),
+  //             Text('Mobile Number: ${contactNumberController.text}'),
+  //             // Display total amount
+  //             Row(
+  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //               children: [
+  //                 Text('Total Amount:'),
+  //                 Text('₱$totalAmount'),
+  //               ],
+  //             ),
+  //             // Display discounted amount and deducted amount
+  //             Row(
+  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //               children: [
+  //                 Text('Discounted Amount (20%):'),
+  //                 Text('₱$discountedAmount'),
+  //               ],
+  //             ),
+  //             Row(
+  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //               children: [
+  //                 Text('Deducted from Total:'),
+  //                 Text('₱$deductedAmount'),
+  //               ],
+  //             ),
+  //           ],
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //             },
+  //             child: const Text('Cancel'),
+  //           ),
+  //           TextButton(
+  //             onPressed: () async {
+  //               Navigator.of(context).pop();
+  //               await sendTransactionData();
+  //               Provider.of<CartProvider>(currentContext, listen: false)
+  //                   .clearCart();
+  //               Navigator.pushNamed(currentContext, walkinRoute);
+  //             },
+  //             child: const Text('Confirm'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   Future<void> confirmDialog() async {
     selectedDateTime = DateTime.now();
     BuildContext currentContext = context;
+
+    // Retrieve the list of selected items from the cart
+    final CartProvider cartProvider =
+        Provider.of<CartProvider>(context, listen: false);
+    final List<CartItem> cartItems = cartProvider.cartItems;
+
+    // Calculate the total amount
+    double totalAmount = 0;
+    for (var cartItem in cartItems) {
+      if (cartItem.isSelected) {
+        totalAmount += cartItem.customerPrice * cartItem.quantity;
+      }
+    }
+
+    // Calculate discounted amount and deducted amount
+    final double discountedAmount = isDiscounted ? totalAmount * 0.2 : 0;
+    final double deductedAmount = totalAmount - discountedAmount;
 
     showDialog(
       context: context,
@@ -183,7 +239,55 @@ class _SetDeliveryPageState extends State<SetDeliveryPage> {
                       ),
                     ),
                     TextSpan(
-                      text: isDiscounted != false ? 'Yes' : 'No',
+                      text: isDiscounted ? 'Yes' : 'No',
+                    ),
+                  ],
+                ),
+              ),
+              // Display the total amount
+              Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: 'Total Amount: ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextSpan(
+                      text: '₱$totalAmount',
+                    ),
+                  ],
+                ),
+              ),
+              // Display the discounted amount
+              Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: 'Discounted Amount (20%): ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextSpan(
+                      text: '₱$discountedAmount',
+                    ),
+                  ],
+                ),
+              ),
+              // Display the deducted amount
+              Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: 'Deducted from Total: ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextSpan(
+                      text: '₱$deductedAmount',
                     ),
                   ],
                 ),
