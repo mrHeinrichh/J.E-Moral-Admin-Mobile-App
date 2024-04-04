@@ -171,7 +171,7 @@ class _ActiveOrdersState extends State<ActiveOrders> {
                             if (transaction.containsKey('discountIdImage'))
                               BodyMediumText(
                                 text:
-                                    'Assemble Option: ${transaction['assembly'] ? 'Yes' : 'No'}',
+                                    'Assemble Option: ${transaction['installed'] ? 'Yes' : 'No'}',
                               ),
                             BodyMediumOver(
                               text:

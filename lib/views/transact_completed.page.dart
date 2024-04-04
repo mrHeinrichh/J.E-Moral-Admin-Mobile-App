@@ -806,7 +806,7 @@ class _Transaction_CompletedPage extends State<Transaction_CompletedPage> {
                     ),
                     BodyMediumText(
                       text:
-                          'Need to be Assembled: ${userData['assembly'] != null ? 'Yes' : 'No'}',
+                          'Need to be Assembled: ${userData['installed'] != null ? 'Yes' : 'No'}',
                     ),
                     BodyMediumText(
                       text:
@@ -1030,7 +1030,7 @@ class _Transaction_CompletedPage extends State<Transaction_CompletedPage> {
                     ),
                     BodyMediumText(
                       text:
-                          'Need to be Assembled: ${userData['assembly'] != null ? 'Yes' : 'No'}',
+                          'Need to be Assembled: ${userData['installed'] != null ? 'Yes' : 'No'}',
                     ),
                     BodyMediumText(
                       text:

@@ -767,7 +767,7 @@ class _TransactionCancelledRetailerPageState
                   ),
                   BodyMediumText(
                     text:
-                        'Need to be Assembled: ${userData['assembly'] != null ? 'Yes' : 'No'}',
+                        'Need to be Assembled: ${userData['installed'] != null ? 'Yes' : 'No'}',
                   ),
                   BodyMediumText(
                     text:
